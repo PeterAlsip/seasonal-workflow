@@ -62,17 +62,24 @@ def process_daily(root, domain, var, ens=None, xslice=None, yslice=None):
 
 if __name__ == '__main__':
     import argparse
+    from yaml import safe_load
     parser = argparse.ArgumentParser()
-    parser.add_argument('root')
-    parser.add_argument('domain')
-    parser.add_argument('freq')
-    parser.add_argument('var')
-    parser.add_argument('ensemble', default='pp_ensemble')
-    parser.add_argument('-x', '--xslice', type=str, help='Limits of x region', default='-100,-30')
-    parser.add_argument('-y', '--yslice', type=str, help='initialization year', default='5,60')
+    parser.add_argument('-d', '--domain')
+    parser.add_argument('-f', '--freq')
+    parser.add_argument('-v', '--var')
+    parser.add_argument('-e', '--ensemble')
+    parser.add_argument('-c', '--config', default=None)
     args = parser.parse_args()
 
+    if args.config is not None:
+        with open(args.config, 'r') as file: 
+            config = safe_load(file)
+            xslice = (config['domain']['westlon'], config['domain']['eastlon'])
+            yslice = (config['domain']['southlat'], config['domain']['northlat'])
+    else:
+        xslice = yslice = None
+
     if args.freq == 'monthly':
-        process_monthly(args.root, args.domain, args.var, ens=args.ensemble, xslice=args.xslice, yslice=args.yslice)
+        process_monthly(args.root, args.domain, args.var, ens=args.ensemble, xslice=xslice, yslice=yslice)
     elif args.freq == 'daily':
-        process_daily(args.root, args.domain, args.var, ens=args.ensemble, xslice=args.xslice, yslice=args.yslice)
+        process_daily(args.root, args.domain, args.var, ens=args.ensemble, xslice=xslice, yslice=yslice)

@@ -86,7 +86,7 @@ def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=ROOT):
         final_path = root / tentative_subdir / subpath
     else:
         import errno
-        raise FileNotFoundError(errno.ENOENT, 'Could not find spear file in plain directory, _update, or _rerun.', fname)
+        raise FileNotFoundError(errno.ENOENT, 'Could not find spear file in plain directory, _update, or _rerun.', fname.as_posix())
     
     return final_path
 
@@ -103,17 +103,22 @@ def get_spear_paths(variables, *args, **kwargs):
 
 if __name__ == '__main__':
     import argparse
+    from yaml import safe_load
     parser = argparse.ArgumentParser()
-    parser.add_argument('domain')
-    parser.add_argument('freq')
-    parser.add_argument('var')
-    parser.add_argument('ensemble', default='pp_ensemble')
+    parser.add_argument('-d', '--domain')
+    parser.add_argument('-f', '--freq')
+    parser.add_argument('-v', '--var')
+    parser.add_argument('-e', '--ensemble')
+    parser.add_argument('-c', '--config')
     args = parser.parse_args()
+    with open(args.config, 'r') as file: 
+        config = safe_load(file)
+
     fnames = []
     # If called from command line, this will return all files
     # for years and months in the following ranges
-    for ystart in range(1993, 2023):
-        for mstart in [3, 6, 9, 12]:
+    for ystart in range(config['dates']['first_year'], config['dates']['last_year']+1):
+        for mstart in config['dates']['months']:
             fname = get_spear_path(ystart, mstart, args.domain, args.freq, args.var, ens=args.ensemble).as_posix()
             fnames.append(fname)
     print(' '.join(fnames))

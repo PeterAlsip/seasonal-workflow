@@ -16,10 +16,11 @@ set domain=$1
 set freq=$2
 set var=$3
 set ens=$4
+set config=$5
 
-set files=`python spear_path.py $domain $freq $var $ens`
+set files=`python spear_path.py -d $domain -f $freq -v $var -e $ens -c $config`
 dmget $files
 gcp $files $TMPDIR/
-set processed=`python process_spear.py $TMPDIR $domain $freq $var $ens`
-gcp $processed /work/acr/spear/processed/
+set processed=`python process_spear.py $TMPDIR -d $domain -f $freq -v $var -e $ens -c $config`
+gcp $processed /work/$USER/spear/processed/
 

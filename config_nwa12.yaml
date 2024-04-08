@@ -1,0 +1,14 @@
+dates:
+  first_year: 1993
+  last_year: 2022
+  months:
+    - 3
+    - 6
+    - 9
+    - 12
+
+domain:
+  south_lat: 5
+  north_lat: 60
+  west_lon: -100
+  east_lon: -30
