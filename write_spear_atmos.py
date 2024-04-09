@@ -8,8 +8,8 @@ import xarray
 from spear_utils import extract_spear, pad_ds, write_ds
 
 
-def write_atmos(ystart, mstart, ens):
-    work_dir = Path('/work') / 'acr' / 'mom6' / 'nwa12' / 'forecast_input_flooded' / f'{ystart}-{mstart:02d}-e{ens:02d}'
+def write_atmos(ystart, mstart, ens, work_dir, lat_slice, lon_slice):
+    out_dir = work_dir / f'{ystart}-{mstart:02d}-e{ens:02d}'
     if not work_dir.is_dir():
         # Read mask for flooding
         static = xarray.open_dataset('/work/acr/spear/atmos.static.nc')
@@ -26,7 +26,7 @@ def write_atmos(ystart, mstart, ens):
             #open
             ds = (
                 xarray.open_dataset(f)
-                .sel(lat=slice(0, 60), lon=slice(360-105, 360-30))
+                .sel(lat=lat_slice, lon=lon_slice)
             )
             # Need to mask just the variable of interest and not the
             # coordinate/metadata variables 
@@ -42,17 +42,30 @@ def write_atmos(ystart, mstart, ens):
 
 
         print('vftmp -> work')
-        work_dir.mkdir(exist_ok=True, parents=True)
-        subprocess.run([f'gcp {tmpdir}/atmos*.nc {work_dir}'], shell=True, check=True)
+        out_dir.mkdir(exist_ok=True, parents=True)
+        subprocess.run([f'gcp {tmpdir}/atmos*.nc {out_dir}'], shell=True, check=True)
 
 
 if __name__ == '__main__':
     import argparse
+    from yaml import safe_load
     parser = argparse.ArgumentParser()
-    parser.add_argument('ystart', type=int)
-    parser.add_argument('mstart', type=int)
-    parser.add_argument('ens', type=int)
+    parser.add_argument('-y', '--year', type=int)
+    parser.add_argument('-m', '--month', type=int)
+    parser.add_argument('-e', '--ensemble', type=int)
+    parser.add_argument('-c', '--config', default=None)
     args = parser.parse_args()
-    write_atmos(args.ystart, args.mstart, args.ens)
+    if args.config is not None:
+        with open(args.config, 'r') as file: 
+            config = safe_load(file)
+            # Note conversion from [-180, 180] to [0, 360]
+            xslice = (config['domain']['westlon'] % 360, config['domain']['eastlon'] % 360)
+            yslice = (config['domain']['southlat'], config['domain']['northlat'])
+            work_dir = Path(config['filesystem']['model_input_data']) / 'atmos'
+    else:
+        xslice = yslice = None
+        import getpass
+        work_dir = Path('/work/' / getpass.getuser())
+    write_atmos(args.year, args.month, args.ensemble, work_dir, yslice, xslice)
     
 

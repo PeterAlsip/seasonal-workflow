@@ -12,3 +12,6 @@ domain:
   north_lat: 60
   west_lon: -100
   east_lon: -30
+
+filesystem:
+  model_input_data: /work/acr/mom6/nwa12/forecast_input_data
