@@ -1,31 +1,7 @@
 import numpy as np
 import xarray
 
-
-def modulo(ds):
-    ds['time'] = np.arange(0, 365, dtype='float')
-    ds['time'].attrs['units'] = 'days since 0001-01-01'
-    ds['time'].attrs['calendar'] = 'noleap'
-    ds['time'].attrs['modulo'] = ' '
-    ds['time'].attrs['cartesian_axis'] = 'T'
-    return ds
-
-
-def smooth_climatology(da, window=5):
-    smooth = da.copy()
-    for _ in range(2):
-        smooth = xarray.concat([
-            smooth.isel(dayofyear=slice(-window, None)),
-            smooth,
-            smooth.isel(dayofyear=slice(None, window))
-        ], 'dayofyear')
-        smooth = (
-            smooth
-            .rolling(dayofyear=(window * 2 + 1), center=True, min_periods=1)
-            .mean()
-            .isel(dayofyear=slice(window, -window))
-        )
-    return smooth
+from utils import modulo, smooth_climatology
 
 
 def process_climatology(years, input_files, output_dir):

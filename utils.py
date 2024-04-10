@@ -1,42 +1,10 @@
 import numpy as np
-import os
-from pathlib import Path
-import subprocess
 import xarray
-from spear_path import get_spear_path, get_spear_paths
 
 # This is tricky to install, so importing by adding to path
+import sys
 sys.path.append('/home/Andrew.C.Ross/git/HCtFlood')
 from HCtFlood import kara as flood
-
-
-def extract_spear(domain, ystart, mstart, ens, outdir=None):
-    if outdir is None:
-        tmp = Path(os.environ['TMPDIR'])
-        if ens == 'pp_ensemble':
-            outdir = tmp / f'{ystart}-{mstart:02d}-{ens}_raw'
-        else:
-            outdir = tmp / f'{ystart}-{mstart:02d}-e{ens:02d}_raw'
-        outdir.mkdir(exist_ok=True)
-
-    if domain == 'atmos':
-        files = get_spear_paths(
-            ['slp', 't_ref', 'u_ref', 'v_ref', 'q_ref', 'lwdn_sfc', 'swdn_sfc', 'precip'],
-            ystart, mstart, 'atmos_daily', 'daily', ens=ens
-        )
-    elif domain == 'ocean':
-        files = get_spear_paths(
-            ['so', 'thetao'],
-            ystart, mstart, 'ocean_z', 'monthly', ens=ens
-        )
-        files.append(get_spear_path(ystart, mstart, 'ice_daily', 'daily', 'SSH', ens='pp_ensemble'))
-    else:
-        raise ValueError(f'Unrecognized domain: {domain}')
-    file_strings = list(map(str, files))
-    subprocess.run(['dmget ' + ' '.join(file_strings)], shell=True, check=True)
-    subprocess.run(['gcp --sync ' + ' '.join(file_strings) + ' ' + str(outdir)], shell=True, check=True)
-    new_files = [outdir / f.name for f in files]
-    return new_files
 
 
 def flood_ds(ds, ocean_mask):
@@ -92,3 +60,29 @@ def write_ds(ds, fout):
         encoding={'time': {'dtype': 'float64', 'calendar': 'gregorian'}},
         unlimited_dims=['time']
     )
+
+
+def modulo(ds):
+    ds['time'] = np.arange(0, 365, dtype='float')
+    ds['time'].attrs['units'] = 'days since 0001-01-01'
+    ds['time'].attrs['calendar'] = 'noleap'
+    ds['time'].attrs['modulo'] = ' '
+    ds['time'].attrs['cartesian_axis'] = 'T'
+    return ds
+
+
+def smooth_climatology(da, window=5):
+    smooth = da.copy()
+    for _ in range(2):
+        smooth = xarray.concat([
+            smooth.isel(dayofyear=slice(-window, None)),
+            smooth,
+            smooth.isel(dayofyear=slice(None, window))
+        ], 'dayofyear')
+        smooth = (
+            smooth
+            .rolling(dayofyear=(window * 2 + 1), center=True, min_periods=1)
+            .mean()
+            .isel(dayofyear=slice(window, -window))
+        )
+    return smooth
