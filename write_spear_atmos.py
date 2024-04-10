@@ -62,6 +62,7 @@ if __name__ == '__main__':
             xslice = (config['domain']['westlon'] % 360, config['domain']['eastlon'] % 360)
             yslice = (config['domain']['southlat'], config['domain']['northlat'])
             work_dir = Path(config['filesystem']['model_input_data']) / 'atmos'
+            work_dir.mkdir(exist_ok=True)
     else:
         xslice = yslice = None
         import getpass

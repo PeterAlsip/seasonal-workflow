@@ -1,11 +1,16 @@
 dates:
-  first_year: 1993
-  last_year: 2022
-  months:
-    - 3
-    - 6
-    - 9
-    - 12
+  forecasts:
+    first_year: 1993
+    last_year: 2022
+    months:
+      - 3
+      - 6
+      - 9
+      - 12
+  climatology:
+    first_year: 1993
+    last_year: 2019
+
 
 domain:
   south_lat: 5
@@ -15,3 +20,6 @@ domain:
 
 filesystem:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
+  yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{y}.nc
+  open_boundary_files: /work/acr/mom6/nwa12/glorys/updated
+  # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here
