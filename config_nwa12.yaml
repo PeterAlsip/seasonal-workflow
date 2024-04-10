@@ -22,4 +22,5 @@ filesystem:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
   yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{y}.nc
   open_boundary_files: /work/acr/mom6/nwa12/glorys/updated
+  analysis_history: /archive/acr/fre/NWA/2023_10/NWA12_COBALT_2023_10_nudgets-90d/gfdl.ncrc5-intel22-prod/history/
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here
