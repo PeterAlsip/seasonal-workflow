@@ -57,7 +57,7 @@ def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=ROOT):
     if ens != 'pp_ensemble':
         ens = f'pp_ens_{int(ens):02d}'
 
-    tentative_subdir = f'i{ystart}{mstart:02d}01_OTA_IceAtmRes_L33'
+    subdir = f'i{ystart}{mstart:02d}01_OTA_IceAtmRes_L33'
     fname = get_spear_file(ystart, mstart, domain, freq, var)
     subpath = PurePath(ens) / domain / 'ts' / freq / '1yr' / fname
 
@@ -78,16 +78,14 @@ def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=ROOT):
     iyyyymm01__OTA_IceAtmRes_L33
     """
 
-    if (root / (tentative_subdir + '_rerun') / subpath).is_file():
-        final_path = root / (tentative_subdir + '_rerun') / subpath
-    elif (root / (tentative_subdir + '_update') / subpath).is_file():
-        final_path = root / (tentative_subdir + '_update') / subpath
-    elif (root / tentative_subdir / subpath).is_file():
-        final_path = root / tentative_subdir / subpath
-    else:
+    if ystart == 2020:
+        subdir += '_rerun'
+    elif ystart in range(2015, 2020) or ystart == 2021:
+        subdir += '_update'
+    final_path = root / subdir / subpath
+    if not final_path.is_file():
         import errno
-        raise FileNotFoundError(errno.ENOENT, 'Could not find spear file in plain directory, _update, or _rerun.', fname.as_posix())
-    
+        raise FileNotFoundError(errno.ENOENT, 'Could not find right plain directory, _update, or _rerun.', final_path.as_posix())
     return final_path
 
 
