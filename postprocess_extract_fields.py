@@ -9,7 +9,7 @@ import xarray
 
 # Expect, and only extract, these variables from the given domain
 _DOMAIN_VARIABLES = {
-    'ocean_month': ['tos', 'tob', 'sos', 'ssh', 'MLD_003']
+    'ocean_month': ['tos', 'tob', 'sos', 'MLD_003'] # ssh or zos
 }
 
 # Using /vftmp/$USER as a cache
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     first_year = config['forecasts']['first_year']
     last_year = config['forecasts']['last_year']
     nens = config['forecasts']['ensemble_size']
-    outdir = Path(config['filesystem']['model_output_data']) / args.domain
+    outdir = Path(config['filesystem']['model_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
 
     files_to_dmget = []

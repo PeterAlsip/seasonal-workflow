@@ -1,16 +1,16 @@
-dates:
-  forecasts:
-    first_year: 1993
-    last_year: 2022
-    months:
-      - 3
-      - 6
-      - 9
-      - 12
-  climatology:
-    first_year: 1993
-    last_year: 2019
+forecasts:
+  first_year: 1993
+  last_year: 2022
+  months:
+    - 3
+    - 6
+    - 9
+    - 12
+  ensemble_size: 10
 
+climatology:
+  first_year: 1993
+  last_year: 2019
 
 domain:
   south_lat: 5
@@ -20,7 +20,9 @@ domain:
 
 filesystem:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
-  yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{y}.nc
+  model_output_data: /work/acr/mom6/nwa12/forecast_output_data
+  yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{year}.nc
   open_boundary_files: /work/acr/mom6/nwa12/glorys/updated
   analysis_history: /archive/acr/fre/NWA/2023_10/NWA12_COBALT_2023_10_nudgets-90d/gfdl.ncrc5-intel22-prod/history/
+  forecast_history: /archive/acr/fre/NWA/2023_04/NWA12_forecast_2023-04_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc5-intel22-prod/history/
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here

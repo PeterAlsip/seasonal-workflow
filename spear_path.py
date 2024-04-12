@@ -117,8 +117,8 @@ if __name__ == '__main__':
     fnames = []
     # If called from command line, this will return all files
     # for years and months in the following ranges
-    for ystart in range(config['dates']['forecasts']['first_year'], config['dates']['forecasts']['last_year']+1):
-        for mstart in config['dates']['forecasts']['months']:
+    for ystart in range(config['forecasts']['first_year'], config['forecasts']['last_year']+1):
+        for mstart in config['forecasts']['months']:
             fname = get_spear_path(ystart, mstart, args.domain, args.freq, args.var, ens=args.ensemble).as_posix()
             fnames.append(fname)
     print(' '.join(fnames))

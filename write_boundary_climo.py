@@ -71,10 +71,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-
-    first_year = config['dates']['climatology']['first_year']
-    last_year = config['dates']['climatology']['last_year']
-                                               
+    first_year = config['climatology']['first_year']
+    last_year = config['climatology']['last_year']                   
     pathin = Path(config['filesystem']['open_boundary_files'])
     pathout = Path(config['filesystem']['model_input_data']) / 'boundary' / f'climatology_{first_year}_{last_year}'
     pathout.mkdir(exist_ok=True, parents=True)

@@ -40,8 +40,8 @@ if __name__ == '__main__':
     with open(args.config, 'r') as file: 
         config = safe_load(file)
 
-    years = np.arange(config['dates']['climatology']['first_year'], config['dates']['climatology']['last_year']+1)
-    input_files = [config['filesystem']['yearly_river_files'].format(y=y) for y in years]
+    years = np.arange(config['climatology']['first_year'], config['climatology']['last_year']+1)
+    input_files = [config['filesystem']['yearly_river_files'].format(year=y) for y in years]
     work_dir = Path(config['filesystem']['model_input_data']) / 'rivers'
     work_dir.mkdir(exist_ok=True)
     process_climatology(years, input_files, work_dir)
