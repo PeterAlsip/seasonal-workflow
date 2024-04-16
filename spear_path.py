@@ -3,6 +3,7 @@ from functools import partial
 from pathlib import Path, PurePath
 
 
+# Top level path to all SPEAR medium reforecast data on archive
 ROOT = Path('/archive') / 'l1j' / 'spear_med' / 'rf_hist' / 'fcst' / 's_j11_OTA_IceAtmRes_L33'
 
 

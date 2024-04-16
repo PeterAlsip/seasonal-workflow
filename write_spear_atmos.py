@@ -1,7 +1,7 @@
 import numpy as np
 import os
 from pathlib import Path
-from spear_path import get_spear_path, get_spear_paths
+from spear_path import get_spear_paths
 import subprocess
 import xarray
 

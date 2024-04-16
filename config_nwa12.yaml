@@ -19,12 +19,20 @@ domain:
   east_lon: -30
 
 filesystem:
+  # Where to put data that will be used to force the model:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
+  # Where to put results from the model simulations:
   model_output_data: /work/acr/mom6/nwa12/forecast_output_data
+  # Path to existing daily river files (one file per year, padded):
   yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{year}.nc
+  # Path to existing open boundary condition data:
   open_boundary_files: /work/acr/mom6/nwa12/glorys/updated
+  # Path to monthly averaged temperature and salinity data, will be used for nudging:
   monthly_data_nudging: /work/acr/glorys/monthly_filled/glorys_monthly_ts_fine_{year}.nc
+  # Path to ocean_static file without mask table:
   ocean_static: /home/Andrew.C.Ross/git/nwa12/data/geography/ocean_static.nc
+  # Path to the nudged analysis simulation that will be used for initial conditions:
   analysis_history: /archive/acr/fre/NWA/2023_10/NWA12_COBALT_2023_10_nudgets-90d/gfdl.ncrc5-intel22-prod/history/
+  # Path to model output from individual forecast simulations:
   forecast_history: /archive/acr/fre/NWA/2023_04/NWA12_forecast_2023-04_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc5-intel22-prod/history/
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here

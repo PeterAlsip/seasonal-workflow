@@ -41,7 +41,7 @@ if __name__ == '__main__':
     anom = anom.rename({v: f'{v}_anom' for v in anom.data_vars})
     model_ds = xarray.merge([model_ds, anom])
     # Write the climatology, being sure that appropriate coords are ints.
-    # Also trying to remote the empty dimension "time" from the output.
+    # Also trying to remove the empty dimension "time" from the output.
     encoding = {v: {'dtype': 'int32'} for v in ['lead', 'month']}
     climo.encoding = {}
     climo.to_netcdf(model_output_data / f'climatology_{args.domain}_{first_year}_{last_year}.nc',
