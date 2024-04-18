@@ -14,7 +14,11 @@ Steps:
 
 2. Run the nudged analysis simulation
 
-3. Set up a forecast simulation
+    a. See [this link](https://github.com/NOAA-CEFI-Regional-Ocean-Modeling/regional-mom6-xml/blob/5969a267989f7f661d8e604cc2f666011a3f582a/NWA12/NWA12_physics.xml#L636) for an example physics-only XML experiment with nudging
+
+    b. See xml/diag_table_snapshots for an example diag table to use to save monthly snapshots from the nudged simulation that can be used as initial conditions. 
+
+4. Set up a forecast simulation
    
     a. Atmospheric forcing from a SPEAR forecast: `write_spear_atmos.py`
    
