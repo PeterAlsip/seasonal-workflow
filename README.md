@@ -30,6 +30,19 @@ Steps:
 
 5. Run many forecast simulations
 
+    a. Build a template XML based on NWA12_forecast_common.xml
+        
+        - The template XML contains XML data that is common to all experiments, with places to fill in the experiment start year and month. 
+        - Each ensemble member is its own experiment. Each member inherits shared data from a base experiment and adds its own unique files. 
+        - The example NWA12_forecast_common.xml file contains experiments using both climatological open boundary conditions and SPEAR-derived OBCs. 
+        - The template XML is included by the forecast XMLs. Any change to the template XML will automatically propagate to the forecast XMLs. 
+
+    b. Generate an XML for the forecast start year and month. 
+
+        - `python write_forecast_xml.py NWA12_forecast_common.xml 1993 03` will create NWA12_forecast_1993_03.xml which contains data for a forecast starting on 1993-03-01, using the template file NWA12_forecast_common.xml. 
+        - The ensemble member experiments in the generated XML can be frerun-ed. 
+        - The generated XML can also be used to compile the model if needed (only needs to be done once).
+
 6. Post-process the forecast data
    
     a. Extract some 2D fields from all available history tar files: `postprocess_extract_fields.py`
