@@ -10,6 +10,13 @@ forecasts:
     - 12
   ensemble_size: 10
 
+# Names of diagnostic files in nudged run output
+# to use to create forecast initial conditions
+# (_snap will be appended).
+snapshots:
+  - ocean_month
+  - ice_month
+
 climatology:
   first_year: 1993
   last_year: 2019

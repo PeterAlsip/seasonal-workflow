@@ -6,10 +6,9 @@ import tarfile
 import xarray
 
 
-# Path to store temporary outpu to:
+# Path to store temporary output to:
 TMP = Path(os.environ['TMPDIR'])
-# Pull these snapshots out and write an initial condition file for each:
-COMPONENTS = ['ocean_month', 'ice_month']
+
 # Drop these variables from the snapshots:
 DROP_VARS = ['mass_wt', 'opottempmint', 'somint', 'uice', 'vice']
 
@@ -20,7 +19,7 @@ def run_cmd(cmd, print_cmd=True):
     subprocess.run([cmd], shell=True, check=True) 
 
 
-def ics_from_snapshot(component, history, outdir, ystart, mstart):
+def ics_from_snapshot(component, history, ystart, mstart):
     target_time = f'{ystart}-{mstart:02d}-01'
     if mstart == 1:
         yfile = ystart - 1
@@ -43,7 +42,7 @@ def ics_from_snapshot(component, history, outdir, ystart, mstart):
     ds = xarray.open_dataset(TMP / f'./{yfile}0101.{component}_snap.nc', decode_cf=False)
     ds['time'].attrs['calendar'] = 'gregorian'
     ds = xarray.decode_cf(ds)
-    ds = ds.drop(DROP_VARS, errors='ignore')
+    ds = ds.drop_vars(DROP_VARS, errors='ignore')
     if 'uo' in ds and 'vo' in ds:
         ds = ds.rename({'uo': 'u', 'vo': 'v'})
     snapshot = ds.sel(time=target_time)
@@ -68,6 +67,18 @@ def ics_from_snapshot(component, history, outdir, ystart, mstart):
     return tmp_output
 
 
+def main(config, cmdargs):
+    history = Path(config['filesystem']['analysis_history'])
+    outdir = Path(config['filesystem']['model_input_data']) / 'initial'
+    outdir.mkdir(exist_ok=True)
+    tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month) for c in config['snapshots']]
+    file_str = ' '.join(map(lambda x: x.name, tmp_files))
+    cmd = f'tar cvf {outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar -C {TMP} {file_str}'
+    run_cmd(cmd)
+    for f in tmp_files:
+        f.unlink()
+
+
 if __name__ == '__main__':
     import argparse
     from pathlib import Path
@@ -79,13 +90,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-
-    history = Path(config['filesystem']['analysis_history'])
-    outdir = Path(config['filesystem']['model_input_data']) / 'initial'
-    outdir.mkdir(exist_ok=True)
-    tmp_files = [ics_from_snapshot(c, history, outdir, args.year, args.month) for c in COMPONENTS]
-    file_str = ' '.join(map(lambda x: x.name, tmp_files))
-    cmd = f'tar cvf {outdir.as_posix()}/forecast_ics_{args.year}-{args.month:02d}.tar -C {TMP} {file_str}'
-    run_cmd(cmd)
-    for f in tmp_files:
-        f.unlink()
+    main(config, args)
+    
