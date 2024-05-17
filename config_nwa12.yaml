@@ -1,3 +1,5 @@
+# Currently name is only used to create a unique path on /vftmp/
+name: nwa12_climatologybcs
 forecasts:
   first_year: 1993
   last_year: 2022

@@ -12,7 +12,11 @@ _DOMAIN_VARIABLES = {
     'ocean_month': ['tos', 'tob', 'sos', 'MLD_003'] # ssh or zos
 }
 
-# Using /vftmp/$USER as a cache
+# Using /vftmp/$USER as a cache.
+# This means this script must be run on analysis,
+# and ideally it should always be run on the 
+# same analysis node because each node has a 
+# different /vftmp.
 VFTMP = Path('/vftmp') / getuser()
 
 @dataclass
@@ -20,6 +24,7 @@ class ForecastRun:
     ystart: int
     mstart: int
     ens: int
+    name: str
     domain: str = 'ocean_month'
 
     @property
@@ -34,7 +39,7 @@ class ForecastRun:
         """
         Location on vftmp to cache extracted data.
         """
-        return VFTMP / 'forecast_data' / f'e{self.ens:02d}'
+        return VFTMP / 'forecast_data' / self.name / f'e{self.ens:02d}'
 
     @property
     def tar_name(self):
@@ -87,7 +92,7 @@ if __name__ == '__main__':
     from pathlib import Path
     from yaml import safe_load
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config')
+    parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-r','--rerun', action='store_true')
     args = parser.parse_args()
@@ -109,6 +114,7 @@ if __name__ == '__main__':
                     ystart=ystart, 
                     mstart=mstart, 
                     ens=ens,
+                    name=config['name'],
                     domain=args.domain
                 )
                 # Check if a processed file exists
@@ -135,6 +141,7 @@ if __name__ == '__main__':
                     ystart=ystart, 
                     mstart=mstart, 
                     ens=ens,
+                    name=config['name'],
                     domain=args.domain
                 )
                 outfile = outdir / run.out_name
