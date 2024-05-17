@@ -6,8 +6,11 @@ import tarfile
 import xarray
 
 
+# Path to store temporary outpu to:
 TMP = Path(os.environ['TMPDIR'])
-
+# Pull these snapshots out and write an initial condition file for each:
+COMPONENTS = ['ocean_month', 'ice_month']
+# Drop these variables from the snapshots:
 DROP_VARS = ['mass_wt', 'opottempmint', 'somint', 'uice', 'vice']
 
 
@@ -31,7 +34,6 @@ def ics_from_snapshot(component, history, outdir, ystart, mstart):
         # dmget the tar file
         run_cmd(f'dmget {snapshot_file.as_posix()}')
         print('extracting')
-        # tar = tarfile.open(snapshot_file, mode='r:').extractfile(f'./{yfile}0101.{component}_snap.nc')
         tar = tarfile.open(snapshot_file, mode='r:')
         member = tar.getmember(f'./{yfile}0101.{component}_snap.nc')
         tar.extractall(path=TMP, members=[member])
@@ -63,14 +65,8 @@ def ics_from_snapshot(component, history, outdir, ystart, mstart):
         encoding=encodings,
         unlimited_dims='time'
     )
+    return tmp_output
 
-    # copy final result from tmp to work
-    print('copying results')
-    run_cmd(f'gcp {tmp_output.as_posix()} {outdir.as_posix()}')
-
-    # delete tmp files 
-    tmp_output.unlink()
-    ds.close()
 
 if __name__ == '__main__':
     import argparse
@@ -87,5 +83,9 @@ if __name__ == '__main__':
     history = Path(config['filesystem']['analysis_history'])
     outdir = Path(config['filesystem']['model_input_data']) / 'initial'
     outdir.mkdir(exist_ok=True)
-    for component in ['ocean_month', 'ice_month']:
-        ics_from_snapshot(component, history, outdir, args.year, args.month)
+    tmp_files = [ics_from_snapshot(c, history, outdir, args.year, args.month) for c in COMPONENTS]
+    file_str = ' '.join(map(lambda x: x.name, tmp_files))
+    cmd = f'tar cvf {outdir.as_posix()}/forecast_ics_{args.year}-{args.month:02d}.tar -C {TMP} {file_str}'
+    run_cmd(cmd)
+    for f in tmp_files:
+        f.unlink()
