@@ -71,7 +71,6 @@
   <property name="PROG_MAIN" value="coupler/coupler_main.o"/>
   <property name="LIBS_ROOT" value="FMS2_MOM6_SIS2_compile_symm"/>
   <property name="FMS_LIB_DIR" value="./$(LIBS_ROOT)/$(platform)-$(target)/exec"/>
-  
   <property name="MOM6_EXAMPLES" value="$root/$(LIBS_ROOT)/src/mom6"/>
   <property name="MY_LIBS" value="$(EXEC_ROOT)/$(FMS_LIB_DIR)"/>
     
@@ -1067,7 +1066,7 @@ SIS_OVERRIDE_EOF
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e06" inherit="NWA12_forecast_2024_04">
     <description>
       Forecast with forecast boundary conditions.
-    </description>>
+    </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e06']/node())"/>
