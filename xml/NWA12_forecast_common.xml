@@ -69,13 +69,13 @@
   <!--===========-->
   <!--The property MOM6_EXAMPLES should point to the mom6 directory that is checked out. It is needed by MOM6 to access its input data files-->
   <property name="PROG_MAIN" value="coupler/coupler_main.o"/>
-  <property name="LIBS_ROOT" value="MOM6_SIS2_forecast_compile_symm"/>
+  <property name="LIBS_ROOT" value="FMS2_MOM6_SIS2_compile_symm"/>
   <property name="FMS_LIB_DIR" value="./$(LIBS_ROOT)/$(platform)-$(target)/exec"/>
   
   <property name="MOM6_EXAMPLES" value="$root/$(LIBS_ROOT)/src/mom6"/>
   <property name="MY_LIBS" value="$(EXEC_ROOT)/$(FMS_LIB_DIR)"/>
     
-  <experiment name="MOM6_SIS2_forecast_compile_symm">
+  <experiment name="FMS2_MOM6_SIS2_compile_symm">
     <description>
       Make the executable for ocean-ice experiments.
     </description>
@@ -87,11 +87,12 @@
         <cppDefs>-Duse_libMPI -Duse_netCDF $(F2003_FLAGS) -DMAXFIELDMETHODS_=400</cppDefs>
       </compile>
     </component>
-    <component name="mom6_symmetric" requires="fms" paths="mom6/src/MOM6/config_src/memory/dynamic_symmetric mom6/src/MOM6/config_src/drivers/FMS_cap mom6/src/MOM6/src/*/ mom6/src/MOM6/src/*/*/ mom6/src/MOM6/config_src/external/* mom6/src/MOM6/pkg/GSW-Fortran/modules mom6/src/MOM6/pkg/GSW-Fortran/toolbox mom6/src/MOM6/config_src/infra/FMS1">
+    <component name="mom6_symmetric" requires="fms" paths="mom6/src/MOM6/config_src/memory/dynamic_symmetric mom6/src/MOM6/config_src/drivers/FMS_cap mom6/src/MOM6/src/*/ mom6/src/MOM6/src/*/*/ mom6/src/MOM6/config_src/external/* mom6/src/MOM6/pkg/GSW-Fortran/modules mom6/src/MOM6/pkg/GSW-Fortran/toolbox mom6/src/MOM6/config_src/infra/FMS2">
       <source versionControl="git" root="https://github.com/NOAA-GFDL/">
         <codeBase version="$(MOM6_GIT_TAG)">CEFI-regional-MOM6.git</codeBase>
         <csh><![CDATA[
           mv CEFI-regional-MOM6 mom6
+          (cd mom6/src/MOM6 && git checkout fix/fms2_nudge)
         ]]></csh>
       </source>	    
       <compile>
@@ -103,7 +104,7 @@
         <codeBase version="master"> ice_param.git </codeBase>
       </source>
       <compile>
-         <cppDefs><![CDATA[$(F2003_FLAGS) -D_FILE_VERSION="'"`git-version-string $<`"'"]]></cppDefs>
+         <cppDefs><![CDATA[$(F2003_FLAGS) -DUSE_FMS2_IO -D_FILE_VERSION="'"`git-version-string $<`"'"]]></cppDefs>
       </compile>
     </component>
     <component name="land_null" paths="land_null" requires="fms">
@@ -131,7 +132,7 @@
     </component>
   </experiment>
 
-  <experiment name="NWA12_forecast_2024_04" inherit="MOM6_SIS2_forecast_compile_symm">
+  <experiment name="NWA12_forecast_2024_04" inherit="FMS2_MOM6_SIS2_compile_symm">
     <description >
     </description>
     <input>
