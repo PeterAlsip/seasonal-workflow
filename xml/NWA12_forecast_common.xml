@@ -312,6 +312,8 @@
 ###.................................................
       </fieldTable>
       <diagTable>
+        $name
+        $baseDate
         "ocean_static", -1, "months", 1, "days", "time"
         "ocean_model", "areacello",   "areacello",   "ocean_static", "all", "none", "none", 2
         "ocean_model", "deptho",      "deptho",      "ocean_static", "all", "none", "none", 2
@@ -431,12 +433,12 @@ cat > $work/INPUT/SIS_layout << SIS_LAYOUT_EOF
 #override MASKTABLE = $ice_mask_table
 SIS_LAYOUT_EOF
 
-cat > $work/INPUT/SIS_diurnal << SIS_diurnal_EOF
-ADD_DIURNAL_SW = True ! This must ONLY be used in the ice-ocean mode if forcing is not diurnal (e.g. CORE), NOT fully coupled mode.
-SIS_diurnal_EOF
-
 cat > $work/INPUT/MOM_override << MOM_OVERRIDE_EOF
+! Have tide nodal correction use the start of the forecast
 #override OBC_TIDE_NODAL_REF_DATE = $(ystart),$(mstart),1
+! Set files to use for initial conditions.
+! These were extracted from the nudged run using
+! write_ics_from_snapshot.py
 #override THICKNESS_FILE = "forecast_ics_ocean_month_$(ystart)-$(mstart).nc"
 #override TS_FILE = "forecast_ics_ocean_month_$(ystart)-$(mstart).nc"
 #override SALT_FILE = "forecast_ics_ocean_month_$(ystart)-$(mstart).nc"
@@ -448,35 +450,39 @@ cat > $work/INPUT/MOM_override << MOM_OVERRIDE_EOF
 MOM_OVERRIDE_EOF
 
 cat > $work/INPUT/SIS_override << SIS_OVERRIDE_EOF
+! SPEAR forcing data is daily, so set this to true.
 #override ADD_DIURNAL_SW = True
+! Set files to use for initial conditions.
+! These were extracted from the nudged run using
+! write_ics_from_snapshot.py
+! Ice concentration:
 #override CONCENTRATION_INIT_CONFIG = "file"
 #override ICE_CONCENTRATION_FILE = "forecast_ics_ice_month_$(ystart)-$(mstart).nc"
 #override ICE_CONCENTRATION_IC_VAR = "aice"
-
+! Ice thickness:
 #override ICE_THICKNESS_INIT_CONFIG = "file"
 #override ICE_THICKNESS_FILE = "forecast_ics_ice_month_$(ystart)-$(mstart).nc"
 #override ICE_THICKNESS_IC_VAR = "hice"
-
+! Snow thickness:
 #override SNOW_THICKNESS_INIT_CONFIG = "file"
 #override SNOW_THICKNESS_FILE = "forecast_ics_ice_month_$(ystart)-$(mstart).nc"
 #override SNOW_THICKNESS_IC_VAR = "hsnow"
-
+! Ice salinity:
 #override ICE_SALINITY_INIT_CONFIG = "file"
 #override ICE_SALINITY_FILE = "forecast_ics_ice_month_$(ystart)-$(mstart).nc"
 #override ICE_SALINITY_IC_VAR = "S_bulkice"
 #override ICE_SALINITY_FILE_IS_2D = True
-
+! Ice temperature
 #override ICE_ENTHALPY_INIT_CONFIG = "file"
 #override READ_ENTHALPY_FILE = False
 #override ICE_TEMPERATURE_FILE = "forecast_ics_ice_month_$(ystart)-$(mstart).nc"
 #override ICE_TEMPERATURE_IC_VAR = "T_bulkice"
 #override ICE_TEMPERATURE_FILE_IS_2D = True
-
+! Snow temperature
 #override SNOW_ENTHALPY_INIT_CONFIG = "file"
 #override SNOW_TEMPERATURE_FILE = "forecast_ics_ice_month_$(ystart)-$(mstart).nc"
 #override SNOW_TEMPERATURE_IC_VAR = "TSN"
 #override SNOW_TEMPERATURE_FILE_IS_2D = True
-
 SIS_OVERRIDE_EOF
       ]]>    
       </csh>
@@ -500,7 +506,8 @@ SIS_OVERRIDE_EOF
     </runtime>
   </experiment>
 
-  <freInclude name="nwa12_data_raw">
+  <!-- Data files for forecasts with climatology boundary conditions-->
+  <freInclude name="nwa12_data_clim">
     <input>
       <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
         <dataSource site="ncrc">/ncrc/home2/Andrew.C.Ross/nwa-xml/NWA12/MOM_inputs/forecast_clim/MOM_input</dataSource>
@@ -540,6 +547,7 @@ SIS_OVERRIDE_EOF
     </input>
   </freInclude>
 
+  <!-- Data files for forecasts with forecast OBCs. OBCs are set for each ensemble later. -->
   <freInclude name="nwa12_data_obcs">
     <input>
       <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
@@ -568,6 +576,8 @@ SIS_OVERRIDE_EOF
       </dataFile>
     </input>
   </freInclude>
+
+  <!-- The following includes specify the atmospheric forcing for each ensemble member-->
 
   <freInclude name="atmos-e01">
     <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
@@ -765,16 +775,18 @@ SIS_OVERRIDE_EOF
   </freInclude>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e01" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e01']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e01" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -819,16 +831,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e02" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e02']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e02" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -873,16 +887,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e03" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e03']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e03" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -927,16 +943,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e04" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e04']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e04" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -981,16 +999,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e05" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e05']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e05" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1035,17 +1055,19 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e06" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e06']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e06" inherit="NWA12_forecast_2024_04">
-    <description >
-    </description>
+    <description>
+      Forecast with forecast boundary conditions.
+    </description>>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e06']/node())"/>
@@ -1089,16 +1111,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e07" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e07']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e07" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1143,16 +1167,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e08" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e08']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e08" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1197,16 +1223,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e09" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e09']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e09" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1251,16 +1279,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e10" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e10']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e10" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1305,16 +1335,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e11" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e11']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e11" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1359,16 +1391,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e12" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e12']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e12" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1413,16 +1447,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e13" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e13']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e13" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1467,16 +1503,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e14" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e14']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e14" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
@@ -1521,16 +1559,18 @@ SIS_OVERRIDE_EOF
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_$(ystart)-$(mstart)-e15" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with climatology boundary conditions.
     </description>
     <input>
-      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_raw']/input/node())"/>
+      <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e15']/node())"/>
     </input>
   </experiment>
 
   <experiment name="NWA12_forecast_2024_04_obcs_$(ystart)-$(mstart)-e15" inherit="NWA12_forecast_2024_04">
-    <description >
+    <description>
+      Forecast with forecast boundary conditions.
     </description>
     <input>
       <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
