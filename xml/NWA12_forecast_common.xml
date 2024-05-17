@@ -459,7 +459,7 @@ SIS_OVERRIDE_EOF
   <freInclude name="nwa12_data_raw">
     <input>
       <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
-        <dataSource site="ncrc">/ncrc/home2/Andrew.C.Ross/nwa-xml/NWA12/MOM_inputs/forecast_2024-04/MOM_input</dataSource>
+        <dataSource site="ncrc">/ncrc/home2/Andrew.C.Ross/nwa-xml/NWA12/MOM_inputs/forecast_clim/MOM_input</dataSource>
         <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/climatology_1993_2019/zos_c_1.nc</dataSource>
         <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/climatology_1993_2019/zos_c_2.nc</dataSource>
         <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/climatology_1993_2019/zos_c_3.nc</dataSource>
