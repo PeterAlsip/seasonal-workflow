@@ -3,6 +3,7 @@
 #SBATCH --job-name=process_spear
 #SBATCH --time=2880
 #SBATCH --partition=batch
+#SBATCH --output=logs/%j.out
 
 # Wrapper to run workflow to extract and combine SPEAR forecasts.
 # Should be sbatch-ed,
