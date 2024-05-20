@@ -1,4 +1,5 @@
 import datetime as dt
+import numpy as np
 import subprocess
 import os
 from pathlib import Path
@@ -11,6 +12,76 @@ TMP = Path(os.environ['TMPDIR'])
 
 # Drop these variables from the snapshots:
 DROP_VARS = ['mass_wt', 'opottempmint', 'somint', 'uice', 'vice']
+
+_EXPECTED_BGC_VARS = [
+    'no3', 'o2', 'po4', 'sio4',
+    'alk', 'dic',
+    'cadet_arag',
+    'cadet_calc',
+    'fed', 
+    'fedi',
+    'felg',
+    'fedet',
+    'fesm',
+    'htotal',
+    'ldon',
+    'ldop', 
+    'lith', 
+    'lithdet', 
+    'nbact', 
+    'ndet', 
+    'ndi', 
+    'nlg', 
+    'nsm', 
+    'nh4', 
+    'pdet', 
+    'srdon', 
+    'srdop', 
+    'sldon', 
+    'sldop', 
+    'sidet', 
+    'silg', 
+    'nsmz', 
+    'nmdz', 
+    'nlgz',
+    'dic14',
+    'do14',
+    'do14c',
+    'di14c',
+    'nh3',
+    'mu_mem_nsm',
+    'mu_mem_nlg',
+    'mu_mem_ndi',
+    'irr_aclm',
+    'fedet_btf',
+    'sidet_btf',
+    'pdet_btf', 
+    'ndet_btf',
+    'lithdet_btf',
+    'cadet_calc_btf',
+    'cadet_arag_btf',
+    'co3_ion',
+    'cased',
+    'chl',
+    'nsm_btf',
+    'nmd_btf',
+    'nlg_btf',
+    'ndi_btf',
+    'fesm_btf',
+    'femd_btf',
+    'felg_btf',
+    'fedi_btf',
+    'simd_btf',
+    'silg_btf',
+    'pdi_btf',
+    'plg_btf',
+    'pmd_btf',
+    'psm_btf',
+    'irr_mem_dp',
+    'irr_aclm_sfc',
+    'irr_aclm_z',
+    'mu_mem_nmd'
+]
 
 
 def run_cmd(cmd, print_cmd=True):
@@ -52,6 +123,35 @@ def ics_from_snapshot(component, history, ystart, mstart):
     all_vars = list(snapshot.data_vars.keys()) + list(snapshot.coords.keys())
     encodings = {v: {'_FillValue': None, 'dtype': 'float32'} for v in all_vars}
     snapshot.attrs['source'] = snapshot_file.as_posix()
+
+    if 'cobalt' in component:
+        nz = len(snapshot['zl'])
+        ny = len(snapshot['yh'])
+        nx = len(snapshot['xh'])
+        for v in _EXPECTED_BGC_VARS:
+            if v not in snapshot:
+                print(f'Adding zero {v} to dataset')
+                if '_btf' in v:
+                    val = 0.0
+                else:
+                    val = 1e-10
+                snapshot[v] = (['zl', 'yh', 'xh'], np.zeros((nz, ny, nx))+val)
+
+        for v in ['si', 'fe', 'n']:
+            new_var = f'{v}md'
+            if new_var not in snapshot:
+                print(f'Adding approx {new_var} to dataset')
+                snapshot[new_var] = snapshot[f'{v}lg']
+
+        for s in ['lg', 'md', 'sm', 'di']:
+            if s == 'di' and 'pdi' not in snapshot:
+                print('Adding approx pdi to dataset')
+                snapshot['pdi'] = snapshot['ndi'] / 40.0
+            else:
+                new_var = f'p{s}'
+                if new_var not in snapshot:
+                    print(f'Adding {new_var} to snapshot')
+                    snapshot[new_var] = snapshot[f'n{s}'] / 16.0
 
     # write the results to tmp
     print('writing')
