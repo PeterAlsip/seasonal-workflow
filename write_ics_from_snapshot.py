@@ -173,11 +173,17 @@ def main(config, cmdargs):
     outdir.mkdir(exist_ok=True)
     tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month) for c in config['snapshots']]
     file_str = ' '.join(map(lambda x: x.name, tmp_files))
-    cmd = f'tar cvf {outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar -C {TMP} {file_str}'
+    tarfile = f'{outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
+    cmd = f'tar cvf {tarfile} -C {TMP} {file_str}'
     run_cmd(cmd)
     for f in tmp_files:
         f.unlink()
-
+    if cmdargs.gaea:
+        print('transferring to Gaea')
+        from subprocess import run
+        cmd = f'gcp {tarfile} gaea:{config["filesystem"]["gaea_input_data"]}/initial/'
+        run([cmd], shell=True, check=True)
+    print(tarfile)
 
 if __name__ == '__main__':
     import argparse
@@ -186,7 +192,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int)
     parser.add_argument('-m', '--month', type=int)
-    parser.add_argument('-c', '--config')
+    parser.add_argument('-c', '--config', type=str, required=True)
+    parser.add_argument('-g', '--gaea', help='gcp result to Gaea', action='store_true')
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)

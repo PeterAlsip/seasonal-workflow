@@ -1,11 +1,11 @@
 name: nwa12_cobalt
 
 forecasts:
-  first_year: 1993
-  last_year: 1996
+  first_year: 1994
+  last_year: 2003
   months:
-    - 3
-    - 6
+    #- 3
+    #- 6
     - 9
     - 12
   ensemble_size: 1
@@ -28,9 +28,10 @@ domain:
 filesystem:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
   model_output_data: /work/acr/mom6/nwa12/forecast_output_data
+  gaea_input_data: /gpfs/f5/gfdl_med/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/forecast_input_data
   yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{year}.nc
   open_boundary_files: /work/acr/mom6/nwa12/glorys/updated
   ocean_static: /home/Andrew.C.Ross/git/nwa12/data/geography/ocean_static.nc
   analysis_history: /archive/Andrew.C.Ross/fre/NWA/2024_04_update/NWA12_COBALT_2024_04_nudgets-90d/gfdl.ncrc5-intel22-prod/history/
-  forecast_history: /archive/Andrew.C.Ross/fre/NWA/2024_04_update/NWA12_cobalt_forecast_flooded_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc5-intel22-prod/history/
+  forecast_history: /archive/Andrew.C.Ross/fre/NWA/2024_04_update/NWA12_cobalt_forecast_2024_04_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc5-intel22-prod/history/
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here

@@ -32,6 +32,8 @@ filesystem:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
   # Where to put results from the model simulations:
   model_output_data: /work/acr/mom6/nwa12/forecast_output_data
+  # Where to put the model input on Gaea:
+  gaea_input_data: /gpfs/f5/gfdl_med/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/forecast_input_data
   # Path to existing daily river files (one file per year, padded):
   yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{year}.nc
   # Path to existing open boundary condition data:
