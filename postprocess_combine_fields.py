@@ -1,25 +1,21 @@
+import os
 from pathlib import Path
+from subprocess import run
 import xarray
-
-
-def process_file(f):
-    ds = xarray.open_dataset(f)
-    # set_coords is needed to avoid later warnings from
-    # concat with newer xarray
-    return ds.swap_dims({'time': 'lead'}).set_coords('init')
 
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
     from yaml import safe_load
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
+    parser.add_argument('-r','--rerun', action='store_true')
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-    
+    tmp = Path(os.environ['TMPDIR'])
+
     model_output_data = Path(config['filesystem']['model_output_data'])
     model_output_data.mkdir(exist_ok=True)
     first_year = config['climatology']['first_year']
@@ -28,17 +24,17 @@ if __name__ == '__main__':
 
     members = []
     for e in range(1, nens+1):
-        print(f'Loading member {e:02d}')
-        files = (model_output_data / 'extracted' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')
-        member = xarray.concat((process_file(f) for f in files), dim='init').load()
-        member['lead'].attrs['units'] = 'months'
-        member = member.rename({'time': 'verif'})
-        member['member'] = e
-        member = member.set_coords('member')
-        members.append(member)
+        out_file = tmp / f'{args.domain}_e{e:02d}.nc'
+        if not out_file.exists() or args.rerun:
+            print(f'Loading member {e:02d}')
+            files = (model_output_data / 'extracted' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')
+            file_str = ' '.join(map(lambda x: x.as_posix(), files))
+            print('  ncrcat')
+            run(f'ncrcat -h {file_str} -O {out_file}', shell=True, check=True)
+        members.append(out_file)
 
     print('Concat')
-    model_ds = xarray.concat(members, dim='member').sortby('init') # sorting is important for slicing later
+    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member').unify_chunks().sortby('init') # sorting is important for slicing later
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore')
     print('Ensemble mean and anomalies')
     ensmean = model_ds.mean('member')

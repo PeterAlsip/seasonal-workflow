@@ -81,12 +81,15 @@ class ForecastRun:
             infile = self.tmp_dir / self.tar_name
         print(f'process_file({infile})')
         ds = xarray.open_dataset(infile)[_DOMAIN_VARIABLES[self.domain]]
-        ds['ens'] = int(self.ens)
-        ds['mstart'] = int(self.mstart)
-        ds['ystart'] = int(self.ystart)
+        ds['member'] = int(self.ens)
         ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
         ds['lead'] = (('time', ), np.arange(len(ds['time'])))
-        ds.to_netcdf(outfile)
+        ds['lead'].attrs['units'] = 'months'
+        ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
+        ds = ds.expand_dims('init')
+        ds = ds.transpose(*(['init', 'lead'] + [d for d in ds.dims if d not in ['init', 'lead']]))
+        ds = ds.rename({'time': 'verif'})
+        ds.to_netcdf(outfile, unlimited_dims='init')
         ds.close()
 
 
