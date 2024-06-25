@@ -8,11 +8,15 @@ import xarray
 
 
 # Expect, and only extract, these variables from the given domain
+# (TODO: this could probably go in config)
 _DOMAIN_VARIABLES = {
-    'ocean_month': ['tos', 'tob', 'sos', 'MLD_003', 'ssh'], # ssh or zos
+    'ocean_month': ['tos', 'tob', 'sos', 'sob', 'MLD_003', 'ssh'], # ssh or zos
     'ocean_daily': ['tos', 'tob', 'ssh', 'ssh_max'],
+    'ocean_cobalt_btm': ['btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal'],
+    'ocean_cobalt_omip_sfc': ['chlos', 'no3os', 'phos'],
     'ocean_cobalt_neus': ['chlos', 'o2', 'no3os', 'po4os', 'zmesoos'],
-    'ocean_neus': ['MLD_003', 'ustar']
+    'ocean_neus': ['MLD_003', 'ustar'],
+    'ocean_cobalt_daily_2d': ['chlos', 'btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal']
 }
 
 # Using /vftmp/$USER as a cache.
