@@ -14,7 +14,10 @@ _DOMAIN_VARIABLES = {
     'ocean_daily': ['tos', 'tob', 'ssh', 'ssh_max'],
     'ocean_cobalt_btm': ['btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal'],
     'ocean_cobalt_omip_sfc': ['chlos', 'no3os', 'phos'],
-    'ocean_cobalt_neus': ['chlos', 'o2', 'no3os', 'po4os', 'zmesoos'],
+    'ocean_cobalt_neus': ['chlos', 'no3os', 'po4os', 'zmesoos', 
+                          'nsmp_100', 'nmdp_100', 'nlgp_100', 
+                          'sfc_no3lim_smp', 'sfc_no3lim_mdp', 'sfc_no3lim_lgp', 
+                          'sfc_irrlim_lgp', 'sfc_irrlim_mdp', 'sfc_irrlim_smp'],
     'ocean_neus': ['MLD_003', 'ustar'],
     'ocean_cobalt_daily_2d': ['chlos', 'btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal']
 }
