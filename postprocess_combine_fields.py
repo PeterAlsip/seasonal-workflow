@@ -52,7 +52,7 @@ if __name__ == '__main__':
                     file_str = ' '.join(map(lambda x: x.as_posix(), files))
                     print(f'ncrcat {len(files)} files to {out_file}')
                     run(f'ncrcat -h {file_str} -O {out_file}', shell=True, check=True)
-                    members.append(out_file)
+            members.append(out_file)
 
     concat_dim = 'init' if args.mean else 'member'
     print(f'Concat by {concat_dim}')
