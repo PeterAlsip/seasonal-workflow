@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
+    parser.add_argument('-v', '--var', type=str, required=True)
     parser.add_argument('-r','--rerun', action='store_true')
     parser.add_argument('-m', '--mean', action='store_true', help='Include only ensemble mean in combined result, dropping individual members.')
     args = parser.parse_args()
@@ -30,9 +31,9 @@ if __name__ == '__main__':
         # Large files: ensemble average, then concatenate averages
         for m in config['forecasts']['months']:
             for y in range(config['forecasts']['first_year'], config['forecasts']['last_year']+1):
-                month_file = tmp / f'{args.domain}_{y}_{m:02d}_ensmean.nc'
+                month_file = tmp / f'{args.domain}_{args.var}_{y}_{m:02d}_ensmean.nc'
                 files = list((model_output_data / 'extracted' / args.domain).glob(f'{y}-{m:02d}-e??.{args.domain}.nc'))
-                if len(files) == 1:
+                if len(files) == 1: # single ensemble member
                     shutil.copy(files[0], month_file)
                     members.append(month_file)
                     print(month_file)
@@ -44,14 +45,13 @@ if __name__ == '__main__':
     else:
         # Regular files: concatenate initializations together
         for e in range(1, nens+1):
-            out_file = tmp / f'{args.domain}_e{e:02d}.nc'
+            out_file = tmp / f'{args.domain}_{args.var}_e{e:02d}.nc'
             if not out_file.exists() or args.rerun:
-                # print(f'Loading member {e:02d}')
                 files = list((model_output_data / 'extracted' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc'))
                 if len(files) > 0:
                     file_str = ' '.join(map(lambda x: x.as_posix(), files))
                     print(f'ncrcat {len(files)} files to {out_file}')
-                    run(f'ncrcat -h {file_str} -O {out_file}', shell=True, check=True)
+                    run(f'ncrcat -v {args.var},member -h {file_str} -O {out_file}', shell=True, check=True)
             members.append(out_file)
 
     concat_dim = 'init' if args.mean else 'member'
@@ -72,9 +72,9 @@ if __name__ == '__main__':
     encoding = {v: {'dtype': 'int32'} for v in ['lead', 'month']}
     climo.encoding = {}
     print('Writing climatology')
-    climo.to_netcdf(model_output_data / f'climatology_{args.domain}_{first_year}_{last_year}.nc',
+    climo.to_netcdf(model_output_data / f'climatology_{args.domain}_{args.var}_{first_year}_{last_year}.nc',
         encoding=encoding)
     # Do the same for the full set of forecasts
     encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month']}
     print('Writing forecasts')
-    model_ds.to_netcdf(model_output_data / f'forecasts_{args.domain}.nc', encoding=encoding)
+    model_ds.to_netcdf(model_output_data / f'forecasts_{args.domain}_{args.var}.nc', encoding=encoding)
