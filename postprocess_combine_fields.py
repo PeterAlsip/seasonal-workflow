@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import shutil
 from subprocess import run
 import xarray
 
@@ -34,12 +33,12 @@ if __name__ == '__main__':
                 month_file = tmp / f'{args.domain}_{args.var}_{y}_{m:02d}_ensmean.nc'
                 files = list((model_output_data / 'extracted' / args.domain).glob(f'{y}-{m:02d}-e??.{args.domain}.nc'))
                 if len(files) == 1: # single ensemble member
-                    shutil.copy(files[0], month_file)
+                    run(f'ncks -v {args.var} -h {files[0].as_posix()} -O {month_file}', shell=True, check=True)
                     members.append(month_file)
                     print(month_file)
                 elif len(files) > 1: 
                     file_str = ' '.join(map(lambda x: x.as_posix(), files))
-                    run(f'ncea -h {file_str} -O {month_file}', shell=True, check=True)
+                    run(f'ncea -v {args.var} -h {file_str} -O {month_file}', shell=True, check=True)
                     members.append(month_file)  
                     print(month_file)
     else:
@@ -60,9 +59,10 @@ if __name__ == '__main__':
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore')
     print('Ensemble mean and anomalies')
     if args.mean:
-        ensmean = model_ds
+        ensmean = model_ds.load()
     else:
         ensmean = model_ds.mean('member')
+    # TODO: for daily, this should be a daily mean followed by smoothing
     climo = ensmean.sel(init=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('init.month').mean('init').load()
     anom = model_ds.groupby('init.month') - climo
     anom = anom.rename({v: f'{v}_anom' for v in anom.data_vars})
@@ -75,6 +75,7 @@ if __name__ == '__main__':
     climo.to_netcdf(model_output_data / f'climatology_{args.domain}_{args.var}_{first_year}_{last_year}.nc',
         encoding=encoding)
     # Do the same for the full set of forecasts
-    encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month']}
+    encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month'] if v in model_ds}
     print('Writing forecasts')
-    model_ds.to_netcdf(model_output_data / f'forecasts_{args.domain}_{args.var}.nc', encoding=encoding)
+    fname = f'forecasts_{args.domain}_{args.var}_ensmean.nc' if args.mean else f'forecasts_{args.domain}_{args.var}.nc'
+    model_ds.to_netcdf(model_output_data / fname, encoding=encoding)
