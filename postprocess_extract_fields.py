@@ -10,7 +10,7 @@ import xarray
 # Expect, and only extract, these variables from the given domain
 # (TODO: this could probably go in config)
 _DOMAIN_VARIABLES = {
-    'ocean_month': ['tos', 'tob', 'sos', 'sob', 'MLD_003', 'ssh'], # ssh or zos
+    'ocean_month': ['tos', 'tob', 'sos', 'sob', 'MLD_003', 'ssh', 'ustar'], # ssh or zos
     'ocean_daily': ['tos', 'tob', 'ssh', 'ssh_max'],
     'ocean_cobalt_btm': ['btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal'],
     'ocean_cobalt_omip_sfc': ['chlos', 'no3os', 'phos'],
@@ -34,7 +34,7 @@ class ForecastRun:
     ystart: int
     mstart: int
     ens: int
-    name: str
+    name: str = ''
     domain: str = 'ocean_month'
 
     @property
@@ -95,7 +95,7 @@ class ForecastRun:
         ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
         ds = ds.expand_dims('init')
         ds = ds.transpose(*(['init', 'lead'] + [d for d in ds.dims if d not in ['init', 'lead']]))
-        ds = ds.rename({'time': 'verif'})
+        ds = ds.drop_vars('time')
         ds.to_netcdf(outfile, unlimited_dims='init')
         ds.close()
 
