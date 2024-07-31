@@ -22,11 +22,15 @@ def slice_ds(ds, xslice, yslice):
     
     slice_dict = {}
     if xslice is not None:
-        for xcoord in ['xh', 'xq', 'xT']:
+        for xcoord in ['xh', 'xq', 'xT', 'lon']:
             if xcoord in ds.coords:
-                slice_dict.update({xcoord: slice(float(xslice[0]), float(xslice[1]))})
+                if ds[xcoord].max() > 180:
+                    # If data longitude is 0--360, convert lon slice from config to 0--360
+                    slice_dict.update({xcoord: slice(np.mod(float(xslice[0]), 360), np.mod(float(xslice[1]), 360))})                
+                else:
+                    slice_dict.update({xcoord: slice(float(xslice[0]), float(xslice[1]))})
     if yslice is not None:
-        for ycoord in ['yh', 'yq', 'yT']:
+        for ycoord in ['yh', 'yq', 'yT', 'lat']:
             if ycoord in ds.coords:
                 slice_dict.update({ycoord: slice(float(yslice[0]), float(yslice[1]))})
     return ds.sel(**slice_dict)
