@@ -12,7 +12,8 @@
 
 # Newer prebuilt python envs
 # are missing dask and/or yaml
-module load python/3.9
+module load miniforge
+conda activate /nbhome/acr/python/envs/medpy3111_20240702
 module load gcp
     
 set domain=$1
