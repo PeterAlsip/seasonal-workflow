@@ -36,28 +36,15 @@ def slice_ds(ds, xslice, yslice):
     return ds.sel(**slice_dict)
 
 
-def process_monthly(root, domain, var, ens=None, xslice=None, yslice=None):
+def process_spear(root, domain, freq, var, ens=None, xslice=None, yslice=None):
     files = sorted(glob(os.path.join(root, f'{domain}.*-*.{var}.nc')))
     processed = xarray.open_mfdataset(files, preprocess=prepro, combine='nested', concat_dim='start', chunks=None, parallel=False)[var]
     processed = slice_ds(processed, xslice, yslice)
 
     if ens != 'pp_ensemble':
-        fname = os.path.join(root, f'{domain}.monthly_mean.ens_{int(ens):02d}.{var}.nc')
+        fname = os.path.join(root, f'{domain}.{freq}_mean.ens_{int(ens):02d}.{var}.nc')
     else:
-        fname = os.path.join(root, f'{domain}.monthly_mean.ensmean.{var}.nc')
-    processed.to_netcdf(fname)
-    print(fname)
-
-
-def process_daily(root, domain, var, ens=None, xslice=None, yslice=None):
-    files = sorted(glob(os.path.join(root, f'{domain}.*-*.{var}.nc')))
-    processed = xarray.open_mfdataset(files, preprocess=prepro, combine='nested', concat_dim='start', chunks=None, parallel=False)[var]
-    processed = slice_ds(processed, xslice, yslice)
-
-    if ens != 'pp_ensemble':
-        fname = os.path.join(root, f'{domain}.daily_mean.ens_{int(ens):02d}.{var}.nc')
-    else:
-        fname = os.path.join(root, f'{domain}.daily_mean.ensmean.{var}.nc')
+        fname = os.path.join(root, f'{domain}.{freq}_mean.ensmean.{var}.nc')
     processed.to_netcdf(fname)
     print(fname)
 
@@ -82,7 +69,4 @@ if __name__ == '__main__':
     else:
         xslice = yslice = None
 
-    if args.freq == 'monthly':
-        process_monthly(args.root, args.domain, args.var, ens=args.ensemble, xslice=xslice, yslice=yslice)
-    elif args.freq == 'daily':
-        process_daily(args.root, args.domain, args.var, ens=args.ensemble, xslice=xslice, yslice=yslice)
+    process_spear(args.root, args.domain, args.freq, args.var, ens=args.ensemble, xslice=xslice, yslice=yslice)
