@@ -41,6 +41,10 @@ def get_spear_file(ystart, mstart, domain, freq, var):
         fname = f'{domain}.{ystart}{mstart_f:02d}-{yend}{mend:02d}.{var}.nc'
     elif freq == 'daily':
         fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}-{yend}{mend:02d}{dend_f:02d}.{var}.nc'
+    elif freq == '6hr':
+        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}00-{yend}{mend:02d}{dend_f:02d}23.{var}.nc' 
+    else:
+        raise Exception(f'Unknown frequency: {freq}')       
     return PurePath(fname)
 
 
