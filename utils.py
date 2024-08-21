@@ -22,25 +22,30 @@ def pad_ds(ds):
         ds['time'] = ds['time'].to_index().to_datetimeindex()
     
     # convert time bounds to days
-    ds['time_bnds'] = (ds['time_bnds'].astype('int') / (1e9 * 24 * 60 * 60)).astype('int')
+    if 'time_bnds' in ds:
+        ds['time_bnds'] = (ds['time_bnds'].astype('int') / (1e9 * 24 * 60 * 60)).astype('int')
 
     # Pad by duplicating the first data point and inserting it as one day before the start
     tfirst = ds.isel(time=0).copy()
-    tfirst['time'] = tfirst['time'] - np.timedelta64(1, 'D')
-    tfirst['average_T1'] = tfirst['average_T1'] - np.timedelta64(1, 'D')
-    tfirst['average_T2'] = tfirst['average_T2'] - np.timedelta64(1, 'D')
-    tfirst['time_bnds'] = tfirst['time_bnds'] - 1
+    for var in ['time', 'average_T1', 'average_T2']:
+        if var in tfirst:
+            tfirst[var] = tfirst[var] - np.timedelta64(1, 'D')
+    if 'time_bnds' in tfirst:
+        tfirst['time_bnds'] = tfirst['time_bnds'] - 1
 
     # Pad by duplicating the last data point and inserting it as one day after the end
     tlast = ds.isel(time=-1).copy()
-    tlast['time'] = tlast['time'] + np.timedelta64(1, 'D')
-    tlast['average_T1'] = tlast['average_T1'] + np.timedelta64(1, 'D')
-    tlast['average_T2'] = tlast['average_T2'] + np.timedelta64(1, 'D')
-    tlast['time_bnds'] = tlast['time_bnds'] + 1
+    for var in ['time', 'average_T1', 'average_T2']:
+        if var in tlast:
+            tlast[var] = tlast[var] + np.timedelta64(1, 'D')
+    if 'time_bnds' in tlast:
+        tlast['time_bnds'] = tlast['time_bnds'] + 1
 
     # Combine the duplicated and original data
     tcomb = xarray.concat((tfirst, ds, tlast), dim='time').transpose('time', 'lat', 'lon', 'bnds')
-    tcomb['time_bnds'] = tcomb['time_bnds'] + 1
+
+    if 'time_bnds' in tcomb:
+        tcomb['time_bnds'] = tcomb['time_bnds'] + 1
 
     tcomb['time'].attrs = ds['time'].attrs
 

@@ -11,8 +11,11 @@ from utils import pad_ds, write_ds
 
 def get_files_to_extract(ystart, mstart, ens):
     files = get_spear_paths(
-        ['slp', 't_ref', 'u_ref', 'v_ref', 'q_ref', 'lwdn_sfc', 'swdn_sfc', 'precip'],
+        ['slp', 't_ref', 'q_ref', 'lwdn_sfc', 'swdn_sfc', 'precip'],
         ystart, mstart, 'atmos_daily', 'daily', ens=ens
+    )
+    files += get_spear_paths(
+        ['u_ref', 'v_ref'], ystart, mstart, 'atmos_4xdaily', '6hr', ens=ens
     )
     return files
 
