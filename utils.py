@@ -1,20 +1,6 @@
 import numpy as np
 import xarray
 
-# This is tricky to install, so importing by adding to path
-import sys
-sys.path.append('/home/Andrew.C.Ross/git/HCtFlood')
-from HCtFlood import kara as flood
-
-
-def flood_ds(ds, ocean_mask):
-    # Find the variable being flooded, which is the first on that is not a coordinate variable
-    var = next(x for x in ds.data_vars if x not in ['average_DT', 'average_T1', 'average_T2', 'lat_bnds', 'lon_bnds', 'time_bnds'])
-    # ocean_mask is true where model is ocean
-    flooded = flood.flood_kara(ds[var].where(ocean_mask)).isel(z=0)
-    ds[var] = flooded
-    return ds
-
 
 def pad_ds(ds):
     if not isinstance(ds.time.values[0], np.datetime64):
