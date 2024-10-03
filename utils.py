@@ -1,5 +1,56 @@
+from dataclasses import dataclass
+from os import environ
+from getpass import getuser
 import numpy as np
+from pathlib import Path
+from shutil import which
+from subprocess import run, DEVNULL
 import xarray
+
+
+@dataclass
+class HSMGet():
+    archive: Path = Path('/') # hopefully this will duplicate paths used by frepp
+    ptmp: Path = Path('/ptmp') / getuser()
+    tmp: Path = Path(environ.get('TMPDIR', ptmp)) # can this ref self already?
+
+    def __call__(self, path_or_paths):
+        if which('hsmget') is None:
+            print('Not using hsmget')
+            return path_or_paths
+        elif isinstance(path_or_paths, Path):
+            relative = path_or_paths.relative_to(self.archive)
+            # hsmget will do the dmget first and this is fine since it's one file
+            cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {relative.as_posix()}'
+            run(cmd, shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
+            return (self.tmp / relative)
+        elif iter(path_or_paths):
+            p_str = ' '.join([p.as_posix() for p in path_or_paths])
+            run(f'dmget {p_str}', shell=True, check=True)
+            relative = [p.relative_to(self.archive) for p in path_or_paths]
+            rel_str = ' '.join([r.as_posix() for r in relative])
+            cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {rel_str}'
+            run(cmd, shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
+            return [self.tmp / r for r in relative]
+        else:
+            raise Exception('Need a Path or iterable of Paths to get')
+            
+
+def open_var(pp_root, kind, var, hsmget=HSMGet()):
+    print(pp_root)
+    freq = 'daily' if 'daily' in kind or 'nwshelf' in kind else 'monthly'
+    longslice1 = '19930101-20221231' if freq == 'daily' else '199301-202212'
+    longfile1 = pp_root / 'pp' / kind / 'ts' / freq / '30yr' / f'{kind}.{longslice1}.{var}.nc'
+    if longfile1.exists():
+        tmpfile = hsmget(longfile1)
+        return xarray.open_dataset(longfile1)[var]
+    else:
+        short_files = list((pp_root / 'pp' / kind / 'ts' / freq / '5yr').glob(f'{kind}.*.{var}.nc'))
+        if len(short_files) > 0:
+            tmpfiles = hsmget(sorted(short_files))
+            return xarray.open_mfdataset(short_files)[var]
+        else:
+            raise Exception('Did not find postprocessed files')
 
 
 def pad_ds(ds):
@@ -62,18 +113,18 @@ def modulo(ds):
     return ds
 
 
-def smooth_climatology(da, window=5):
+def smooth_climatology(da, window=5, dim='dayofyear'):
     smooth = da.copy()
     for _ in range(2):
         smooth = xarray.concat([
-            smooth.isel(dayofyear=slice(-window, None)),
+            smooth.isel(**{dim: slice(-window, None)}),
             smooth,
-            smooth.isel(dayofyear=slice(None, window))
-        ], 'dayofyear')
+            smooth.isel(**{dim: slice(None, window)})
+        ], dim)
         smooth = (
             smooth
-            .rolling(dayofyear=(window * 2 + 1), center=True, min_periods=1)
+            .rolling(**{dim: (window * 2 + 1)}, center=True, min_periods=1)
             .mean()
-            .isel(dayofyear=slice(window, -window))
+            .isel(**{dim: slice(window, -window)})
         )
     return smooth
