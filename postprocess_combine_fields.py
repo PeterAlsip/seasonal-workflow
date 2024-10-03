@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from subprocess import run
 import xarray
+from utils import smooth_climatology
 
 
 if __name__ == '__main__':
@@ -56,14 +57,16 @@ if __name__ == '__main__':
     concat_dim = 'init' if args.mean else 'member'
     print(f'Concat by {concat_dim}')
     model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim=concat_dim).sortby('init') # sorting is important for slicing later
-    model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore')
+    model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').load()
     print('Ensemble mean and anomalies')
     if args.mean:
-        ensmean = model_ds.load()
+        ensmean = model_ds
     else:
         ensmean = model_ds.mean('member')
-    # TODO: for daily, this should be a daily mean followed by smoothing
-    climo = ensmean.sel(init=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('init.month').mean('init').load()
+    climo = ensmean[args.var].sel(init=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('init.month').mean('init')
+    if 'daily' in args.domain:
+        print('Smoothing daily climatology')
+        climo = smooth_climatology(climo, dim='lead')
     anom = model_ds.groupby('init.month') - climo
     anom = anom.rename({v: f'{v}_anom' for v in anom.data_vars})
     model_ds = xarray.merge([model_ds, anom])
