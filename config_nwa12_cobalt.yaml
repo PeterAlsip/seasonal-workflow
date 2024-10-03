@@ -26,6 +26,16 @@ domain:
   west_lon: -100
   east_lon: -30
 
+regions:
+  mask_file: /home/Andrew.C.Ross/git/nwa12/data/geography/masks/regions_30m.nc 
+  names:
+    - SS_LME
+    - NEUS_LME
+    - SEUS_LME
+    - GOM
+    - MAB
+    - GB
+
 filesystem:
   model_input_data: /work/acr/mom6/nwa12/forecast_input_data
   model_output_data: /work/acr/mom6/nwa12/forecast_output_data
