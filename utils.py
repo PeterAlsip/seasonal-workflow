@@ -43,12 +43,12 @@ def open_var(pp_root, kind, var, hsmget=HSMGet()):
     longfile1 = pp_root / 'pp' / kind / 'ts' / freq / '30yr' / f'{kind}.{longslice1}.{var}.nc'
     if longfile1.exists():
         tmpfile = hsmget(longfile1)
-        return xarray.open_dataset(longfile1)[var]
+        return xarray.open_dataset(tmpfile)[var]
     else:
         short_files = list((pp_root / 'pp' / kind / 'ts' / freq / '5yr').glob(f'{kind}.*.{var}.nc'))
         if len(short_files) > 0:
             tmpfiles = hsmget(sorted(short_files))
-            return xarray.open_mfdataset(short_files)[var]
+            return xarray.open_mfdataset(tmpfiles)[var]
         else:
             raise Exception('Did not find postprocessed files')
 
