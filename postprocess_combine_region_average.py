@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # Regular files: concatenate initializations together
     for e in range(1, nens+1):
         print(f'Member {e}')
-        files = list((model_output_data / 'extracted_region_average' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc'))
+        files = sorted(list((model_output_data / 'extracted_region_average' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')))
         if len(files) > 0:
             ds = xarray.open_mfdataset(files).load()
             ds['member'] = e
