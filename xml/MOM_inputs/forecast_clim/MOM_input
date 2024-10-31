@@ -175,7 +175,7 @@ PARALLEL_RESTARTFILES = False   !   [Boolean] default = False
                                 ! If true, the IO layout is used to group processors that write to the same
                                 ! restart file or each processor writes its own (numbered) restart file. If
                                 ! false, a single restart file is generated combining output from all PEs.
-
+RESTART_CONTROL = -1
 ! === module MOM_tracer_flow_control ===
 
 ! === module MOM_boundary_update ===
@@ -684,3 +684,15 @@ BBL_USE_EOS = True
 AGGREGATE_FW_FORCING = True
 EQN_OF_STATE = "WRIGHT_FULL"
 REMAP_AUXILIARY_VARS = False
+
+! New bug fixes
+FRICTWORK_BUG = False
+REMAPPING_USE_OM4_SUBCELLS = False
+OBC_REMAPPING_USE_OM4_SUBCELLS = False
+DIAG_REMAPPING_USE_OM4_SUBCELLS = False
+Z_INIT_REMAPPING_USE_OM4_SUBCELLS = False
+HOR_DIFF_LIMIT_BUG = False
+TRIG_CHANNEL_DRAG_WIDTHS = False
+UNSPLIT_DT_VISC_BUG = False
+USTAR_GUSTLESS_BUG = False
+USE_HUYNH_STENCIL_BUG = False
