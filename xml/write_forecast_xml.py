@@ -29,7 +29,9 @@ def write_xml(common, ystart, mstart):
     <experimentSuite rtsVersion="4" xmlns:xi="http://www.w3.org/2001/XInclude">
       <property name="ystart" value="{ystart}"/>
       <property name="mstart" value="{mstart:02d}"/>
-      <property name="atmosspan" value="{ystart}{mfirst:02d}{dfirst:02d}-{yend}{mlast:02d}{dlast:02d}"/>
+      <property name="atmos_start" value="{ystart}{mfirst:02d}{dfirst:02d}"/>
+      <property name="atmos_end" value="{yend}{mlast:02d}{dlast:02d}"/>
+
       <xi:include href="{common}" xpointer="xpointer(//freInclude[@name='common']/node())"/>
     </experimentSuite>''')
     # Write to file. The name will be based on the name of the common XML,
