@@ -38,7 +38,7 @@ if __name__ == '__main__':
         anom.name = args.var
         persist = anom.shift(time=1)
         persist_lead = persist.expand_dims(lead=np.arange(12)).rename({'time': 'init'})
-        persist_lead = persist_lead.transpose('init', 'lead')
+        persist_lead = persist_lead.transpose('init', 'lead', ...)
         persist_lead['lead'].attrs['units'] = 'months'
         persist_lead.name = args.var
         # This needs to be last
