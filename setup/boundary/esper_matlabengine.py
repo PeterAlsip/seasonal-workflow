@@ -22,10 +22,11 @@ for segment in [1, 2, 3]:
     print(f'Segment {segment:03d}')
     segstr = f'_segment_{segment:03d}'
     year_data = []
-    for yr in [2022, 2023, 2024]:
+    for yr in range(2022, 2026):
         print(yr)
-        timeslice = slice(f'{yr}-01-01', f'{yr}-12-31')
-        fileyear = 2023 if yr == 2024 else yr
+        # temporary fix for partial years
+        fileyear = 2023 if yr > 2023 else yr
+        timeslice = slice(f'{fileyear}-01-01', f'{fileyear}-12-31')
         print('Loading data')
         salt = xarray.open_dataset(f'/work/acr/mom6/nwa12/analysis_input_data/boundary/so_{segment:03d}_{fileyear}.nc')
         temp = xarray.open_dataset(f'/work/acr/mom6/nwa12/analysis_input_data/boundary/thetao_{segment:03d}_{fileyear}.nc')

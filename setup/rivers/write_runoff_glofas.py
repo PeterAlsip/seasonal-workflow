@@ -2,6 +2,7 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 import os
 import pandas as pd
+from pathlib import Path
 import xarray
 import xesmf
 
@@ -47,8 +48,7 @@ def reuse_regrid(*args, **kwargs):
 def expand_mask_true(mask, window):
     """Given a 2D bool mask, expand the true values of the
     mask so that at a given point, the mask becomes true
-    if any point within a window x window box
-    is true.
+    if any point within a window x window box is true.
     Note, points near the edges of the mask, where the 
     box would expand beyond the mask, are always set to false.
 
@@ -100,7 +100,7 @@ def center_to_outer(center, left=None, right=None):
     return outer
 
 
-def write_runoff(glofas, glofas_mask, hgrid, coast_mask, out_file):
+def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     # Assuming grid spacing of 0.05 deg here and below;
     # eventually should detect from file (there are attributes for this)
     dlon = dlat = 0.05  # GloFAS grid spacing
@@ -154,18 +154,19 @@ def write_runoff(glofas, glofas_mask, hgrid, coast_mask, out_file):
     # For NWA12 only: remove runoff from Hudson Bay
     glofas_regridded[:, 700:, 150:300] = 0.0
     
-    # For NWA12 only: Mississippi River adjustment.
-    # Adjust to be approximately the same as the USGS station at Belle Chasse, LA
-    # and relocate closer to the end of the delta.
-    ms_total_kg = glofas_regridded[:, 317:320, 106:108] 
-    # Convert to m3/s
-    ms_total_cms = (ms_total_kg * np.broadcast_to(area[317:320, 106:108], ms_total_kg.shape)).sum(axis=(1, 2)) / 1000.0 
-    ms_corrected = 0.5192110112243014 * ms_total_cms + 3084.5571334312735
-    glofas_regridded[:, 317:320, 106:108] = 0.0
-    new_ms_coords = [(314, 108), (315, 107), (317, 112)]
-    for c in new_ms_coords:
-        y, x = c
-        glofas_regridded[:, y, x] = (1 / len(new_ms_coords)) * ms_corrected * 1000.0 / float(area[y, x])
+    if modify:
+        # For NWA12 only: Mississippi River adjustment.
+        # Adjust to be approximately the same as the USGS station at Belle Chasse, LA
+        # and relocate closer to the end of the delta.
+        ms_total_kg = glofas_regridded[:, 317:320, 106:108] 
+        # Convert to m3/s
+        ms_total_cms = (ms_total_kg * np.broadcast_to(area[317:320, 106:108], ms_total_kg.shape)).sum(axis=(1, 2)) / 1000.0 
+        ms_corrected = 0.5192110112243014 * ms_total_cms + 3084.5571334312735
+        glofas_regridded[:, 317:320, 106:108] = 0.0
+        new_ms_coords = [(314, 108), (315, 107), (317, 112)]
+        for c in new_ms_coords:
+            y, x = c
+            glofas_regridded[:, y, x] = (1 / len(new_ms_coords)) * ms_corrected * 1000.0 / float(area[y, x])
 
     # Flatten mask and coordinates to 1D
     flat_mask = coast_mask.ravel().astype('bool')
@@ -186,13 +187,14 @@ def write_runoff(glofas, glofas_mask, hgrid, coast_mask, out_file):
     coast_id = mom_id[flat_mask]
     nearest_coast = coast_to_mom(coast_id)
     
-    # For NWA12 only: the Susquehanna gets mapped to the Delaware
-    # because NWA12 only has the lower half of the Chesapeake.
-    # Move the nearest grid point for the Susquehanna Region
-    # to the one for the lower bay.
-    # see notebooks/check_glofas_susq.ipynb
-    target = nearest_coast[455, 271]
-    nearest_coast[460:480, 265:278] = target
+    if modify:
+        # For NWA12 only: the Susquehanna gets mapped to the Delaware
+        # because NWA12 only has the lower half of the Chesapeake.
+        # Move the nearest grid point for the Susquehanna Region
+        # to the one for the lower bay.
+        # see notebooks/check_glofas_susq.ipynb
+        target = nearest_coast[455, 271]
+        nearest_coast[460:480, 265:278] = target
     
     nearest_coast = nearest_coast.ravel()
 
@@ -220,35 +222,19 @@ def write_runoff(glofas, glofas_mask, hgrid, coast_mask, out_file):
         },
         coords={'time': glofas['time'].data, 'y': np.arange(filled_reshape.shape[1]), 'x': np.arange(filled_reshape.shape[2])}
     )
-    encodings = get_encodings(ds)
-    ds['time'].attrs = {'cartesian_axis': 'T'}
-    ds['x'].attrs = {'cartesian_axis': 'X'}
-    ds['y'].attrs = {'cartesian_axis': 'Y'}
-    ds['lat'].attrs = {'units': 'degrees_north'}
-    ds['lon'].attrs = {'units': 'degrees_east'}
-    ds['runoff'].attrs = {'units': 'kg m-2 s-1'}
-    # Write out
-    ds.to_netcdf(
-        out_file,
-        unlimited_dims=['time'],
-        format='NETCDF3_64BIT',
-        encoding=encodings,
-        engine='netcdf4'
-    )
-    ds.close()
-
     return ds
 
 
-if __name__ == '__main__':
-    ocean_mask = xarray.open_dataarray('../../../nwa12/setup/grid/ocean_mask.nc')
+def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
+    ocean_mask = xarray.open_dataarray(mask_file)
     mom_coast_mask = get_coast_mask(ocean_mask)
-    hgrid = xarray.open_dataset( '../../../nwa12/setup/grid/ocean_hgrid.nc')
+    hgrid = xarray.open_dataset(hgrid_file)
     # For NWA12: subset GloFAS to a smaller region containing NWA.
+    # TODO: hardcoded config
     glofas_subset = dict(lat=slice(60, 0), lon=slice(-100, -30))
 
     # drainage direction already has coords named lat/lon and they are exactly 1/25 deg
-    ldd = xarray.open_dataset('/work/Utheri.Wagura/datasets/glofas/LDD/ldd_glofas_v4_0.nc').ldd.sel(**glofas_subset)
+    ldd = xarray.open_dataset(ldd_file).ldd.sel(**glofas_subset)
 
     # Start pour point mask to include points where ldd==5
     # and any surrounding point is ocean (nan in ldd)
@@ -274,29 +260,92 @@ if __name__ == '__main__':
     # glofas runoff coordinates are float64 
     glofas_coast_mask = adjacent.values
 
-    for y in [1993]:#range(1993, 2024):
-        print(y)
-        # TODO: deal with 2024. 
-        # temporarily deal with 1993 because of a problem with the data for 1992 
-        if y == 1993:
-            files = [f'/work/Utheri.Wagura/datasets/glofas/v4.0/GloFAS_river_discharge_{y}_v4.0.nc' for y in [y, y+1]]
-        else:
-            files = [f'/work/Utheri.Wagura/datasets/glofas/v4.0/GloFAS_river_discharge_{y}_v4.0.nc' for y in [y-1, y, y+1]]
-        glofas = (
-            xarray.open_mfdataset(files, preprocess=round_coords)
-            .rename({'latitude': 'lat', 'longitude': 'lon', 'valid_time': 'time'})
-            .sel(time=slice(f'{y}-01-01 00:00:00', f'{y+1}-01-02 00:00:00'), **glofas_subset)
-            .dis24
-        )
-        # Latest glofas is in terms of discharge over previous 24 hours,
-        # so subtract 12 hours to center.
-        shifted_time = glofas['time'] - pd.Timedelta(hours=12)
-        # Temporary fix for bad 1992:
-        if y == 1993:
-            shifted_time[0] = shifted_time[0] - pd.Timedelta(hours=12)
-        glofas['time'] = shifted_time
-        out_file = f'/work/acr/mom6/nwa12/analysis_input_data/rivers/glofasv4_runoff_{y}.nc'
-        res = write_runoff(glofas, glofas_coast_mask, hgrid, mom_coast_mask, out_file)
+    # temporarily deal with 1993 because of a problem with the data for 1992 
+    if year == 1993:
+        files = [glofas_template.format(y=y) for y in [year, year+1]]
+    else:
+        files = [glofas_template.format(y=y) for y in [year-1, year]]
+
+    # Check if the next year is available
+    # (need Jan 1 for padding)
+    next_file = glofas_template.format(y=year+1)
+    if Path(next_file).is_file() and not extend:
+        files.append(next_file)
+        extend = False
+    else:
+        extend = True
+        
+    glofas = (
+        xarray.open_mfdataset(files, preprocess=round_coords)
+        .rename({'latitude': 'lat', 'longitude': 'lon', 'valid_time': 'time'})
+        .sel(time=slice(f'{year}-01-01 00:00:00', f'{year+1}-01-02 00:00:00'), **glofas_subset)
+        .dis24
+    )
+    # Latest glofas is in terms of discharge over previous 24 hours,
+    # so subtract 12 hours to center.
+    # TODO: the climatology extension below should be modified
+    # depending on whether write_river_climo.py modifies the time.
+    shifted_time = glofas['time'] - pd.Timedelta(hours=12)
+    # Temporary fix for bad 1992:
+    if year == 1993:
+        shifted_time[0] = shifted_time[0] - pd.Timedelta(hours=12)
+    glofas['time'] = shifted_time
+
+    res = regrid_runoff(glofas, glofas_coast_mask, hgrid, mom_coast_mask, modify=modify)
+
+    # If the next year is not available for padding,
+    # pad using the climatology.
+    # If only a partial year of data is available this should
+    # also have the effect of filling the missing part
+    # with the climatology.
+    if extend:
+        print('Extending to end of year using climatology')
+        # TODO: hardcoded path to climatology
+        climo = xarray.open_dataset('/work/acr/mom6/nwa12/forecast_input_common/glofas_runoff_climo_1993_2019_2023-04-v2.nc')
+        extend = climo.isel(time=slice(int(res['time.dayofyear'][-1])-1, None))
+        back = climo.isel(time=0)
+        # breakpoint()
+        extend = xarray.concat((extend, back),dim='time')
+        new_times = pd.date_range(res.time[-1].values, freq='1D', periods=len(extend.time)+1)[1:]
+        extend['time'] = new_times
+        res = xarray.merge([res, extend.runoff])
+
+    # TODO: hardcoded config
+    out_file = f'/work/acr/mom6/nwa12/analysis_input_data/rivers/glofasv4_runoff_{year}.nc'
+    encodings = get_encodings(res)
+    res['time'].attrs = {'cartesian_axis': 'T'}
+    res['x'].attrs = {'cartesian_axis': 'X'}
+    res['y'].attrs = {'cartesian_axis': 'Y'}
+    res['lat'].attrs = {'units': 'degrees_north'}
+    res['lon'].attrs = {'units': 'degrees_east'}
+    res['runoff'].attrs = {'units': 'kg m-2 s-1'}
+    # Write out
+    res.to_netcdf(
+        out_file,
+        unlimited_dims=['time'],
+        format='NETCDF3_64BIT',
+        encoding=encodings,
+        engine='netcdf4'
+    )
+    res.close()
+
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-y', '--year', type=int, required=True)
+    parser.add_argument('-M','--modify', action='store_true', help='Apply corrections for location and bias')
+    args = parser.parse_args()
+    main(
+        args.year, 
+        mask_file='../../../nwa12/setup/grid/ocean_mask.nc',
+        hgrid_file='../../../nwa12/setup/grid/ocean_hgrid.nc',
+        ldd_file='/work/Utheri.Wagura/datasets/glofas/LDD/ldd_glofas_v4_0.nc',
+        glofas_template='/work/Utheri.Wagura/datasets/glofas/v4.0/GloFAS_river_discharge_{y}_v4.0.nc',
+        modify=args.modify
+    )
+
 
         # if y == 2024:
         #     import pandas as pd

@@ -9,6 +9,13 @@ import xarray
 sys.path.append('../boundary')
 from boundary import reuse_regrid
 
+
+def round_coords(ds, to=25):
+    ds['latitude'] = np.round(ds['latitude'] * to ) / to
+    ds['longitude'] = np.round(ds['longitude'] * to) / to
+    return ds
+
+
 hgrid = xarray.open_dataset('../../../nwa12/setup/grid/ocean_hgrid.nc')
 target_t = (
     hgrid
@@ -22,12 +29,12 @@ output_dir = input_dir.parents[0]
 
 variables = ['thetao', 'so']
 
-years = [2022, 2023, 2024]#range(2022, 2024)
+years = [2024]#range(2022, 2024)
 for year in years:
     print(f'  {year}')
     files = list(input_dir.glob(f'glorys_*_{year}-??.nc'))
     glorys = (
-        xarray.open_mfdataset(files, chunks='auto') # without auto, chunks will be weird and loading will be slow
+        xarray.open_mfdataset(files, chunks='auto', preprocess=lambda x: round_coords(x, to=12)) # without auto, chunks will be weird and loading will be slow
         .rename({'latitude': 'lat', 'longitude': 'lon'})
         .sel(depth=slice(None, 5300)) # make sure empty last depth is excluded
         [variables]
@@ -37,7 +44,7 @@ for year in years:
         glorys, target_t, 
         filename=os.path.join(os.environ['TMPDIR'], 'regrid_glorys_t.nc'), 
         method='nearest_s2d', 
-        reuse_weights=True,
+        reuse_weights=False, #! Not reusing
         periodic=False
     )
     interped = (
@@ -49,9 +56,11 @@ for year in years:
     # Add data points at end of month, since time_bnds aren't used
     # All points extend to 23:59:59 at end of month, except
     # for the end of the year which is padded to 00:00:00 the next Jan 1.
-    # normalize=True rolls down to midnight
+    # normalize=True rolls down to midnight.
+    # Not sure how this handles a case where day = 1 but hour > 0
     mstart = [d - pd.offsets.MonthBegin(normalize=True) if d.day > 1 else d for d in interped['time'].to_pandas()]
-    mend = [d + pd.DateOffset(months=1) if d.month == 12 else d + pd.DateOffset(months=1) - pd.Timedelta(seconds=1) for d in mstart]
+    mend = [d + pd.DateOffset(months=1) - pd.Timedelta(seconds=1) for d in mstart]
+    mend[-1] = mend[-1] + pd.Timedelta(seconds=1)
     starts = interped.copy()
     starts['time'] = mstart
     ends = interped.copy()
