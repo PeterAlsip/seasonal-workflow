@@ -3,6 +3,7 @@ import concurrent.futures as futures
 from functools import partial
 from getpass import getuser
 from os import environ
+import numpy as np
 from pathlib import Path
 import xarray
 from subprocess import run, DEVNULL
@@ -34,6 +35,11 @@ segments = [
 
 reanalysis_path = Path('/archive/uda/Global_Ocean_Physics_Reanalysis/global/daily/')
 analysis_path = Path('/archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/')
+
+def round_coords(ds, to=25):
+    ds['latitude'] = np.round(ds['latitude'] * to ) / to
+    ds['longitude'] = np.round(ds['longitude'] * to) / to
+    return ds
 
 
 def find_best_files(year, mon, var):
@@ -91,7 +97,7 @@ def main(year, mon, var, threads, dry=False):
     else:
         mon = int(mon)
         if var == 'all':
-            for v in ['uv', 'so', 'thetao', 'zos']:
+            for v in ['so', 'thetao', 'uv', 'zos']:
                 main(year, mon, v, threads, dry=dry)
         else:
             print(var)
@@ -110,7 +116,7 @@ def main(year, mon, var, threads, dry=False):
                 if var in ['so', 'thetao']:
                     run_cmd(f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc')
                 ds = (
-                    xarray.open_mfdataset(processed_files)
+                    xarray.open_mfdataset(processed_files, preprocess=lambda x: round_coords(x, to=12))
                     .rename({'latitude': 'lat', 'longitude': 'lon'})
                 )
                 if 'depth' in ds.coords:
@@ -131,6 +137,6 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--month', default='all')
     parser.add_argument('-v', '--var', default='all')
     parser.add_argument('-t', '--threads', type=int, default=4)
-    parser.add_argument('-D','--dry', action='store_true')
+    parser.add_argument('-D', '--dry', action='store_true')
     args = parser.parse_args()
     main(args.year, args.month, args.var, args.threads, dry=args.dry)
