@@ -564,6 +564,10 @@ class Segment():
         })
 
         ds_uv = fill_missing(ds_uv, fill=fill)
+        
+        # If time is singular, it can be lost from the dimensions, so add it back.
+        if 'time' not in ds_uv.dims:
+            ds_uv = ds_uv.expand_dims('time')
 
         # Need to transpose so that time is first,
         # so that it can be the unlimited dimension
