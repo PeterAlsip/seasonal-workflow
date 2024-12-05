@@ -7,9 +7,6 @@ import xarray
 import xesmf
 
 
-# TODO: need to check if adjustments to Mississippi 
-# are still necessary in version 4.
-
 def get_coast_mask(mask):
     # Alistair's method of finding coastal cells
     ocn_mask = mask.values
@@ -277,15 +274,17 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
         
     glofas = (
         xarray.open_mfdataset(files, preprocess=round_coords)
-        .rename({'latitude': 'lat', 'longitude': 'lon', 'valid_time': 'time'})
-        .sel(time=slice(f'{year}-01-01 00:00:00', f'{year+1}-01-02 00:00:00'), **glofas_subset)
+        .rename({'latitude': 'lat', 'longitude': 'lon'})
+        .sel(time=slice(f'{year-1}-12-31 00:00:00', f'{year+1}-01-01 00:00:00'), **glofas_subset)
         .dis24
+        .load() # avoid chunking issues?
     )
     # Latest glofas is in terms of discharge over previous 24 hours,
     # so subtract 12 hours to center.
     # TODO: the climatology extension below should be modified
     # depending on whether write_river_climo.py modifies the time.
-    shifted_time = glofas['time'] - pd.Timedelta(hours=12)
+    # TODO: confirm this is still accurate.
+    shifted_time = glofas['time'] + pd.Timedelta(hours=12)
     # Temporary fix for bad 1992:
     if year == 1993:
         shifted_time[0] = shifted_time[0] - pd.Timedelta(hours=12)
@@ -300,11 +299,10 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
     # with the climatology.
     if extend:
         print('Extending to end of year using climatology')
-        # TODO: hardcoded path to climatology
+        # TODO: hardcoded path to climatology. Also, this is the v3.0 climatology.
         climo = xarray.open_dataset('/work/acr/mom6/nwa12/forecast_input_common/glofas_runoff_climo_1993_2019_2023-04-v2.nc')
         extend = climo.isel(time=slice(int(res['time.dayofyear'][-1])-1, None))
         back = climo.isel(time=0)
-        # breakpoint()
         extend = xarray.concat((extend, back),dim='time')
         new_times = pd.date_range(res.time[-1].values, freq='1D', periods=len(extend.time)+1)[1:]
         extend['time'] = new_times
@@ -342,7 +340,8 @@ if __name__ == '__main__':
         mask_file='../../../nwa12/setup/grid/ocean_mask.nc',
         hgrid_file='../../../nwa12/setup/grid/ocean_hgrid.nc',
         ldd_file='/work/Utheri.Wagura/datasets/glofas/LDD/ldd_glofas_v4_0.nc',
-        glofas_template='/work/Utheri.Wagura/datasets/glofas/v4.0/GloFAS_river_discharge_{y}_v4.0.nc',
+        glofas_template='/archive/uda/GloFAS/LISFLOOD/consolidated/global/river_discharge/v4.0/GloFAS_river_discharge_{y}_v4.0.nc',
+        # glofas_template='/vftmp/Andrew.C.Ross/glofas/GloFAS_river_discharge_{y}_v4.0.nc',
         modify=args.modify
     )
 
