@@ -49,7 +49,7 @@ def find_best_files(year, mon, var):
         # analysis files will be duplicated; remove them.
         files  = find_best_files(year, mon, 'uo')
         files += find_best_files(year, mon, 'vo')
-        files = list(set(files))
+        files = sorted(set(files))
     else:
         # Use reanalysis files when they are available,
         # and find and use the analysis files when not.
@@ -64,14 +64,16 @@ def find_best_files(year, mon, var):
             else:
                 # The variable naming for the analysis is complicated.
                 # Assuming that the 202406 in cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406 will never change.
+                # The ???? before _R* could be hcst or nwct or fcst. Currently there is no checking if both are matched;
+                # the last one by sorted order will be returned.
                 if var == 'zos':
                     # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc 
-                    analysis_file = sorted((analysis_path / 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_2D_hcst_R*.nc'))
+                    analysis_file = sorted((analysis_path / 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_2D_????_R*.nc'))
                 elif var in ['thetao', 'so']:
-                    analysis_file = sorted((analysis_path / f'cmems_mod_glo_phy-{var}_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-{var}_hcst_R*.nc'))
+                    analysis_file = sorted((analysis_path / f'cmems_mod_glo_phy-{var}_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-{var}_????_R*.nc'))
                 elif var in ['uo', 'vo']:
                     # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_3D-uovo_hcst_R20241002.nc
-                    analysis_file = sorted((analysis_path / 'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-uovo_hcst_R*.nc'))
+                    analysis_file = sorted((analysis_path / 'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-uovo_????_R*.nc'))
                 else:
                     raise Exception('Unknown variable')
                 if len(analysis_file) > 0:
@@ -137,6 +139,6 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--month', default='all')
     parser.add_argument('-v', '--var', default='all')
     parser.add_argument('-t', '--threads', type=int, default=4)
-    parser.add_argument('-D', '--dry', action='store_true')
+    parser.add_argument('-D', '--dry', action='store_true', help='Dry run: only print out the files that would be worked on.')
     args = parser.parse_args()
     main(args.year, args.month, args.var, args.threads, dry=args.dry)
