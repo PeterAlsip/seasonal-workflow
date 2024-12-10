@@ -118,10 +118,16 @@ class ForecastRun:
             ds['member'] = int(self.ens)
             ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
             ds['lead'] = (('time', ), np.arange(len(ds['time'])))
-            ds['lead'].attrs['units'] = 'months'
+            if 'daily' in self.domain:
+                ds['lead'].attrs['units'] = 'months'
+            else:
+                if len(ds['lead']) > 12:
+                    print('Setting units to days. Number of lead times is long.')
+                    ds['lead'].attrs['units'] = 'days'
+                ds['lead'].attrs['units'] = 'months'
             ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
             ds = ds.expand_dims('init')
-            ds = ds.transpose(*(['init', 'lead'] + [d for d in ds.dims if d not in ['init', 'lead']]))
+            ds = ds.transpose('init', 'lead', ...)
             ds = ds.drop_vars('time')
             ds.to_netcdf(outfile, unlimited_dims='init')
             ds.close()
