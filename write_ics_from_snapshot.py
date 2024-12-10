@@ -217,6 +217,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--month', type=int)
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-g', '--gaea', help='gcp result to Gaea', action='store_true')
+    # TODO: reusing old files is dangerous and should probably not be default 
     parser.add_argument('-r', '--rerun', help='Run even if previous files exist', action='store_true')
     parser.add_argument('-e', '--ensemble', help='Write an ensemble of ICs', action='store_true')
     args = parser.parse_args()
