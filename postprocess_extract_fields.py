@@ -7,21 +7,6 @@ import subprocess
 import xarray
 
 
-# Expect, and only extract, these variables from the given domain
-# (TODO: this could probably go in config)
-_DOMAIN_VARIABLES = {
-    'ocean_month': ['tos', 'tob', 'sos', 'sob', 'MLD_003', 'ssh', 'ustar'], # ssh or zos
-    'ocean_daily': ['tos', 'tob', 'ssh', 'ssh_max'],
-    'ocean_cobalt_btm': ['btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal'],
-    'ocean_cobalt_omip_sfc': ['chlos', 'no3os', 'phos'],
-    'ocean_cobalt_neus': ['chlos', 'no3os', 'po4os', 'zmesoos', 
-                          'nsmp_100', 'nmdp_100', 'nlgp_100', 
-                          'sfc_no3lim_smp', 'sfc_no3lim_mdp', 'sfc_no3lim_lgp', 
-                          'sfc_irrlim_lgp', 'sfc_irrlim_mdp', 'sfc_irrlim_smp'],
-    'ocean_neus': ['MLD_003', 'ustar'],
-    'ocean_cobalt_daily_2d': ['chlos', 'btm_o2', 'btm_co3_sol_arag', 'btm_co3_ion', 'btm_htotal']
-}
-
 # Using ptmp to cache full history files
 PTMP = Path('/ptmp') / getuser()
 
@@ -109,12 +94,15 @@ class ForecastRun:
         cmd = f'gcp {(self.ptmp_dir / self.file_name).as_posix()} {self.vftmp_dir.as_posix()}'
         self.run_cmd(cmd)
 
-    def process_file(self, outfile, infile=None):
+    def process_file(self, outfile, variables=None, infile=None):
         if infile is None:
             infile = self.vftmp_dir / self.file_name
         print(f'process_file({infile})')
         if not self.dry_run:
-            ds = xarray.open_dataset(infile)[_DOMAIN_VARIABLES[self.domain]]
+            ds = xarray.open_dataset(infile)
+            if variables is None:
+                variables = list(ds.data_vars)
+            ds = ds[variables]
             ds['member'] = int(self.ens)
             ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
             ds['lead'] = (('time', ), np.arange(len(ds['time'])))
@@ -161,6 +149,7 @@ if __name__ == '__main__':
         nens = config['retrospective_forecasts']['ensemble_size']
     outdir = Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
+    variables = config['variables']['args.domain']
     files_to_dmget = []
     for ystart in range(first_year, last_year+1):
         for mstart in months:
@@ -208,16 +197,16 @@ if __name__ == '__main__':
                 if not outfile.is_file() or args.rerun:
                     # Check if an extracted data file exists
                     if (run.vftmp_dir / run.file_name).is_file():
-                        run.process_file(outfile)
+                        run.process_file(outfile, variables=variables)
                     # Check if a cached tar file exists
                     elif (run.ptmp_dir / run.file_name).is_file():
                         run.copy_from_ptmp()
-                        run.process_file(outfile)
+                        run.process_file(outfile, variables=variables)
                     else:
                         # Check if the raw data exists in archive
                         if (run.archive_dir / run.tar_file).is_file():
                             run.copy_from_archive()
                             run.copy_from_ptmp()
-                            run.process_file(outfile)
+                            run.process_file(outfile, variables=variables)
                         else:
                             print(f'{(run.archive_dir / run.tar_file).as_posix()} not found in archive')

@@ -44,6 +44,50 @@ regions:
     - MAB
     - GB
 
+variables:
+  ocean_month:
+    - tos
+    - tob
+    - sos
+    - sob
+    - MLD_003
+    - ssh
+  ocean_daily:
+    - tos
+    - tob
+    - sos
+    - ssh
+  ocean_cobalt_btm:
+    - btm_o2
+    - btm_co3_sol_arag
+    - btm_co3_ion
+    - btm_htotal
+  ocean_cobalt_omip_sfc:
+    - chlos
+    - no3os
+    - phos
+    - po4os
+    - sios
+    - talkos
+  ocean_cobalt_neus:
+    - chlos
+    - no3os
+    - po4os
+    - zmesoos
+    - nsmp_100
+    - nmdp_100
+    - nlgp_100
+  ocean_neus:
+    - MLD_003
+    - so
+    - thetao
+  ocean_cobalt_daily_2d:
+    - chlos
+    - btm_o2
+    - btm_co3_sol_arag
+    - btm_co3_ion
+    - btm_htotal
+
 filesystem:
   forecast_input_data: /work/acr/mom6/nwa12/forecast_input_data
   nowcast_input_data: /work/acr/mom6/nwa12/analysis_input_data
