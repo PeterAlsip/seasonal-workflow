@@ -1,15 +1,12 @@
 from calendar import monthrange
 import concurrent.futures as futures
 from functools import partial
-from getpass import getuser
-from os import environ
-import numpy as np
 from pathlib import Path
 import xarray
 from subprocess import run, DEVNULL
 import sys
 sys.path.append('../..')
-from utils import HSMGet
+from utils import HSMGet, round_coords
 from boundary import Segment
 
 
@@ -17,32 +14,10 @@ from boundary import Segment
 def run_cmd(cmd):
     run([cmd], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
 
-hsmget = HSMGet(archive=Path('/archive/uda'), ptmp=Path('/ptmp')/getuser())
-TMP = Path(environ['TMPDIR'])
+hsmget = HSMGet(archive=Path('/archive/uda'))
+TMP = hsmget.tmp
 
-# temporarily hardcoded config
-latmin = 5
-latmax = 60
-lonmin = -100
-lonmax = -30
-output_dir = '/work/acr/mom6/nwa12/analysis_input_data/boundary/monthly'
-hgrid = xarray.open_dataset('../../../nwa12/setup/grid/ocean_hgrid.nc')
-segments = [
-    Segment(1, 'south', hgrid, output_dir=output_dir),
-    Segment(2, 'north', hgrid, output_dir=output_dir),
-    Segment(3, 'east', hgrid, output_dir=output_dir)
-]
-
-reanalysis_path = Path('/archive/uda/Global_Ocean_Physics_Reanalysis/global/daily/')
-analysis_path = Path('/archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/')
-
-def round_coords(ds, to=25):
-    ds['latitude'] = np.round(ds['latitude'] * to ) / to
-    ds['longitude'] = np.round(ds['longitude'] * to) / to
-    return ds
-
-
-def find_best_files(year, mon, var):
+def find_best_files(year, mon, var, reanalysis_path, analysis_path):
     if var == 'uv':
         # For velocity, find the individual components separately.
         # Since u and v are in the same file for the analysis,
@@ -83,27 +58,28 @@ def find_best_files(year, mon, var):
     return files
 
 
-def thread_worker(in_file, out_dir):
+def thread_worker(in_file, out_dir, lon_lat_box):
     out_file = out_dir / in_file.name
+    lonmin, lonmax, latmin, latmax = lon_lat_box
     # run_cmd(f'ncks -d latitude,{float(latmin)},{float(latmax)} -d longitude,{float(lonmin)},{float(lonmax)} {in_file.as_posix()} -O {out_file.as_posix()}')
     run_cmd(f'cdo setmisstonn -sellevidx,1/49 -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} {in_file.as_posix()} {out_file.as_posix()}')
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
 
 
-def main(year, mon, var, threads, dry=False):
+def main(year, mon, var, segments, threads, analysis_path, reanalysis_path, lon_lat_box, dry=False):
     if mon == 'all':
         for m in range(1, 13):
             print(m)
-            main(year, m, var, threads, dry=dry)
+            main(year, m, var, segments, threads, analysis_path, reanalysis_path, lon_lat_box, dry=dry)
     else:
         mon = int(mon)
         if var == 'all':
             for v in ['so', 'thetao', 'uv', 'zos']:
-                main(year, mon, v, threads, dry=dry)
+                main(year, mon, v, segments, threads, analysis_path, reanalysis_path, lon_lat_box, dry=dry)
         else:
             print(var)
-            files = find_best_files(year, mon, var)
+            files = find_best_files(year, mon, var, analysis_path=analysis_path, reanalysis_path=reanalysis_path)
             if dry:
                 print(f'Found {len(files)} files')
                 for f in files:
@@ -112,13 +88,13 @@ def main(year, mon, var, threads, dry=False):
                 copied_files = hsmget(files)
 
                 with futures.ThreadPoolExecutor(max_workers=threads) as executor:
-                    processed_files = sorted(executor.map(partial(thread_worker, out_dir=TMP), copied_files))
+                    processed_files = sorted(executor.map(partial(thread_worker, out_dir=TMP, lon_lat_box=lon_lat_box), copied_files))
 
-                # Save data for use with sponge.
+                # Save data for use with sponge. TODO: config output path
                 if var in ['so', 'thetao']:
                     run_cmd(f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc')
                 ds = (
-                    xarray.open_mfdataset(processed_files, preprocess=lambda x: round_coords(x, to=12))
+                    xarray.open_mfdataset(processed_files, preprocess=partial(round_coords, to=12))
                     .rename({'latitude': 'lat', 'longitude': 'lon'})
                 )
                 if 'depth' in ds.coords:
@@ -134,11 +110,25 @@ def main(year, mon, var, threads, dry=False):
 
 if __name__ == '__main__':
     import argparse
+    from yaml import safe_load
     parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     parser.add_argument('-m', '--month', default='all')
     parser.add_argument('-v', '--var', default='all')
     parser.add_argument('-t', '--threads', type=int, default=4)
     parser.add_argument('-D', '--dry', action='store_true', help='Dry run: only print out the files that would be worked on.')
     args = parser.parse_args()
-    main(args.year, args.month, args.var, args.threads, dry=args.dry)
+    with open(args.config, 'r') as file: 
+        config = safe_load(file)
+    d = config['domain']
+    output_dir = Path(config['filesystem']['nowcast_input_data'] / 'boundary' / 'monthly')
+    segments = [
+        Segment(num, edge, d['hgrid_file'], output_dir=output_dir)
+        for edge, num in d['boundaries'].items()
+    ]
+    main(args.year, args.month, args.var, args.threads, dry=args.dry,
+         segments=segments,
+         lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
+         reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
+         analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']))

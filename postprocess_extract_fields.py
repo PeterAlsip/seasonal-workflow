@@ -159,7 +159,7 @@ if __name__ == '__main__':
         last_year = args.year if args.year is not None else config['retrospective_forecasts']['last_year']
         months = [args.month if args.month is not None else config['retrospective_forecasts']['months']]
         nens = config['retrospective_forecasts']['ensemble_size']
-    outdir = Path(config['filesystem']['model_output_data']) / 'extracted' / args.domain
+    outdir = Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
     files_to_dmget = []
     for ystart in range(first_year, last_year+1):

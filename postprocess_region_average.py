@@ -3,7 +3,7 @@ import xarray
 
 
 def process_var(var, config, cmdargs):
-    model_output_data = Path(config['filesystem']['model_output_data'])
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
 
     fname = f'forecasts_{cmdargs.domain}_{var}_ensmean.nc' if cmdargs.mean else f'forecasts_{cmdargs.domain}_{var}.nc'
     ds = xarray.open_dataset(model_output_data / fname)

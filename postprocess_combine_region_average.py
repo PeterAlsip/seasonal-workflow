@@ -16,7 +16,7 @@ if __name__ == '__main__':
         config = safe_load(file)
     tmp = Path(os.environ['TMPDIR'])
 
-    model_output_data = Path(config['filesystem']['model_output_data'])
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
     model_output_data.mkdir(exist_ok=True)
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']

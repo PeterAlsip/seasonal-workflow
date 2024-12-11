@@ -4,12 +4,8 @@ from subprocess import run
 def run_cmd(cmd):
     run([cmd], shell=True, check=True)
 
-# temporarily hardcoded config
-input_dir = Path('/work/acr/mom6/nwa12/analysis_input_data/boundary/monthly')
-output_dir = input_dir.parents[0]
-n_segments = 3
 
-def main(year):
+def main(year, input_dir, output_dir, n_segments):
     for var in ['thetao', 'so', 'uv', 'zos']:
         for seg in range(1, n_segments+1):
             available_months = []
@@ -46,7 +42,15 @@ def main(year):
 
 if __name__ == '__main__':
     import argparse
+    from pathlib import Path
+    from yaml import safe_load    
     parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    main(args.year)
+    with open(args.config, 'r') as file: 
+        config = safe_load(file)
+    in_dir = Path(config['filesystem']['nowcast_input_data'] / 'boundary' / 'monthly')
+    out_dir = in_dir.parents[0]
+    n_seg = len(config['domain']['boundaries'])
+    main(args.year, in_dir, out_dir, n_seg)

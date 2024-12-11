@@ -10,7 +10,7 @@ def process_var(var, config, cmdargs):
     last_year = config['climatology']['last_year']
     nens = config['retrospective_forecasts']['ensemble_size']
     tmp = Path(os.environ['TMPDIR'])
-    model_output_data = Path(config['filesystem']['model_output_data'])
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
     members = []
 
     if cmdargs.mean:
@@ -83,7 +83,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-    Path(config['filesystem']['model_output_data']).mkdir(exist_ok=True)
     if ',' in args.var:
         cmdvar = args.var.split(',')
         for v in cmdvar:

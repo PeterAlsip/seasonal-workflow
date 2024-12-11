@@ -1,11 +1,10 @@
-import numpy as np
 import xarray
 from utils import modulo, smooth_climatology
 
 
-def write_boundary(ystart, yend, pathin, pathout):
+def write_boundary(ystart, yend, pathin, pathout, n_segments):
     for var in ['zos', 'thetao', 'so', 'uv']:
-        for segment in [1, 2, 3]:
+        for segment in range(1, n_segments+1):
             print(f'{var} {segment}')
             boundary = xarray.open_dataset(pathin / f'{var}_{segment:03d}.nc')
             boundary = boundary.sel(time=slice(str(ystart), str(yend)))
@@ -74,7 +73,8 @@ if __name__ == '__main__':
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']                   
     pathin = Path(config['filesystem']['open_boundary_files'])
-    pathout = Path(config['filesystem']['model_input_data']) / 'boundary' / f'climatology_{first_year}_{last_year}'
+    pathout = Path(config['filesystem']['forecast_input_data']) / 'boundary' / f'climatology_{first_year}_{last_year}'
     pathout.mkdir(exist_ok=True, parents=True)
-    write_boundary(first_year, last_year, pathin, pathout)
+    n_seg = len(config['domain']['boundaries'])
+    write_boundary(first_year, last_year, pathin, pathout), n_segments=n_seg
     

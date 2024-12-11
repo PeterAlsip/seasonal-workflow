@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # Note conversion from [-180, 180] to [0, 360]
     xslice = slice(config['domain']['west_lon'] % 360, config['domain']['east_lon'] % 360)
     yslice = slice(config['domain']['south_lat'], config['domain']['north_lat'])
-    work_dir = Path(config['filesystem']['model_input_data']) / 'atmos'
+    work_dir = Path(config['filesystem']['forecast_input_data']) / 'atmos'
     work_dir.mkdir(exist_ok=True)
 
     if args.ensemble == -1:

@@ -42,6 +42,6 @@ if __name__ == '__main__':
 
     years = np.arange(config['climatology']['first_year'], config['climatology']['last_year']+1)
     input_files = [config['filesystem']['yearly_river_files'].format(year=y) for y in years]
-    work_dir = Path(config['filesystem']['model_input_data']) / 'rivers'
+    work_dir = Path(config['filesystem']['forecast_input_data']) / 'rivers'
     work_dir.mkdir(exist_ok=True)
     process_climatology(years, input_files, work_dir)

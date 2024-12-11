@@ -14,7 +14,7 @@ if __name__ == '__main__':
     with open(args.config, 'r') as file: 
         config = safe_load(file)
 
-    model_output_data = Path(config['filesystem']['model_output_data'])
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
 
     # Fully extracted files, generally on /work
     files = (model_output_data / 'extracted' / args.domain).glob(f'????-??-e??.{args.domain}.nc')

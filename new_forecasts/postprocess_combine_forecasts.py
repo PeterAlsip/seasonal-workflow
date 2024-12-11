@@ -4,8 +4,8 @@ from pathlib import Path
 import xarray
 
 
-def process_all_vars(y, m, all_vars, config, cmdargs):
-    model_output_data = Path(config['filesystem']['model_output_data'])
+def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
     members = (model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc')
     model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member')
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').squeeze().load()
@@ -35,8 +35,7 @@ def process_all_vars(y, m, all_vars, config, cmdargs):
         res = res.swap_dims({'lead': 'valid_time'}).transpose('valid_time', 'member', ...)
         encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month', 'valid_time'] if v in res}
         fname = f'{var}.nwa.full.ssfcast.v2024-01-1.monthly.enss.i{y}{m:02d}.nc' # TODO
-        # TODO: config where to put this
-        res.to_netcdf(model_output_data / 'individual' / fname, encoding=encoding)
+        res.to_netcdf(output_dir / fname, encoding=encoding)
 
 
 
@@ -49,17 +48,21 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--var', type=str, default='all')
     parser.add_argument('-r','--rerun', action='store_true')
     parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
-    parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config')    
+    parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config') 
+    parser.add_argument('-o', '--output', type=str, help='Where to place output files', required=False)   
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-    # TODO: config exactly where to put these files
-    (Path(config['filesystem']['model_output_data']) / 'individual').mkdir(exist_ok=True)
+    if args.output is None:
+        output_dir = Path(config['filesystem']['forecast_output_data']) / 'individual'
+    else:
+        output_dir = Path(args.output)
+    output_dir.mkdir(exist_ok=True)
     if ',' in args.var:
         all_vars = args.var.split(',')
     elif args.var == 'all':
         all_vars = config['variables'][args.domain]
     else:
         all_vars = [args.var]
-    process_all_vars(args.year, args.month, all_vars, config, args)
+    process_all_vars(args.year, args.month, all_vars, output_dir, config, args)
 

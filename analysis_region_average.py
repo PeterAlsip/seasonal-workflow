@@ -15,7 +15,7 @@ if __name__ == '__main__':
     with open(args.config, 'r') as file: 
         config = safe_load(file)
 
-    outdir = Path(config['filesystem']['model_output_data']) / 'analysis'
+    outdir = Path(config['filesystem']['forecast_output_data']) / 'analysis'
     outdir.mkdir(exist_ok=True)
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
