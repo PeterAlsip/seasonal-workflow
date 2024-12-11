@@ -4,7 +4,7 @@ from pathlib import Path, PurePath
 
 
 # Top level path to all SPEAR medium reforecast data on archive
-ROOT = Path('/archive') / 'l1j' / 'spear_med' / 'rf_hist' / 'fcst' / 's_j11_OTA_IceAtmRes_L33'
+SPEAR_ROOT = Path('/archive') / 'l1j' / 'spear_med' / 'rf_hist' / 'fcst' / 's_j11_OTA_IceAtmRes_L33'
 
 
 def get_spear_file(ystart, mstart, domain, freq, var):
@@ -48,7 +48,7 @@ def get_spear_file(ystart, mstart, domain, freq, var):
     return PurePath(fname)
 
 
-def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=ROOT):
+def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=SPEAR_ROOT):
     """
     Find the complete path to SPEAR post-processed forecast output on archive.
     Includes logic to identify which of several re-runs to use where available.
@@ -120,8 +120,8 @@ if __name__ == '__main__':
     fnames = []
     # If called from command line, this will return all files
     # for years and months in the following ranges
-    for ystart in range(config['forecasts']['first_year'], config['forecasts']['last_year']+1):
-        for mstart in config['forecasts']['months']:
+    for ystart in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
+        for mstart in config['retrospective_forecasts']['months']:
             fname = get_spear_path(ystart, mstart, args.domain, args.freq, args.var, ens=args.ensemble).as_posix()
             fnames.append(fname)
     print(' '.join(fnames))

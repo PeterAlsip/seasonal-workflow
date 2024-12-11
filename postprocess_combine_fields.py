@@ -8,15 +8,15 @@ from utils import smooth_climatology
 def process_var(var, config, cmdargs):
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
-    nens = config['forecasts']['ensemble_size']
+    nens = config['retrospective_forecasts']['ensemble_size']
     tmp = Path(os.environ['TMPDIR'])
     model_output_data = Path(config['filesystem']['model_output_data'])
     members = []
 
     if cmdargs.mean:
         # Large files: ensemble average, then concatenate averages
-        for m in config['forecasts']['months']:
-            for y in range(config['forecasts']['first_year'], config['forecasts']['last_year']+1):
+        for m in config['retrospective_forecasts']['months']:
+            for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
                 month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
                 files = list((model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'))
                 if len(files) == 1: # single ensemble member
@@ -50,7 +50,7 @@ def process_var(var, config, cmdargs):
     else:
         ensmean = model_ds.mean('member')
     climo = ensmean[var].sel(init=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('init.month').mean('init')
-    if 'daily' in cmdargs.domain:
+    if 'daily' in cmdargs.domain: # todo: would this work for neus?
         print('Smoothing daily climatology')
         climo = smooth_climatology(climo, dim='lead')
     anom = model_ds.groupby('init.month') - climo

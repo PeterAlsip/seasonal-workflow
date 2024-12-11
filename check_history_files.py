@@ -18,13 +18,13 @@ args = parser.parse_args()
 with open(args.config, 'r') as file: 
     config = safe_load(file)
 
-first_year = config['forecasts']['first_year']
-last_year = config['forecasts']['last_year']
-nens = config['forecasts']['ensemble_size']
+first_year = config['retrospective_forecasts']['first_year']
+last_year = config['retrospective_forecasts']['last_year']
+nens = config['retrospective_forecasts']['ensemble_size']
 template = config['filesystem']['forecast_history']
 
 for ystart in range(first_year, last_year+1):
-    for mstart in config['forecasts']['months']:
+    for mstart in config['retrospective_forecasts']['months']:
         for ens in range(1, nens+1):
             run = ForecastRun(ystart=ystart, mstart=mstart, ens=ens, template=template)
             tar = run.archive_dir / run.tar_file

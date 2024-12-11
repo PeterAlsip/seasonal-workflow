@@ -1,6 +1,6 @@
 name: nwa12_cobalt
 
-forecasts:
+retrospective_forecasts:
   first_year: 1994
   last_year: 2022
   months:
@@ -8,6 +8,9 @@ forecasts:
     - 6
     - 9
     - 12
+  ensemble_size: 5
+
+new_forecasts:
   ensemble_size: 5
 
 snapshots:

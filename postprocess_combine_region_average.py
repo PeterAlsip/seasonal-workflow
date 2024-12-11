@@ -20,10 +20,11 @@ if __name__ == '__main__':
     model_output_data.mkdir(exist_ok=True)
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
-    nens = config['forecasts']['ensemble_size']
+    nens = config['retrospective_forecasts']['ensemble_size']
 
     members = []
     # Regular files: concatenate initializations together
+    # Note: this will pull in new forecasts in addition to retrospective
     for e in range(1, nens+1):
         print(f'Member {e}')
         files = sorted(list((model_output_data / 'extracted_region_average' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')))

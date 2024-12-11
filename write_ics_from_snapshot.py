@@ -187,25 +187,24 @@ def main_single(config, cmdargs):
 
 
 def main_ensemble(config, cmdargs):
-    for ens in range(1, config['forecasts']['ensemble_size']+1):
-        print(f'e{ens:02d}')
-        history = Path(config['filesystem']['analysis_history'].format(ensemble=ens))
-        outdir = Path(config['filesystem']['model_input_data']) / f'e{ens:02d}' / 'initial'
-        tarfile = outdir / f'forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
-        if cmdargs.rerun or not tarfile.exists():
-            outdir.mkdir(parents=True, exist_ok=True)
-            tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month, force_extract=True) for c in config['snapshots']]
-            file_str = ' '.join(map(lambda x: x.name, tmp_files))
-            cmd = f'tar cvf {tarfile.as_posix()} -C {TMP} {file_str}'
-            run_cmd(cmd)
-            for f in tmp_files:
-                f.unlink()
-            if cmdargs.gaea:
-                print('transferring to Gaea')
-                from subprocess import run
-                cmd = f'gcp -cd {tarfile.as_posix()} gaea:{config["filesystem"]["gaea_input_data"]}/e{ens:02d}/initial/'
-                run([cmd], shell=True, check=True)
-        print(tarfile)
+    ens = cmdargs.ensemble
+    history = Path(config['filesystem']['analysis_history'].format(ensemble=ens))
+    outdir = Path(config['filesystem']['model_input_data']) / f'e{ens:02d}' / 'initial'
+    tarfile = outdir / f'forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
+    if cmdargs.rerun or not tarfile.exists():
+        outdir.mkdir(parents=True, exist_ok=True)
+        tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month, force_extract=True) for c in config['snapshots']]
+        file_str = ' '.join(map(lambda x: x.name, tmp_files))
+        cmd = f'tar cvf {tarfile.as_posix()} -C {TMP} {file_str}'
+        run_cmd(cmd)
+        for f in tmp_files:
+            f.unlink()
+        if cmdargs.gaea:
+            print('transferring to Gaea')
+            from subprocess import run
+            cmd = f'gcp -cd {tarfile.as_posix()} gaea:{config["filesystem"]["gaea_input_data"]}/e{ens:02d}/initial/'
+            run([cmd], shell=True, check=True)
+    print(tarfile)
 
 
 if __name__ == '__main__':
@@ -219,11 +218,11 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gaea', help='gcp result to Gaea', action='store_true')
     # TODO: reusing old files is dangerous and should probably not be default 
     parser.add_argument('-r', '--rerun', help='Run even if previous files exist', action='store_true')
-    parser.add_argument('-e', '--ensemble', help='Write an ensemble of ICs', action='store_true')
+    parser.add_argument('-e', '--ensemble', type=int, help='Member number when writing an ensemble of ICs', required=False)
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-    if args.ensemble:
+    if args.ensemble is not None:
         main_ensemble(config, args)
     else:
         main_single(config, args)

@@ -14,12 +14,13 @@ if __name__ == '__main__':
         config = safe_load(file)
 
     model_output_data = Path(config['filesystem']['model_output_data'])
-    nens = config['forecasts']['ensemble_size']
+    nens = config['retrospective_forecasts']['ensemble_size']
     masks = xarray.open_dataset(config['regions']['mask_file'])
     outdir = model_output_data / 'extracted_region_average' / args.domain
     outdir.mkdir(parents=True, exist_ok=True)
 
     for e in range(1, nens+1):
+        # Note: this will pull in new forecasts in addition to retrospective forecasts.
         files = (model_output_data / 'extracted' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')
         for f in files:
             outname = outdir / f.name

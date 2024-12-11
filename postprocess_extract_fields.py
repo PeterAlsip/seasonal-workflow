@@ -141,22 +141,27 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-r','--rerun', action='store_true')
+    parser.add_argument('-n','--new', action='store_true')
     parser.add_argument('-D','--dry', action='store_true')
     parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
     parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config')
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-
-    first_year = args.year if args.year is not None else config['forecasts']['first_year']
-    last_year = args.year if args.year is not None else config['forecasts']['last_year']
-    months = [args.month if args.month is not None else config['forecasts']['months']]
-    nens = config['forecasts']['ensemble_size']
+    if args.new:
+        nens = config['new_forecasts']['ensemble_size']
+        if args.year is None or args.month is None:
+            raise Exception('Must provide year and month for the new forecast to extract')
+        first_year = last_year = args.year
+        months = [args.month]
+    else:
+        first_year = args.year if args.year is not None else config['retrospective_forecasts']['first_year']
+        last_year = args.year if args.year is not None else config['retrospective_forecasts']['last_year']
+        months = [args.month if args.month is not None else config['retrospective_forecasts']['months']]
+        nens = config['retrospective_forecasts']['ensemble_size']
     outdir = Path(config['filesystem']['model_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
-
     files_to_dmget = []
-
     for ystart in range(first_year, last_year+1):
         for mstart in months:
             for ens in range(1, nens+1):

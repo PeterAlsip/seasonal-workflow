@@ -57,7 +57,8 @@ if __name__ == '__main__':
     regridder = None
     model_input = Path(config['filesystem']['model_input_data']) / 'nudging'
     model_input.mkdir(exist_ok=True)
-    for year in range(config['forecasts']['first_year'], config['forecasts']['last_year']+1):
+    # TODO: merge with new file and add arg to choose year
+    for year in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
         print(f'{year}')
         glorys = (
             xarray.open_dataset(nudging_data.format(year=year))

@@ -114,6 +114,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int)
     parser.add_argument('-m', '--month', type=int)
+    parser.add_argument('-n','--new', action='store_true')
     parser.add_argument('-e', '--ensemble', type=int, default=-1, help='Ensemble member to extract (default -1 extracts all members set by config)')
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-r','--rerun', action='store_true', help='Write even if the files for this run already exist')
@@ -127,7 +128,8 @@ if __name__ == '__main__':
     work_dir.mkdir(exist_ok=True)
 
     if args.ensemble == -1:
-        nens = config['forecasts']['ensemble_size']
+        forecast_name = 'new_forecasts' if args.new else 'retrospective_forecasts'
+        nens = config[forecast_name]['ensemble_size']
         write_atmos_all_members(args.year, args.month, nens, work_dir, yslice, xslice, rerun=args.rerun)
     elif args.ensemble > 0:
         write_atmos(args.year, args.month, args.ensemble, work_dir, yslice, xslice, rerun=args.rerun)
