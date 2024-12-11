@@ -1,9 +1,10 @@
 import numpy as np
-import os
 import pandas as pd
+import sys
+from xesmf import Regridder
 import xarray
-import xesmf
-
+sys.path.append('../..')
+from utils import round_coords
 
 VARIABLES = ['thetao', 'so']
 
@@ -25,21 +26,52 @@ def add_bounds(ds):
     return bounded
 
 
-def reuse_regrid(*args, **kwargs):
-    filename = kwargs.pop('filename', None)
-    reuse_weights = kwargs.pop('reuse_weights', False)
 
-    if reuse_weights:
-        if filename.is_file():
-            return xesmf.Regridder(*args, reuse_weights=True, filename=filename, **kwargs)
-        else:
-            regrid = xesmf.Regridder(*args, **kwargs)
-            regrid.to_netcdf(filename)
-            return regrid
-    else:
-        regrid = xesmf.Regridder(*args, **kwargs)
-        return regrid
-
+def main(year, target_grid, input_dir, output_dir):
+    files = list(input_dir.glob(f'glorys_*_{year}-??.nc'))
+    glorys = (
+        xarray.open_mfdataset(files, chunks='auto', preprocess=lambda x: round_coords(x, to=12)) # without auto, chunks will be weird and loading will be slow
+        .rename({'latitude': 'lat', 'longitude': 'lon'})
+        .sel(depth=slice(None, 5300)) # make sure empty last depth is excluded
+        [VARIABLES]
+    ).load()
+    print('Interpolating')
+    glorys_to_t = Regridder(
+        glorys, target_grid, 
+        method='nearest_s2d', 
+        reuse_weights=False, #! Not reusing
+        periodic=False
+    )
+    interped = (
+        glorys_to_t(glorys)
+        .drop_vars(['lon', 'lat'], errors='ignore')
+        .compute()
+    ) 
+    bounded = add_bounds(interped)
+    bounded['xh'] = (('xh', ), target_grid.xh.data)
+    bounded['yh'] = (('yh', ), target_grid.yh.data)
+    all_vars = list(bounded.data_vars.keys()) + list(bounded.coords.keys())
+    encodings = {v: {'_FillValue': None} for v in all_vars}
+    encodings['time'].update({'dtype':'float64', 'calendar': 'gregorian', 'units': 'days since 1993-01-01'})
+    for v in ['xh', 'yh']:
+        encodings[v].update({'dtype': np.int32})
+    bounded['depth'].attrs = {
+        'units': 'meter',
+        'cartesian_axis': 'Z',
+        'positive': 'down'
+    }
+    bounded['time'].attrs['cartesian_axis'] = 'T'
+    bounded['xh'].attrs = {'cartesian_axis': 'X'}
+    bounded['yh'].attrs = {'cartesian_axis': 'Y'}
+    print('Writing')
+    bounded.to_netcdf(
+        output_dir / 'glorys_sponge_monthly_bnd_{year}.nc',
+        format='NETCDF3_64BIT',
+        engine='netcdf4',
+        encoding=encodings,
+        unlimited_dims='time'
+    )
+    glorys.close()
 
 
 if __name__ == '__main__':
@@ -47,65 +79,14 @@ if __name__ == '__main__':
     from pathlib import Path
     from yaml import safe_load
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config')
+    parser.add_argument('-y', '--year', type=int, required=True)
+    parser.add_argument('-c', '--config', required=True)
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
-    static = xarray.open_dataset(config['filesystem']['ocean_static'])
+    static = xarray.open_dataset(config['domain']['ocean_static_file'])
     target_grid = static[['geolat', 'geolon']].rename({'geolat': 'lat', 'geolon': 'lon'})
-    nudging_data = config['filesystem']['monthly_data_nudging']
-    regridder = None
-    model_input = Path(config['filesystem']['model_input_data']) / 'nudging'
-    model_input.mkdir(exist_ok=True)
-    # TODO: merge with new file and add arg to choose year
-    for year in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
-        print(f'{year}')
-        glorys = (
-            xarray.open_dataset(nudging_data.format(year=year))
-            .rename({'latitude': 'lat', 'longitude': 'lon'})
-            [VARIABLES]
-        )
-        print('  Filling')
-        filled = glorys.ffill('depth', limit=None)
-        filled = filled.compute()
-        if regridder is None:
-            print('  Setting up regridder')
-            regridder = reuse_regrid(
-                glorys, target_grid, 
-                filename=Path(os.environ['TMPDIR']) / 'regrid_nudging.nc', 
-                method='nearest_s2d', 
-                reuse_weights=True,
-                periodic=False
-            )
-        print('  Interpolating')
-        interped = (
-            regridder(filled)
-            .drop(['lon', 'lat'], errors='ignore')
-            .compute()
-        ) 
-        print('  Setting time bounds and coordinates')
-        bounded = add_bounds(interped)
-        # Add coordinate information
-        bounded['xh'] = (('xh', ), target_grid.xh.data)
-        bounded['yh'] = (('yh', ), target_grid.yh.data)
-        all_vars = list(bounded.data_vars.keys()) + list(bounded.coords.keys())
-        encodings = {v: {'_FillValue': None} for v in all_vars}
-        encodings['time'].update({'dtype':'float64', 'calendar': 'gregorian', 'units': 'days since 1993-01-01'})
-        bounded['depth'].attrs = {
-            'cartesian_axis': 'Z',
-            'positive': 'down'
-        }
-        bounded['time'].attrs['cartesian_axis'] = 'T'
-        bounded['xh'].attrs = {'cartesian_axis': 'X'}
-        bounded['yh'].attrs = {'cartesian_axis': 'Y'}
-        print('  Writing')
-        bounded.to_netcdf(
-            model_input / f'nudging_monthly_{year}.nc',
-            format='NETCDF3_64BIT',
-            engine='netcdf4',
-            encoding=encodings,
-            unlimited_dims='time'
-        )
-        glorys.close() 
-
+    input_dir = Path(config['filesystem']['nowcast_input_data']) / 'sponge' / 'monthly_filled'
+    output_dir = input_dir.parents[0]
+    main(args.year, target_grid, input_dir, output_dir)
 

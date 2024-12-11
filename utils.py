@@ -113,6 +113,12 @@ def modulo(ds):
     return ds
 
 
+def round_coords(ds, to, lat='latitude', lon='longitude'):
+    ds[lat] = np.round(ds[lat] * to ) / to
+    ds[lon] = np.round(ds[lon] * to) / to
+    return ds
+
+
 def smooth_climatology(da, window=5, dim='dayofyear'):
     smooth = da.copy()
     for _ in range(2):
