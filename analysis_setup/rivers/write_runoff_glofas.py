@@ -222,14 +222,10 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     return ds
 
 
-def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
+def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_subset, extension_climo, outdir, modify=True):
     ocean_mask = xarray.open_dataarray(mask_file)
     mom_coast_mask = get_coast_mask(ocean_mask)
     hgrid = xarray.open_dataset(hgrid_file)
-    # For NWA12: subset GloFAS to a smaller region containing NWA.
-    # TODO: hardcoded config
-    glofas_subset = dict(lat=slice(60, 0), lon=slice(-100, -30))
-
     # drainage direction already has coords named lat/lon and they are exactly 1/25 deg
     ldd = xarray.open_dataset(ldd_file).ldd.sel(**glofas_subset)
 
@@ -299,8 +295,8 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
     # with the climatology.
     if extend:
         print('Extending to end of year using climatology')
-        # TODO: hardcoded path to climatology. Also, this is the v3.0 climatology.
-        climo = xarray.open_dataset('/work/acr/mom6/nwa12/forecast_input_common/glofas_runoff_climo_1993_2019_2023-04-v2.nc')
+        # TODO: This is the v3.0 climatology.
+        climo = xarray.open_dataset(extension_climo)
         extend = climo.isel(time=slice(int(res['time.dayofyear'][-1])-1, None))
         back = climo.isel(time=0)
         extend = xarray.concat((extend, back),dim='time')
@@ -308,8 +304,7 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
         extend['time'] = new_times
         res = xarray.merge([res, extend.runoff])
 
-    # TODO: hardcoded config
-    out_file = f'/work/acr/mom6/nwa12/analysis_input_data/rivers/glofasv4_runoff_{year}.nc'
+    out_file = outdir / 'glofasv4_runoff_{year}.nc'
     encodings = get_encodings(res)
     res['time'].attrs = {'cartesian_axis': 'T'}
     res['x'].attrs = {'cartesian_axis': 'X'}
@@ -331,35 +326,24 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, modify=True):
 
 if __name__ == '__main__':
     import argparse
+    from pathlib import Path
+    from yaml import safe_load
     parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     parser.add_argument('-M','--modify', action='store_true', help='Apply corrections for location and bias')
     args = parser.parse_args()
+    with open(args.config, 'r') as file: 
+        config = safe_load(file)
+    d = config['domain']
+    subset = dict(lat=slice(d['north_lat'], d['south_lat']), lon=slice(d['west_lon'], d['east_lon']))
     main(
         args.year, 
-        mask_file='../../../nwa12/setup/grid/ocean_mask.nc',
-        hgrid_file='../../../nwa12/setup/grid/ocean_hgrid.nc',
-        ldd_file='/work/Utheri.Wagura/datasets/glofas/LDD/ldd_glofas_v4_0.nc',
-        glofas_template='/archive/uda/GloFAS/LISFLOOD/consolidated/global/river_discharge/v4.0/GloFAS_river_discharge_{y}_v4.0.nc',
-        # glofas_template='/vftmp/Andrew.C.Ross/glofas/GloFAS_river_discharge_{y}_v4.0.nc',
+        mask_file=d['ocean_mask_file'],
+        hgrid_file=d['hgrid_file'],
+        ldd_file=config['filesystem']['interim_data']['GloFAS_ldd'],
+        glofas_template=config['filesystem']['interim_data']['GloFAS_template'],
+        extension_climo=config['filesystem']['interim_data']['GloFAS_extension_climatology'],
+        outdir=Path(config['filesystem']['nowcast_input_data']) / 'rivers',
         modify=args.modify
     )
-
-
-        # if y == 2024:
-        #     import pandas as pd
-        #     climo = xarray.open_dataset('/work/acr/mom6/nwa12/forecast_input_common/glofas_runoff_climo_1993_2019_2023-04-v2.nc')
-        #     extend = climo.isel(time=slice(len(res.time), None))
-        #     back = climo.isel(time=0)
-        #     extend = xarray.concat((extend, back),dim='time')
-        #     new_times = pd.date_range(res.time[-1].values, freq='1D', periods=len(extend.time)+1)[1:]
-        #     extend['time'] = new_times
-        #     joined = xarray.merge([res, extend.runoff])
-        #     encodings = get_encodings(joined)
-        #     joined.to_netcdf(
-        #         out_file,
-        #         unlimited_dims=['time'],
-        #         format='NETCDF3_64BIT',
-        #         encoding=encodings,
-        #         engine='netcdf4'
-        #     )
