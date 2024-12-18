@@ -149,7 +149,7 @@ if __name__ == '__main__':
         nens = config['retrospective_forecasts']['ensemble_size']
     outdir = Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
-    variables = config['variables']['args.domain']
+    variables = config['variables'][args.domain]
     files_to_dmget = []
     for ystart in range(first_year, last_year+1):
         for mstart in months:
