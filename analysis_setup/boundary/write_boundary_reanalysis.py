@@ -2,6 +2,7 @@ from calendar import monthrange
 import concurrent.futures as futures
 from functools import partial
 from pathlib import Path
+import re
 import xarray
 from subprocess import run, DEVNULL
 import sys
@@ -12,7 +13,12 @@ from boundary import Segment
 
 
 def run_cmd(cmd):
-    run([cmd], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
+    # Some file names contain (1) or similar, which
+    # will cause problems if sent directly to dmget.
+    # Put a backslash in front of these. 
+    esc = re.sub(r'([\(\)])', r'\\\1', cmd)
+    #esc = cmd.replace('(', '\(').replace(')', '\)')
+    run([esc], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 TMP = hsmget.tmp
@@ -22,8 +28,8 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
         # For velocity, find the individual components separately.
         # Since u and v are in the same file for the analysis,
         # analysis files will be duplicated; remove them.
-        files  = find_best_files(year, mon, 'uo')
-        files += find_best_files(year, mon, 'vo')
+        files  = find_best_files(year, mon, 'uo', reanalysis_path, analysis_path)
+        files += find_best_files(year, mon, 'vo', reanalysis_path, analysis_path)
         files = sorted(set(files))
     else:
         # Use reanalysis files when they are available,
@@ -33,7 +39,7 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
             # Search for reanalysis file for the day.
             # If there are multiple files with different R* for the day,
             # choose the last one by sorted order.
-            reanalysis_file = sorted((reanalysis_path / var / str(year)).glob(f'*_{year}{mon:02d}{day:02d}_R*.nc'))
+            reanalysis_file = sorted((reanalysis_path / var / str(year)).glob(f'*_{year}{mon:02d}{day:02d}_R????????.nc'))
             if len(reanalysis_file) > 0:
                 files.append(reanalysis_file[-1])
             else:
@@ -67,16 +73,16 @@ def thread_worker(in_file, out_dir, lon_lat_box):
     return out_file
 
 
-def main(year, mon, var, segments, threads, analysis_path, reanalysis_path, lon_lat_box, dry=False):
+def main(year, mon, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=False):
     if mon == 'all':
         for m in range(1, 13):
             print(m)
-            main(year, m, var, segments, threads, analysis_path, reanalysis_path, lon_lat_box, dry=dry)
+            main(year, m, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=dry)
     else:
         mon = int(mon)
         if var == 'all':
             for v in ['so', 'thetao', 'uv', 'zos']:
-                main(year, mon, v, segments, threads, analysis_path, reanalysis_path, lon_lat_box, dry=dry)
+                main(year, mon, v, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=dry)
         else:
             print(var)
             files = find_best_files(year, mon, var, analysis_path=analysis_path, reanalysis_path=reanalysis_path)
@@ -122,13 +128,16 @@ if __name__ == '__main__':
     with open(args.config, 'r') as file: 
         config = safe_load(file)
     d = config['domain']
-    output_dir = Path(config['filesystem']['nowcast_input_data'] / 'boundary' / 'monthly')
+    hgrid = xarray.open_dataset(d['hgrid_file'])
+    output_dir = Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
     segments = [
-        Segment(num, edge, d['hgrid_file'], output_dir=output_dir)
+        Segment(num, edge, hgrid, output_dir=output_dir)
         for edge, num in d['boundaries'].items()
     ]
-    main(args.year, args.month, args.var, args.threads, dry=args.dry,
+    main(args.year, args.month, args.var, args.threads,
          segments=segments,
          lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
          reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
-         analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']))
+         analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']),
+         dry=args.dry
+         )

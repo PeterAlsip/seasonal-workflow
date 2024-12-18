@@ -8,7 +8,7 @@ eng = matlab.engine.start_matlab()
 s = eng.genpath('/home/Andrew.C.Ross/git/nwa12/setup/boundary/ESPER-main')
 eng.addpath(s, nargout=0)
 
-glorys_z = xarray.open_dataset('/work/acr/glorys/GLOBAL_MULTIYEAR_PHY_001_030/depths.nc').depth
+glorys_z = xarray.open_dataset('/work/acr/glorys/GLOBAL_MULTIYEAR_PHY_001_030/depths.nc').depth[0:-1] # last depth is dropped when writing BCs
 nz = len(glorys_z.values)
 
 desired_vars = np.array([1, 2], dtype='int')
@@ -22,7 +22,7 @@ for segment in [1, 2, 3]:
     print(f'Segment {segment:03d}')
     segstr = f'_segment_{segment:03d}'
     year_data = []
-    for yr in range(2022, 2026):
+    for yr in range(1993, 2026):
         print(yr)
         # temporary fix for partial years
         fileyear = 2023 if yr > 2023 else yr
@@ -65,6 +65,9 @@ for segment in [1, 2, 3]:
         ds['dz_dic'+segstr] = temp['dz_thetao'+segstr].isel(time=0).drop_vars('time')
         ds['time'] = [dt.datetime(yr, 7, 2)]
         year_data.append(ds)
+        salt.close()
+        temp.close()
+
     all_years = xarray.concat(year_data, dim='time')
     all_years = all_years.transpose('time', 'nz'+segstr, 'ny'+segstr, 'nx'+segstr)
     if 'calendar' in all_years['time'].attrs:
