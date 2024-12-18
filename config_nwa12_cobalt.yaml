@@ -20,7 +20,7 @@ snapshots:
 
 climatology:
   first_year: 1993
-  last_year: 2019
+  last_year: 2022
 
 domain:
   south_lat: 5
