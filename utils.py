@@ -3,6 +3,7 @@ from os import environ
 from getpass import getuser
 import numpy as np
 from pathlib import Path
+import re
 from shutil import which
 from subprocess import run, DEVNULL
 import xarray
@@ -14,6 +15,10 @@ class HSMGet():
     ptmp: Path = Path('/ptmp') / getuser()
     tmp: Path = Path(environ.get('TMPDIR', ptmp)) # can this ref self already?
 
+    def _run(self, cmd, stdout=DEVNULL, stderr=DEVNULL):
+        esc = re.sub(r'([\(\)])', r'\\\1', cmd)
+        return run(esc, shell=True, check=True, stdout=stdout, stderr=stderr)
+
     def __call__(self, path_or_paths):
         if which('hsmget') is None:
             print('Not using hsmget')
@@ -22,15 +27,15 @@ class HSMGet():
             relative = path_or_paths.relative_to(self.archive)
             # hsmget will do the dmget first and this is fine since it's one file
             cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {relative.as_posix()}'
-            run(cmd, shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
+            self._run(cmd)
             return (self.tmp / relative)
         elif iter(path_or_paths):
             p_str = ' '.join([p.as_posix() for p in path_or_paths])
-            run(f'dmget {p_str}', shell=True, check=True)
+            self._run(f'dmget {p_str}')
             relative = [p.relative_to(self.archive) for p in path_or_paths]
             rel_str = ' '.join([r.as_posix() for r in relative])
             cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {rel_str}'
-            run(cmd, shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
+            self._run(cmd)
             return [self.tmp / r for r in relative]
         else:
             raise Exception('Need a Path or iterable of Paths to get')
