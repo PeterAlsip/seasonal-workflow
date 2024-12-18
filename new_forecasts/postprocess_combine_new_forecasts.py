@@ -34,7 +34,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
             res[f'{var}_anom'] = res[var] * np.nan
         res = res.swap_dims({'lead': 'valid_time'}).transpose('valid_time', 'member', ...)
         encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month', 'valid_time'] if v in res}
-        fname = f'{var}.nwa.full.ssfcast.v2024-01-1.monthly.enss.i{y}{m:02d}.nc' # TODO
+        fname = f'{var}.nwa.full.ss_fcast.monthly.raw.r20241209.enss.i{y}{m:02d}.nc' # TODO: put this in config?
         res.to_netcdf(output_dir / fname, encoding=encoding)
 
 
