@@ -145,7 +145,7 @@ if __name__ == '__main__':
     else:
         first_year = args.year if args.year is not None else config['retrospective_forecasts']['first_year']
         last_year = args.year if args.year is not None else config['retrospective_forecasts']['last_year']
-        months = [args.month if args.month is not None else config['retrospective_forecasts']['months']]
+        months = [args.month] if args.month is not None else config['retrospective_forecasts']['months']
         nens = config['retrospective_forecasts']['ensemble_size']
     outdir = Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
