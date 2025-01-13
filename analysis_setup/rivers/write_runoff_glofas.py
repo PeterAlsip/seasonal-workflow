@@ -1,3 +1,4 @@
+from functools import partial
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 import os
@@ -81,6 +82,10 @@ def round_coords(ds, to=25):
     ds['latitude'] = np.round(ds['latitude'] * to ) / to
     ds['longitude'] = np.round(ds['longitude'] * to) / to
     return ds
+
+
+def drop_dup_time(ds):
+    return ds.drop_duplicates('time', keep='first')
 
 
 def center_to_outer(center, left=None, right=None):
@@ -222,12 +227,24 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     return ds
 
 
-def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_subset, extension_climo, outdir, modify=True):
+def get_glofas_file(main_template, interim_template, year):
+    main_file = main_template.format(y=year)
+    interim_file = interim_template.format(y=year)
+    if Path(main_file).is_file():
+        return main_file
+    elif Path(interim_file).is_file():
+        return interim_file
+    else:
+        return None
+
+
+def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_interim, glofas_subset, extension_climo, outdir, modify=True):
     ocean_mask = xarray.open_dataarray(mask_file)
     mom_coast_mask = get_coast_mask(ocean_mask)
     hgrid = xarray.open_dataset(hgrid_file)
     # drainage direction already has coords named lat/lon and they are exactly 1/25 deg
     ldd = xarray.open_dataset(ldd_file).ldd.sel(**glofas_subset)
+    get_file = partial(get_glofas_file, glofas_template, glofas_interim)
 
     # Start pour point mask to include points where ldd==5
     # and any surrounding point is ocean (nan in ldd)
@@ -255,21 +272,27 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_subset, 
 
     # temporarily deal with 1993 because of a problem with the data for 1992 
     if year == 1993:
-        files = [glofas_template.format(y=y) for y in [year, year+1]]
+        files = [get_file(y) for y in [year, year+1]]
     else:
-        files = [glofas_template.format(y=y) for y in [year-1, year]]
+        files = [get_file(y) for y in [year-1, year]]
 
     # Check if the next year is available
     # (need Jan 1 for padding)
-    next_file = glofas_template.format(y=year+1)
-    if Path(next_file).is_file() and not extend:
+    next_file = get_file(year+1)
+    if next_file is not None and not extend:
         files.append(next_file)
         extend = False
     else:
         extend = True
-        
+    
+    print('Using files:')
+    for f in files:
+        print(f)
+    if extend:
+        print('Extending with climatology')
+
     glofas = (
-        xarray.open_mfdataset(files, preprocess=round_coords)
+        xarray.open_mfdataset(files, preprocess=lambda x: drop_dup_time(round_coords(x)))
         .rename({'latitude': 'lat', 'longitude': 'lon'})
         .sel(time=slice(f'{year-1}-12-31 00:00:00', f'{year+1}-01-01 00:00:00'), **glofas_subset)
         .dis24
@@ -304,7 +327,7 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_subset, 
         extend['time'] = new_times
         res = xarray.merge([res, extend.runoff])
 
-    out_file = outdir / 'glofasv4_runoff_{year}.nc'
+    out_file = outdir / f'glofasv4_runoff_{year}.nc'
     encodings = get_encodings(res)
     res['time'].attrs = {'cartesian_axis': 'T'}
     res['x'].attrs = {'cartesian_axis': 'X'}
@@ -342,7 +365,9 @@ if __name__ == '__main__':
         mask_file=d['ocean_mask_file'],
         hgrid_file=d['hgrid_file'],
         ldd_file=config['filesystem']['interim_data']['GloFAS_ldd'],
-        glofas_template=config['filesystem']['interim_data']['GloFAS_template'],
+        glofas_template=config['filesystem']['interim_data']['GloFAS_v4'],
+        glofas_interim=config['filesystem']['interim_data']['GloFAS_interim'],
+        glofas_subset=subset,
         extension_climo=config['filesystem']['interim_data']['GloFAS_extension_climatology'],
         outdir=Path(config['filesystem']['nowcast_input_data']) / 'rivers',
         modify=args.modify

@@ -8,10 +8,11 @@ def process_climatology(years, input_files, output_dir):
     print('Opening dataset')
     rivers = xarray.open_mfdataset(
         input_files,
-        preprocess=lambda x: x.isel(time=slice(None, -1)) # skip padded days
+        preprocess=lambda x: x.isel(time=slice(None, -1)) # skip padded days. todo: both ends could be padded
     ) 
     vardata = rivers.runoff
     print('Calculating climatology by day')
+    # TODO: the newer glofas is the value over the previous 24 hours
     ave = vardata.groupby('time.dayofyear').mean('time').sel(dayofyear=slice(1, 365)).load()
     print('Smoothing daily climatology')
     smoothed = smooth_climatology(ave).rename({'dayofyear': 'time'}).load()
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     from pathlib import Path
     from yaml import safe_load
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config')
+    parser.add_argument('-c', '--config', required=True)
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
