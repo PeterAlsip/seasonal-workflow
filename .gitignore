@@ -1,3 +1,7 @@
 logs/*
 __pycache__/
 *.png
+# Workflow files
+*.out
+*.db
+*.log
