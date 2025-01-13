@@ -72,9 +72,6 @@ def main(year, interim_path, output_dir, lon_lat_box):
         tail = ds.isel(time=-1)
         tail['time'] = tail['time'] + pd.Timedelta(hours=1)
         ds = xarray.concat((ds, tail), dim='time').transpose('time', ...)
-        # Temporary hack for test run, where the time data
-        # was accidentally rolled back by 1 day during qa/qc.
-        ds['time'] = ds['time'].to_pandas() + pd.Timedelta(days=1)
         all_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
         encodings = {v: {'_FillValue': None, 'dtype': 'float32'} for v in all_vars}
         encodings['time'].update({'dtype':'float64', 'calendar': 'gregorian', 'units': 'hours since 1990-01-01'})
