@@ -376,6 +376,7 @@ class Segment():
         #     f'lon_{self.segstr}': dict(dtype='float64', _FillValue=1.0e20),
         #     f'lat_{self.segstr}': dict(dtype='float64', _FillValue=1.0e20)
         # }
+        encoding = {}
         ds[f'lon_{self.segstr}'].encoding['dtype'] = 'float64'
         ds[f'lat_{self.segstr}'].encoding['dtype'] = 'float64'
 
@@ -385,14 +386,14 @@ class Segment():
             ds.time.encoding['calendar']='gregorian'
             ds.time.encoding['dtype'] = 'float64'
             ds.time.encoding['_FillValue'] = 1.0e20
-        # if additional_encoding is not None:
-        #     encoding.update(additional_encoding)
+        if additional_encoding is not None:
+            encoding.update(additional_encoding)
         
         ds.to_netcdf(
             path.join(self.output_dir, fname),
             format='NETCDF3_64BIT',
             engine='netcdf4',
-            # encoding=encoding,
+            encoding=encoding,
             unlimited_dims='time'
         )
 

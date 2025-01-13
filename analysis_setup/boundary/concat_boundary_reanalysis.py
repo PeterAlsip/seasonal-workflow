@@ -15,15 +15,15 @@ def main(year, input_dir, output_dir, n_segments):
             prev_month = input_dir / f'{var}_{seg:03d}_{year-1}-12.nc'
             if prev_month.exists():
                 tail_file = prev_month.with_suffix('.tail.nc')
-                run_cmd(f'ncks {prev_month.as_posix()} -d time,-1,-1 -O {tail_file.as_posix()}')
+                run_cmd(f'ncks {prev_month} -d time,-1,-1 -O {tail_file}')
             else:
                 print('Padding with first time')
                 first_file = input_dir / f'{var}_{seg:03d}_{year}-01.nc'
                 tail_file = first_file.with_suffix('.tail.nc')
                 # Pick out the first time from the first month.
-                run_cmd(f'ncks {first_file.as_posix()} -d time,0,0 -O {tail_file.as_posix()}')
+                run_cmd(f'ncks {first_file} -d time,0,0 -O {tail_file}')
                 # Pad by subtracting one day from the time.
-                run_cmd(f'ncap2 -s "time-=1" {tail_file.as_posix()} -O {tail_file.as_posix()}')
+                run_cmd(f'ncap2 -s "time-=24" {tail_file} -O {tail_file}')
             available_months.append(tail_file)
             # Search for the months of this year, stopping
             # if one month is not found.
@@ -41,20 +41,25 @@ def main(year, input_dir, output_dir, n_segments):
             next_month = input_dir / f'{var}_{seg:03d}_{year+1}-01.nc'
             if len(available_months) == 13 and next_month.exists():
                 head_file = next_month.with_suffix('.head.nc')
-                run_cmd(f'ncks {next_month.as_posix()} -d time,0,0 -O {head_file.as_posix()}')
+                run_cmd(f'ncks {next_month} -d time,0,0 -O {head_file}')
             else:
                 print('Padding with last time')
                 last_file = available_months[-1]
                 head_file = last_file.with_suffix('.head.nc')
                 # Pick out the first time from the first month.
-                run_cmd(f'ncks {last_file.as_posix()} -d time,-1,-1 -O {head_file.as_posix()}')
+                run_cmd(f'ncks {last_file} -d time,-1,-1 -O {head_file}')
                 # Pad by subtracting one day from the time.
-                run_cmd(f'ncap2 -s "time+=1" {head_file.as_posix()} -O {head_file.as_posix()}')
+                run_cmd(f'ncap2 -s "time+=24" {head_file} -O {head_file}')
             available_months.append(head_file)
             output_file = output_dir / f'{var}_{seg:03d}_{year}.nc'
-            cmd = f'ncrcat {" ".join(map(lambda x: x.as_posix(), available_months))} -O {output_file.as_posix()}'
+            cmd = f'ncrcat {" ".join(map(str, available_months))} -O {output_file}'
             print(cmd)
             run_cmd(cmd)
+            # TODO: proleptic_gregorian attribute carries over because of setting 
+            # the time units when extracting.
+            # Fix it here for now.
+            # Also, time is an int but this could be ok since it's not int64. 
+            run_cmd(f'ncatted -a calendar,time,o,c,gregorian -O {output_file}')
             tail_file.unlink()
             head_file.unlink()
             print(' ')

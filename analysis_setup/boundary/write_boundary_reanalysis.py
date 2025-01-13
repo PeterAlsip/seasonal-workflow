@@ -107,9 +107,9 @@ def main(year, mon, var, threads, analysis_path, reanalysis_path, lon_lat_box, s
                     ds = ds.rename({'depth': 'z'})
                 for seg in segments:
                     if var == 'uv':
-                        seg.regrid_velocity(ds['uo'], ds['vo'], suffix=f'{year}-{mon:02d}', flood=False)
+                        seg.regrid_velocity(ds['uo'], ds['vo'], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
                     else:
-                        seg.regrid_tracer(ds[var], suffix=f'{year}-{mon:02d}', flood=False)
+                        seg.regrid_tracer(ds[var], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
                 for f in processed_files:
                         f.unlink()
 
