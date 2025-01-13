@@ -168,7 +168,8 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
 
 
 def main_single(config, cmdargs):
-    history = Path(config['filesystem']['analysis_history'])
+    history_type = 'nowcast_history' if cmdargs.now else 'analysis_history'
+    history = Path(config['filesystem'][history_type])
     outdir = Path(config['filesystem']['forecast_input_data']) / 'initial'
     outdir.mkdir(exist_ok=True)
     tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month) for c in config['snapshots']]
@@ -188,7 +189,8 @@ def main_single(config, cmdargs):
 
 def main_ensemble(config, cmdargs):
     ens = cmdargs.ensemble
-    history = Path(config['filesystem']['analysis_history'].format(ensemble=ens))
+    history_type = 'nowcast_history' if cmdargs.now else 'analysis_history'
+    history = Path(config['filesystem'][history_type].format(ensemble=ens))
     outdir = Path(config['filesystem']['forecast_input_data']) / f'e{ens:02d}' / 'initial'
     tarfile = outdir / f'forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
     if cmdargs.rerun or not tarfile.exists():
@@ -216,6 +218,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--month', type=int)
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-g', '--gaea', help='gcp result to Gaea', action='store_true')
+    parser.add_argument('-n', '--now', help='Use nowcast (extended nudged hindcast)', action='store_true')
     # TODO: reusing old files is dangerous and should probably not be default 
     parser.add_argument('-r', '--rerun', help='Run even if previous files exist', action='store_true')
     parser.add_argument('-e', '--ensemble', type=int, help='Member number when writing an ensemble of ICs', required=False)

@@ -105,6 +105,6 @@ filesystem:
     GloFAS_interim: /uda/CEFI/GloFAS/GloFAS_river_discharge_{y}_v4.0.nc
     GloFAS_extension_climatology: /work/acr/mom6/nwa12/forecast_input_common/glofas_runoff_climo_1993_2019_2023-04-v2.nc
   analysis_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d/gfdl.ncrc6-intel23-prod/history/
-  nowcast_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d_try2/gfdl.ncrc6-intel23-prod/history/    
+  nowcast_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/3/history/    
   forecast_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_cobalt_forecast_2024_09_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc6-intel23-prod/history/
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here
