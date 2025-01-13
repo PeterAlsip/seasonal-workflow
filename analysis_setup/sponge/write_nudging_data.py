@@ -65,7 +65,7 @@ def main(year, target_grid, input_dir, output_dir):
     bounded['yh'].attrs = {'cartesian_axis': 'Y'}
     print('Writing')
     bounded.to_netcdf(
-        output_dir / 'glorys_sponge_monthly_bnd_{year}.nc',
+        output_dir / f'glorys_sponge_monthly_bnd_{year}.nc',
         format='NETCDF3_64BIT',
         engine='netcdf4',
         encoding=encodings,
