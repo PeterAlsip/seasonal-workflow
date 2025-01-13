@@ -9,17 +9,20 @@ workflow:
   cycledef:
     - attrs:
         group: default
-      spec: "2024120100000 2024120100000 06:00:00"
+      # spec: "202412010000 202412010000 06:00:00"
+      spec: "202209300000 202209300000 06:00:00"
   log: /home/acr/git/seasonal-workflow/flow/log.log
   entities:
     ANALYSIS_INPUT: /work/acr/mom6/nwa12/analysis_input_data
     FORECAST_INPUT: /work/acr/mom6/nwa12/forecast_input_data
+    GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
+    CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
   tasks:
     task_write_spear_atmos:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source flow/env_setup.sh; python write_spear_atmos.py -c config_nwa12_cobalt.yaml -y 2025 -m 1"
+      command: "source flow/env_setup.sh; python write_spear_atmos.py -c &CONFIG; -y 2025 -m 1"
       jobname: write_spear_atmos
       partition: batch
       nodes: 1:ppn=1
@@ -29,7 +32,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source env_setup.sh; gcp -cd -r -v &FORECAST_INPUT;/atmos/2025-01-e?? gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/forecast_input_data/atmos"
+      command: "source env_setup.sh; gcp -cd -r -v &FORECAST_INPUT;/atmos/2025-01-e?? &GAEA_INPUT;/forecast_input_data/atmos"
       jobname: spear_gaea
       partition: batch
       nodes: 1:ppn=1
@@ -43,7 +46,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 5
-      command: "source ../../flow/env_setup.sh; python write_boundary_reanalysis.py -c ../../config_nwa12_cobalt.yaml -y 2024 -m 12"
+      command: "source ../../flow/env_setup.sh; python write_boundary_reanalysis.py -c &CONFIG; -y 2024 -m 12"
       jobname: write_boundary_reanalysis
       partition: analysis
       nodes: 1:ppn=4
@@ -53,7 +56,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source ../../flow/env_setup.sh; python concat_boundary_reanalysis.py -c ../../config_nwa12_cobalt.yaml -y 2024"
+      command: "source ../../flow/env_setup.sh; python concat_boundary_reanalysis.py -c &CONFIG; -y 2024"
       jobname: concat_boundary_reanalysis
       partition: batch
       nodes: 1:ppn=1
@@ -67,7 +70,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source env_setup.sh; gcp -cd -v &ANALYSIS_INPUT;/boundary/*_???_2024.nc gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/analysis_input_data/boundary/"
+      command: "source env_setup.sh; gcp -cd -v &ANALYSIS_INPUT;/boundary/*_???_2024.nc &GAEA_INPUT;/analysis_input_data/boundary/"
       jobname: boundary_gaea
       partition: batch
       nodes: 1:ppn=1
@@ -81,7 +84,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source ../../flow/env_setup.sh; python write_nudging_data.py -c ../../config_nwa12_cobalt.yaml -y 2024"
+      command: "source ../../flow/env_setup.sh; python write_nudging_data.py -c &CONFIG; -y 2024"
       jobname: write_nudging_data
       partition: batch
       nodes: 1:ppn=1
@@ -95,7 +98,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source env_setup.sh; gcp -cd -v &ANALYSIS_INPUT;/sponge/glorys_sponge_monthly_bnd_2024.nc gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/analysis_input_data/sponge/"
+      command: "source env_setup.sh; gcp -cd -v &ANALYSIS_INPUT;/sponge/glorys_sponge_monthly_bnd_2024.nc &GAEA_INPUT;/analysis_input_data/sponge/"
       jobname: nudging_gaea
       partition: batch
       nodes: 1:ppn=1
@@ -109,7 +112,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 10
-      command: "source ../../flow/env_setup.sh; python write_runoff_glofas.py -c ../../config_nwa12_cobalt.yaml -y 2024"
+      command: "source ../../flow/env_setup.sh; python write_runoff_glofas.py -c &CONFIG; -y 2024"
       jobname: write_runoff_glofas
       partition: batch
       nodes: 1:ppn=1
@@ -119,7 +122,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source env_setup.sh; gcp -cd -v &ANALYSIS_INPUT;/rivers/glofasv4_runoff_2024.nc gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/analysis_input_data/rivers/"
+      command: "source env_setup.sh; gcp -cd -v &ANALYSIS_INPUT;/rivers/glofasv4_runoff_2024.nc &GAEA_INPUT;/analysis_input_data/rivers/"
       jobname: runoff_gaea
       partition: batch
       nodes: 1:ppn=1
@@ -133,7 +136,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source env_setup.sh; gcp -cd -r -v &FORECAST_INPUT;/atmos/2025-01-e?? gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/forecast_input_data/atmos"
+      command: "source env_setup.sh; gcp -cd -r -v &FORECAST_INPUT;/atmos/2025-01-e?? &GAEA_INPUT;/forecast_input_data/atmos"
       jobname: spear_gaea
       partition: batch
       nodes: 1:ppn=1
@@ -147,7 +150,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source ../../flow/env_setup.sh; python pad_era5.py -c ../../config_nwa12_cobalt.yaml -y 2024"
+      command: "source ../../flow/env_setup.sh; python pad_era5.py -c &CONFIG; -y 2024"
       jobname: pad_era5
       partition: batch
       nodes: 1:ppn=1
@@ -157,7 +160,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 10
-      command: "source ../../flow/env_setup.sh; python era5_lp.py -t /work/acr/mom6/nwa12/analysis_input_data/atmos/ERA5_tp_2024_padded.nc -s /work/acr/mom6/nwa12/analysis_input_data/atmos/ERA5_sf_2024_padded.nc -o /work/acr/mom6/nwa12/analysis_input_data/atmos/"
+      command: "source ../../flow/env_setup.sh; python era5_lp.py -t &ANALYSIS_INPUT;/atmos/ERA5_tp_2024_padded.nc -s &ANALYSIS_INPUT;/atmos/ERA5_sf_2024_padded.nc -o &ANALYSIS_INPUT;/atmos/"
       jobname: era5_lp
       partition: batch
       nodes: 1:ppn=1
@@ -171,7 +174,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source ../../flow/env_setup.sh; python era5_sphum.py -d /work/acr/mom6/nwa12/analysis_input_data/atmos/ERA5_d2m_2024_padded.nc -p /work/acr/mom6/nwa12/analysis_input_data/atmos/ERA5_sp_2024_padded.nc"
+      command: "source ../../flow/env_setup.sh; python era5_sphum.py -d &ANALYSIS_INPUT;/atmos/ERA5_d2m_2024_padded.nc -p &ANALYSIS_INPUT;/atmos/ERA5_sp_2024_padded.nc"
       jobname: era5_sphum
       partition: batch
       nodes: 1:ppn=1
@@ -185,7 +188,7 @@ workflow:
       attrs:
         cycledefs: default
         maxtries: 10
-      command: "source ~/git/seasonal-workflow/flow/env_setup.sh; gcp -cd -v ERA5_strd_2024_padded.nc ERA5_ssrd_2024_padded.nc ERA5_lp_2024_padded.nc ERA5_sf_2024_padded.nc ERA5_msl_2024_padded.nc ERA5_t2m_2024_padded.nc ERA5_sphum_2024_padded.nc ERA5_u10_2024_padded.nc ERA5_v10_2024_padded.nc gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/analysis_input_data/atmos/"
+      command: "source ~/git/seasonal-workflow/flow/env_setup.sh; gcp -cd -v ERA5_strd_2024_padded.nc ERA5_ssrd_2024_padded.nc ERA5_lp_2024_padded.nc ERA5_sf_2024_padded.nc ERA5_msl_2024_padded.nc ERA5_t2m_2024_padded.nc ERA5_sphum_2024_padded.nc ERA5_u10_2024_padded.nc ERA5_v10_2024_padded.nc &GAEA_INPUT;/analysis_input_data/atmos/"
       jobname: era5_gaea
       partition: batch
       nodes: 1:ppn=1
@@ -203,34 +206,46 @@ workflow:
             attrs:
               task: era5_lp
     # After analysis simulation has run:
-    task_write_ics_from_snapshot:
+    task_write_ics:
       attrs:
         cycledefs: default
         maxtries: 3
-      command: "source flow/env_setup.sh; python write_ics_from_snapshot.py -c config_nwa12_cobalt.yaml -y 2025 -m 1 -g"
-      jobname: write_ics_from_snapshot
+      command: "source flow/env_setup.sh; python write_ics_from_snapshot.py -c &CONFIG; -y 2025 -m 1 --new --rerun"
+      jobname: write_ics
       partition: batch
       nodes: 1:ppn=1
-      walltime: 04:00:00
+      walltime: 02:00:00
       native: -D /home/acr/git/seasonal-workflow --output=flow/logs/ics_%j.out
       dependency:
         datadep:
-          value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/2/history/20240101.nc.tar"
-
-
-
-    # task_goodbye:
-    #   attrs:
-    #     cycledefs: default
-    # maxtries: 3
-    #   command: "echo goodbye $person"
-    #   jobname: goodbye
-    #   partition: batch
-    #   nodes: 1:ppn=1
-    #   walltime: 00:01:00
-    #   envars:
-    #     person: world
-    #   dependency:
-    #     taskdep:
-    #       attrs:
-    #         task: hello
+          value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/3/history/20240101.nc.tar"
+    task_ics_gaea:
+      attrs:
+        cycledefs: default
+        maxtries: 3
+      command: "source env_setup.sh; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_2025-01.tar &GAEA_INPUT;/forecast_input_data/initial/"
+      jobname: ics_gaea
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 03:00:00
+      native: --output=logs/ics_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_ics
+    # Test how to use the cyclestr
+    task_test_cyclestr:
+      attrs:
+        cycledefs: default
+        maxtries: 3
+      command: 
+        # TODO: use an offset so that SPEAR is current month and year but 
+        # everything else is minus one day?
+        cyclestr:
+          value:
+            "echo @Y"
+      jobname: test_cyclestr
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 01:00:00
+      native: -D /home/acr/git/seasonal-workflow --output=flow/logs/test_%j.out
