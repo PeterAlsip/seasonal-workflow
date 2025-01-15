@@ -13,13 +13,16 @@ workflow:
       # spec: "202412010000 202412010000 06:00:00"
       #spec: "202501010000 202501010000 06:00:00"
       spec: "202410010000 202410010000 06:00:00"
-  log: /home/acr/git/seasonal-workflow/flow/log.log
+  log: 
+    cyclestr:
+      value: /home/acr/git/seasonal-workflow/flow/log_@Y-@m.log
   entities:
     ANALYSIS_INPUT: /work/acr/mom6/nwa12/analysis_input_data
     FORECAST_INPUT: /work/acr/mom6/nwa12/forecast_input_data
     GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
     CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
-    ENV_SETUP: "source ~/git/seasonal-workflow/flow/env_setup.sh;"
+    ENV_SETUP: "source /home/acr/git/seasonal-workflow/flow/env_setup.sh;"
+    LOGS: /home/acr/git/seasonal-workflow/flow/logs
   tasks:
     task_write_spear_atmos:
       attrs:
@@ -30,7 +33,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow --output=flow/logs/spear_atmos_%j.out
+      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/spear_atmos_%j.out
     task_spear_gaea:
       attrs:
         cycledefs: default
@@ -40,7 +43,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 0:30:00
-      native: --output=logs/spear_gaea_%j.out
+      native: --output=&LOGS;/spear_gaea_%j.out
       dependency:
         taskdep:
           attrs:
@@ -56,7 +59,7 @@ workflow:
       partition: analysis
       nodes: 1:ppn=4
       walltime: 04:00:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/boundary --output=../../flow/logs/write_boundary_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/boundary --output=&LOGS;/write_boundary_%j.out
     task_concat_boundary:
       attrs:
         cycledefs: default
@@ -68,7 +71,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 00:30:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/boundary --output=../../flow/logs/concat_boundary_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/boundary --output=&LOGS;/concat_boundary_%j.out
       dependency:
         taskdep:
           attrs:
@@ -84,7 +87,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 0:30:00
-      native: --output=logs/boundary_gaea_%j.out
+      native: --output=&LOGS;/boundary_gaea_%j.out
       dependency:
         taskdep:
           attrs:
@@ -100,7 +103,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 00:30:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/sponge --output=../../flow/logs/nudging_data_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/sponge --output=&LOGS;/nudging_data_%j.out
       dependency:
         taskdep:
           attrs:
@@ -116,7 +119,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 01:00:00
-      native: --output=logs/nudging_gaea_%j.out
+      native: --output=&LOGS;/nudging_gaea_%j.out
       dependency:
         taskdep:
           attrs:
@@ -132,7 +135,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 01:00:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/rivers --output=../../flow/logs/runoff_glofas_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/rivers --output=&LOGS;/runoff_glofas_%j.out
     task_runoff_gaea:
       attrs:
         cycledefs: default
@@ -144,7 +147,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 0:30:00
-      native: --output=logs/runoff_gaea_%j.out
+      native: --output=&LOGS;/runoff_gaea_%j.out
       dependency:
         taskdep:
           attrs:
@@ -160,7 +163,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 01:00:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=../../flow/logs/pad_era5_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=&LOGS;/pad_era5_%j.out
     task_era5_lp:
       attrs:
         cycledefs: default
@@ -172,7 +175,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 00:30:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=../../flow/logs/era5_lp_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=&LOGS;/era5_lp_%j.out
       dependency:
         taskdep:
           attrs:
@@ -188,7 +191,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 0:30:00
-      native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=../../flow/logs/era5_sphum_%j.out
+      native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=&LOGS;/era5_sphum_%j.out
       dependency:
         taskdep:
           attrs:
@@ -204,7 +207,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 2:00:00
-      native: -D &ANALYSIS_INPUT;/atmos/ --output=/home/acr/git/seasonal-workflow/flow/logs/era5_gaea_%j.out
+      native: -D &ANALYSIS_INPUT;/atmos/ --output=&LOGS;/era5_gaea_%j.out
       # the and in these dependencies may not be interpreted correctly?
       dependency:
         and:
@@ -227,7 +230,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow --output=flow/logs/ics_%j.out
+      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
       dependency:
         datadep:
           value:
@@ -242,7 +245,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 03:00:00
-      native: --output=logs/ics_gaea_%j.out
+      native: --output=&LOGS;/ics_gaea_%j.out
       dependency:
         taskdep:
           attrs:
