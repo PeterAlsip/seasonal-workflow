@@ -1,3 +1,6 @@
+# Can also do something like:
+# sbatch --export=ALL --wrap="python postprocess_extract_fields.py -c config_nwa12_physics.yaml -d ocean_daily -y 2019 -m 3"
+
 from dataclasses import dataclass
 import datetime as dt
 from getpass import getuser
@@ -24,6 +27,7 @@ class ForecastRun:
     mstart: int
     ens: int
     template: str
+    outdir: Path
     name: str = ''
     domain: str = 'ocean_month'
     dry_run: bool = False
@@ -73,6 +77,14 @@ class ForecastRun:
         """
         return f'{self.ystart}-{self.mstart:02d}-e{self.ens:02d}.{self.domain}.nc'
     
+    @property
+    def exists(self):
+         return (run.archive_dir / run.tar_file).is_file()
+    
+    @property
+    def needs_dmget(self):
+        return self.exists and not (run.vftmp_dir / run.file_name).is_file() and not (run.ptmp_dir / run.file_name).is_file()
+    
     def run_cmd(self, cmd):
         print(cmd)
         if not self.dry_run:
@@ -82,6 +94,8 @@ class ForecastRun:
         """
         Extract the file for this domain, from the tar file on archive, to the path on /ptmp.
         """
+        if not self.exists:
+            raise FileNotFoundError(f'File {(self.archive_dir / self.tar_file)} does not exist.')
         self.ptmp_dir.mkdir(parents=True, exist_ok=True)
         cmd = f'tar xf {(self.archive_dir / self.tar_file).as_posix()} -C {self.ptmp_dir.as_posix()} ./{self.file_name}'
         self.run_cmd(cmd)
@@ -94,31 +108,31 @@ class ForecastRun:
         cmd = f'gcp {(self.ptmp_dir / self.file_name).as_posix()} {self.vftmp_dir.as_posix()}'
         self.run_cmd(cmd)
 
-    def process_file(self, outfile, variables=None, infile=None):
+    def process_file(self, variables=None, infile=None, outfile=None):
         if infile is None:
             infile = self.vftmp_dir / self.file_name
+        if outfile is None:
+            outfile = self.outdir / self.out_name
         print(f'process_file({infile})')
         if not self.dry_run:
-            ds = xarray.open_dataset(infile)
-            if variables is None:
-                variables = list(ds.data_vars)
-            ds = ds[variables]
-            ds['member'] = int(self.ens)
-            ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
-            ds['lead'] = (('time', ), np.arange(len(ds['time'])))
-            if 'daily' in self.domain:
-                ds['lead'].attrs['units'] = 'months'
-            else:
-                if len(ds['lead']) > 12:
-                    print('Setting units to days. Number of lead times is long.')
+            with xarray.open_dataset(infile) as ds:
+                if variables is None:
+                    variables = list(ds.data_vars)
+                ds = ds[variables]
+                ds['member'] = int(self.ens)
+                ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
+                ds['lead'] = (('time', ), np.arange(len(ds['time'])))
+                if 'daily' in self.domain or len(ds['lead']) > 12:
                     ds['lead'].attrs['units'] = 'days'
-                ds['lead'].attrs['units'] = 'months'
-            ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
-            ds = ds.expand_dims('init')
-            ds = ds.transpose('init', 'lead', ...)
-            ds = ds.drop_vars('time')
-            ds.to_netcdf(outfile, unlimited_dims='init')
-            ds.close()
+                else:
+                    ds['lead'].attrs['units'] = 'months'
+                ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
+                ds = ds.expand_dims('init')
+                ds = ds.transpose('init', 'lead', ...)
+                ds = ds.drop_vars('time')
+                # Compress output to significantly reduce space
+                encoding = {var: dict(zlib=True, complevel=3) for var in variables}
+                ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
 
 if __name__ == '__main__':
@@ -150,63 +164,65 @@ if __name__ == '__main__':
     outdir = Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
     variables = config['variables'][args.domain]
-    files_to_dmget = []
-    for ystart in range(first_year, last_year+1):
-        for mstart in months:
-            for ens in range(1, nens+1):
-                run = ForecastRun(
-                    ystart=ystart, 
-                    mstart=mstart, 
-                    ens=ens,
-                    name=config['name'],
-                    template=config['filesystem']['forecast_history'],
-                    domain=args.domain,
-                    dry_run=args.dry
-                )
-                # Check if a processed file exists
-                if not (outdir / run.out_name).is_file() or args.rerun:
-                    # Check if an extracted data file exists
-                    if not (run.vftmp_dir / run.file_name).is_file() and not (run.ptmp_dir / run.file_name).is_file():
-                        # Check if the raw data exists in archive
-                        if (run.archive_dir / run.tar_file).is_file():
-                            files_to_dmget.append((run.archive_dir / run.tar_file).as_posix())
-                        else:
-                            print(f'{(run.archive_dir / run.tar_file).as_posix()} not found in archive')
+    all_runs = [
+        ForecastRun(
+            ystart=ystart, 
+            mstart=mstart, 
+            ens=ens,
+            name=config['name'],
+            template=config['filesystem']['forecast_history'],
+            domain=args.domain,
+            dry_run=args.dry,
+            outdir=outdir
+        )
+        for ystart in range(first_year, last_year+1) 
+            for mstart in months 
+                for ens in range(1, nens+1)
+    ]
+    # Prefer to dmget all files that need it in one command, if possible.
+    runs_to_dmget = []
+    for run in all_runs:
+        if not (run.outdir / run.out_name).is_file() or args.rerun:
+            if run.needs_dmget:
+                runs_to_dmget.append(run)#(run.archive_dir / run.tar_file))
 
-    if len(files_to_dmget) > 0:
-        print(f'dmgetting {len(files_to_dmget)} files')
+    # Try running one dmget command for all files.
+    if len(runs_to_dmget) > 0:
+        print(f'dmgetting {len(runs_to_dmget)} files')
         if not args.dry:
-            subprocess.run([f'dmget {" ".join(files_to_dmget)}'], shell=True, check=True)
+            file_names = [str(run.archive_dir / run.tar_file) for run in runs_to_dmget]
+            dmget = subprocess.run([f'dmget {" ".join(file_names)}'], shell=True, capture_output=True, universal_newlines=True)
+            # If a tape is bad, the single dmget will fail.
+            # Try running dmget separately for each individual file.
+            # If the dmget fails, remove the run from the all_runs list
+            # so that it is not extracted or worked on later. 
+            if dmget.returncode > 0:
+                if 'unable to recall the requested file' in dmget.stderr:
+                    print('dmget failed. Running dmget separately for each file.')
+                    for run in runs_to_dmget:
+                        try:
+                            subprocess.run([f'dmget {run.archive_dir / run.tar_file}'], shell=True, check=True)
+                        except subprocess.CalledProcessError:
+                            print(f'Could not dmget {run.archive_dir / run.tar_file}. Removing from list of files to extract.')
+                            all_runs.remove(run)
+                else:
+                    # dmget failed, but not with the usual error associated with a bad file/tape.
+                    raise subprocess.CalledProcessError(dmget.returncode, str(dmget.args), output=dmget.stdout, stderr=dmget.stderr)
     else:
         print('No files to dmget')
 
-    for ystart in range(first_year, last_year+1):
-        for mstart in months:
-            for ens in range(1, nens+1):
-                run = ForecastRun(
-                    ystart=ystart, 
-                    mstart=mstart, 
-                    ens=ens,
-                    name=config['name'],
-                    template=config['filesystem']['forecast_history'],
-                    domain=args.domain,
-                    dry_run=args.dry
-                )
-                outfile = outdir / run.out_name
-                # Check if a processed file exists
-                if not outfile.is_file() or args.rerun:
-                    # Check if an extracted data file exists
-                    if (run.vftmp_dir / run.file_name).is_file():
-                        run.process_file(outfile, variables=variables)
-                    # Check if a cached tar file exists
-                    elif (run.ptmp_dir / run.file_name).is_file():
-                        run.copy_from_ptmp()
-                        run.process_file(outfile, variables=variables)
-                    else:
-                        # Check if the raw data exists in archive
-                        if (run.archive_dir / run.tar_file).is_file():
-                            run.copy_from_archive()
-                            run.copy_from_ptmp()
-                            run.process_file(outfile, variables=variables)
-                        else:
-                            print(f'{(run.archive_dir / run.tar_file).as_posix()} not found in archive')
+    for run in all_runs:
+        # Check if a processed file exists
+        if not (run.outdir / run.out_name).is_file() or args.rerun:
+            # Check if an extracted data file exists
+            if (run.vftmp_dir / run.file_name).is_file():
+                run.process_file(variables=variables)
+            # Check if a cached tar file exists
+            elif (run.ptmp_dir / run.file_name).is_file():
+                run.copy_from_ptmp()
+                run.process_file(variables=variables)
+            else:
+                run.copy_from_archive()
+                run.copy_from_ptmp()
+                run.process_file(variables=variables)
+
