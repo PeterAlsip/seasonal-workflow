@@ -8,25 +8,22 @@ def process_climatology(years, input_files, output_dir):
     print('Opening dataset')
     rivers = xarray.open_mfdataset(
         input_files,
-        preprocess=lambda x: x.isel(time=slice(None, -1)) # skip padded days. todo: both ends could be padded
+        preprocess=lambda x: x.isel(time=slice(1, -1)) # skip padded days (both ends are padded in glofas v4)
     ) 
     vardata = rivers.runoff
     print('Calculating climatology by day')
-    # TODO: the newer glofas is the value over the previous 24 hours
     ave = vardata.groupby('time.dayofyear').mean('time').sel(dayofyear=slice(1, 365)).load()
     print('Smoothing daily climatology')
     smoothed = smooth_climatology(ave).rename({'dayofyear': 'time'}).load()
     print('Preparing to write')
     smoothed = modulo(smoothed)
     # time gets inserted when using open_mfdataset
-    res = rivers[['area', 'lat', 'lon']].isel(time=0).drop('time')
+    res = rivers[['area', 'lat', 'lon']].isel(time=0).drop_vars('time')
     # add smoothed result to res
     res['runoff'] = smoothed
     print('Writing')
     res.to_netcdf(
         output_dir / f'glofas_runoff_climo_{years[0]:d}_{years[-1]:d}.nc',
-        format='NETCDF3_64BIT',
-        engine='netcdf4',
         unlimited_dims='time'
     )
 

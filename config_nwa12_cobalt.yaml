@@ -58,6 +58,7 @@ variables:
     - tob
     - sos
     - ssh
+    - MLD_003
   ocean_cobalt_btm:
     - btm_o2
     - btm_co3_sol_arag
@@ -94,8 +95,8 @@ filesystem:
   nowcast_input_data: /work/acr/mom6/nwa12/analysis_input_data
   forecast_output_data: /work/acr/mom6/nwa12/forecast_output_data
   gaea_input_data: /gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/forecast_input_data
-  yearly_river_files: /work/acr/mom6/nwa12/glofas/glofas_runoff_{year}.nc
-  open_boundary_files: /work/acr/mom6/nwa12/glorys/updated
+  yearly_river_files: /work/acr/mom6/nwa12/analysis_input_data/rivers/glofasv4_runoff_{year}.nc
+  open_boundary_files: /work/acr/mom6/nwa12/glorys/updated # TODO
   interim_data:
     ERA5: /archive/uda/CEFI/ERA5
     GLORYS_reanalysis: /archive/uda/Global_Ocean_Physics_Reanalysis/global/daily
@@ -103,6 +104,7 @@ filesystem:
     GloFAS_ldd: /work/Utheri.Wagura/datasets/glofas/LDD/ldd_glofas_v4_0.nc
     GloFAS_v4: /archive/uda/GloFAS/LISFLOOD/consolidated/global/river_discharge/v4.0/GloFAS_river_discharge_{y}_v4.0.nc
     GloFAS_interim: /uda/CEFI/GloFAS/GloFAS_river_discharge_{y}_v4.0.nc
+    # Using version 3 until v4 is fully evaluated
     GloFAS_extension_climatology: /work/acr/mom6/nwa12/forecast_input_common/glofas_runoff_climo_1993_2019_2023-04-v2.nc
   analysis_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d/gfdl.ncrc6-intel23-prod/history/
   nowcast_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/3/history/    

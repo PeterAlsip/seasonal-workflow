@@ -157,14 +157,14 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     glofas_regridded[:, 700:, 150:300] = 0.0
     
     if modify:
-        # For NWA12 only: Mississippi River adjustment.
+        # For NWA12 only and GloFAS v4 only: Mississippi River adjustment.
         # Adjust to be approximately the same as the USGS station at Belle Chasse, LA
         # and relocate closer to the end of the delta.
-        ms_total_kg = glofas_regridded[:, 317:320, 106:108] 
+        ms_total_kg = glofas_regridded[:, 312:314, 108] 
         # Convert to m3/s
-        ms_total_cms = (ms_total_kg * np.broadcast_to(area[317:320, 106:108], ms_total_kg.shape)).sum(axis=(1, 2)) / 1000.0 
-        ms_corrected = 0.5192110112243014 * ms_total_cms + 3084.5571334312735
-        glofas_regridded[:, 317:320, 106:108] = 0.0
+        ms_total_cms = (ms_total_kg * np.broadcast_to(area[312:314, 108], ms_total_kg.shape)).sum(axis=1) / 1000.0 
+        ms_corrected = 0.5800588699054435 * ms_total_cms + 3842.60956525417
+        glofas_regridded[:, 312:314, 108] = 0.0
         new_ms_coords = [(314, 108), (315, 107), (317, 112)]
         for c in new_ms_coords:
             y, x = c
@@ -190,13 +190,13 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     nearest_coast = coast_to_mom(coast_id)
     
     if modify:
-        # For NWA12 only: the Susquehanna gets mapped to the Delaware
+        # For NWA12 only and GloFAS v4 only: the Susquehanna gets mapped to the Delaware
         # because NWA12 only has the lower half of the Chesapeake.
         # Move the nearest grid point for the Susquehanna Region
         # to the one for the lower bay.
         # see notebooks/check_glofas_susq.ipynb
         target = nearest_coast[455, 271]
-        nearest_coast[460:480, 265:278] = target
+        nearest_coast[460:480, 265:280] = target
     
     nearest_coast = nearest_coast.ravel()
 
@@ -272,14 +272,14 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_interim,
 
     # temporarily deal with 1993 because of a problem with the data for 1992 
     if year == 1993:
-        files = [get_file(y) for y in [year, year+1]]
+        files = [get_file(year)]
     else:
         files = [get_file(y) for y in [year-1, year]]
 
     # Check if the next year is available
     # (need Jan 1 for padding)
     next_file = get_file(year+1)
-    if next_file is not None and not extend:
+    if next_file is not None:
         files.append(next_file)
         extend = False
     else:

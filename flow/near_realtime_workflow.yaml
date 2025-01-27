@@ -131,7 +131,7 @@ workflow:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
-          value: "&ENV_SETUP; python write_runoff_glofas.py -c &CONFIG; -y @Y"
+          value: "&ENV_SETUP; python write_runoff_glofas.py -c &CONFIG; -y @Y --modify"
       partition: batch
       nodes: 1:ppn=1
       walltime: 01:00:00
