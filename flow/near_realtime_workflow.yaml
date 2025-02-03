@@ -12,7 +12,7 @@ workflow:
         group: default
       # spec: "202412010000 202412010000 06:00:00"
       #spec: "202501010000 202501010000 06:00:00"
-      spec: "202410010000 202410010000 06:00:00"
+      spec: "202502010000 202502010000 06:00:00"
   log: 
     cyclestr:
       value: /home/acr/git/seasonal-workflow/flow/log_@Y-@m.log
@@ -34,6 +34,13 @@ workflow:
       nodes: 1:ppn=1
       walltime: 02:00:00
       native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/spear_atmos_%j.out
+      dependency:
+        sh:
+          command: 
+            cyclestr:
+              value: "test -d /archive/l1j/spear_med/rf_hist/fcst/s_j11_OTA_IceAtmRes_L33/i@Y@m01_OTA_IceAtmRes_L33/pp_ens_05"
+          attrs: # attrs is supposed to be optional but uw tools will fail if it isn't there.
+            shell: "/bin/csh"
     task_spear_gaea:
       attrs:
         cycledefs: default
@@ -60,6 +67,40 @@ workflow:
       nodes: 1:ppn=4
       walltime: 04:00:00
       native: -D /home/acr/git/seasonal-workflow/analysis_setup/boundary --output=&LOGS;/write_boundary_%j.out
+      dependency:
+        and:
+          sh_so:
+            command: 
+              cyclestr:
+                attrs:
+                  offset: "-01:00:00:00"
+                value: "test -d /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-so_anfc_0.083deg_P1D-m_202406/@Y/@m"
+            attrs:
+              shell: "/bin/csh"
+          sh_thetao:
+            command: 
+              cyclestr:
+                attrs:
+                  offset: "-01:00:00:00"
+                value: "test -d /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m_202406/@Y/@m"
+            attrs:
+              shell: "/bin/csh"
+          sh_zos:
+            command: 
+              cyclestr:
+                attrs:
+                  offset: "-01:00:00:00"
+                value: "test -d /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/@Y/@m"
+            attrs:
+              shell: "/bin/csh"
+          sh_currents:
+            command: 
+              cyclestr:
+                attrs:
+                  offset: "-01:00:00:00"
+                value: "test -d /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/@Y/@m"
+            attrs:
+              shell: "/bin/csh"
     task_concat_boundary:
       attrs:
         cycledefs: default
@@ -107,7 +148,7 @@ workflow:
       dependency:
         taskdep:
           attrs:
-            task: write_boundary_reanalysis
+            task: write_boundary
     task_nudging_gaea:
       attrs:
         cycledefs: default
@@ -136,6 +177,13 @@ workflow:
       nodes: 1:ppn=1
       walltime: 01:00:00
       native: -D /home/acr/git/seasonal-workflow/analysis_setup/rivers --output=&LOGS;/runoff_glofas_%j.out
+      dependency:
+        datadep:
+          value:
+            cyclestr: 
+              attrs:
+                offset: "-01:00:00:00"
+              value: /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@m@Y_v4.0.nc
     task_runoff_gaea:
       attrs:
         cycledefs: default
@@ -164,6 +212,68 @@ workflow:
       nodes: 1:ppn=1
       walltime: 01:00:00
       native: -D /home/acr/git/seasonal-workflow/analysis_setup/atmos --output=&LOGS;/pad_era5_%j.out
+      dependency:
+        and:
+          datadep_d2m:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/2m_dewpoint_temperature/ERA5_d2m_@m@Y.nc
+          datadep_msl:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/mean_sea_level_pressure/ERA5_msl_@m@Y.nc
+          datadep_sf:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/snowfall/ERA5_sf_@m@Y.nc
+          datadep_sp:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/surface_pressure/ERA5_sp_@m@Y.nc
+          datadep_ssrd:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/surface_solar_radiation_downwards/ERA5_ssrd_@m@Y.nc
+          datadep_strd:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/surface_thermal_radiation_downwards/ERA5_strd_@m@Y.nc
+          datadep_t2m:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/2m_temperature/ERA5_t2m_@m@Y.nc
+          datadep_tp:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/total_precipitation/ERA5_total_precipitation_@m@Y.nc
+          datadep_u10:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/10m_u_component_of_wind/ERA5_u10_@m@Y.nc
+          datadep_v10:
+            value:
+              cyclestr: 
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/ERA5/10m_v_component_of_wind/ERA5_v10_@m@Y.nc
     task_era5_lp:
       attrs:
         cycledefs: default
@@ -208,45 +318,44 @@ workflow:
       nodes: 1:ppn=1
       walltime: 2:00:00
       native: -D &ANALYSIS_INPUT;/atmos/ --output=&LOGS;/era5_gaea_%j.out
-      # the and in these dependencies may not be interpreted correctly?
       dependency:
         and:
-          taskdep:
+          taskdep_pad:
             attrs:
               task: pad_era5
-          taskdep:
+          taskdep_sphum:
             attrs:
               task: era5_sphum
-          taskdep:
+          taskdep_lp:
             attrs:
               task: era5_lp
-    # After analysis simulation has run:
-    task_write_ics:
-      attrs:
-        cycledefs: default
-      command: 
-        cyclestr:
-          value: "&ENV_SETUP; python write_ics_from_snapshot.py -c &CONFIG; -y @Y -m @m --new --rerun"
-      partition: batch
-      nodes: 1:ppn=1
-      walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
-      dependency:
-        datadep:
-          value:
-            cyclestr:
-              value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/3/history/@Y@m01.nc.tar"
-    task_ics_gaea:
-      attrs:
-        cycledefs: default
-      command: 
-        cyclestr:
-          value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
-      partition: batch
-      nodes: 1:ppn=1
-      walltime: 03:00:00
-      native: --output=&LOGS;/ics_gaea_%j.out
-      dependency:
-        taskdep:
-          attrs:
-            task: write_ics
+    # # After analysis simulation has run:
+    # task_write_ics:
+    #   attrs:
+    #     cycledefs: default
+    #   command: 
+    #     cyclestr:
+    #       value: "&ENV_SETUP; python write_ics_from_snapshot.py -c &CONFIG; -y @Y -m @m --new --rerun"
+    #   partition: batch
+    #   nodes: 1:ppn=1
+    #   walltime: 02:00:00
+    #   native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
+    #   dependency:
+    #     datadep:
+    #       value:
+    #         cyclestr:
+    #           value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/3/history/@Y@m01.nc.tar"
+    # task_ics_gaea:
+    #   attrs:
+    #     cycledefs: default
+    #   command: 
+    #     cyclestr:
+    #       value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
+    #   partition: batch
+    #   nodes: 1:ppn=1
+    #   walltime: 03:00:00
+    #   native: --output=&LOGS;/ics_gaea_%j.out
+    #   dependency:
+    #     taskdep:
+    #       attrs:
+    #         task: write_ics
