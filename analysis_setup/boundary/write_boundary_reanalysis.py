@@ -91,27 +91,32 @@ def main(year, mon, var, threads, analysis_path, reanalysis_path, lon_lat_box, s
                 for f in files:
                     print(f.as_posix())
             else:
-                copied_files = hsmget(files)
+                # Make sure that data was found for every day of the month. 
+                n_expected = monthrange(year, mon)[1]
+                if len(files) == n_expected:
+                    copied_files = hsmget(files)
 
-                with futures.ThreadPoolExecutor(max_workers=threads) as executor:
-                    processed_files = sorted(executor.map(partial(thread_worker, out_dir=TMP, lon_lat_box=lon_lat_box), copied_files))
+                    with futures.ThreadPoolExecutor(max_workers=threads) as executor:
+                        processed_files = sorted(executor.map(partial(thread_worker, out_dir=TMP, lon_lat_box=lon_lat_box), copied_files))
 
-                # Save data for use with sponge. TODO: config output path
-                if var in ['so', 'thetao']:
-                    run_cmd(f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc')
-                ds = (
-                    xarray.open_mfdataset(processed_files, preprocess=partial(round_coords, to=12))
-                    .rename({'latitude': 'lat', 'longitude': 'lon'})
-                )
-                if 'depth' in ds.coords:
-                    ds = ds.rename({'depth': 'z'})
-                for seg in segments:
-                    if var == 'uv':
-                        seg.regrid_velocity(ds['uo'], ds['vo'], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
-                    else:
-                        seg.regrid_tracer(ds[var], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
-                for f in processed_files:
-                        f.unlink()
+                    # Save data for use with sponge. TODO: config output path
+                    if var in ['so', 'thetao']:
+                        run_cmd(f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc')
+                    ds = (
+                        xarray.open_mfdataset(processed_files, preprocess=partial(round_coords, to=12))
+                        .rename({'latitude': 'lat', 'longitude': 'lon'})
+                    )
+                    if 'depth' in ds.coords:
+                        ds = ds.rename({'depth': 'z'})
+                    for seg in segments:
+                        if var == 'uv':
+                            seg.regrid_velocity(ds['uo'], ds['vo'], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
+                        else:
+                            seg.regrid_tracer(ds[var], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
+                    for f in processed_files:
+                            f.unlink()
+                else:
+                    print('Did not find all files')
 
 
 if __name__ == '__main__':

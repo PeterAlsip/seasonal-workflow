@@ -227,24 +227,49 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     return ds
 
 
-def get_glofas_file(main_template, interim_template, year):
+def get_glofas_file(main_template, interim_template, monthly_template, year):
     main_file = main_template.format(y=year)
     interim_file = interim_template.format(y=year)
+    # Check for a full year of data from the main dataset
     if Path(main_file).is_file():
         return main_file
+    # Check for a full year of data from the interim dataset.
     elif Path(interim_file).is_file():
         return interim_file
+    # Check for files for individual months from the interim dataset.
+    # Stop as soon as a month isn't found. 
     else:
-        return None
+        monthly_files = []
+        for m in range(1, 13):
+            mf = monthly_template.format(m=m, y=year)
+            if Path(mf).is_file():
+                monthly_files.append(mf)
+            else:
+                break
+        if len(monthly_files) > 0:
+            return monthly_files
+        else:
+            return None
 
 
-def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_interim, glofas_subset, extension_climo, outdir, modify=True):
+def flatten(lst):
+    flat_list = []
+    for item in lst:
+        if isinstance(item, list):
+            flat_list.extend(flatten(item))
+        else:
+            flat_list.append(item)
+    return flat_list
+
+
+def main(year, mask_file, hgrid_file, ldd_file, glofas_template, 
+         glofas_interim, glofas_interim_monthly, glofas_subset, extension_climo, outdir, modify=True):
     ocean_mask = xarray.open_dataarray(mask_file)
     mom_coast_mask = get_coast_mask(ocean_mask)
     hgrid = xarray.open_dataset(hgrid_file)
     # drainage direction already has coords named lat/lon and they are exactly 1/25 deg
     ldd = xarray.open_dataset(ldd_file).ldd.sel(**glofas_subset)
-    get_file = partial(get_glofas_file, glofas_template, glofas_interim)
+    get_file = partial(get_glofas_file, glofas_template, glofas_interim, glofas_interim_monthly)
 
     # Start pour point mask to include points where ldd==5
     # and any surrounding point is ocean (nan in ldd)
@@ -284,6 +309,11 @@ def main(year, mask_file, hgrid_file, ldd_file, glofas_template, glofas_interim,
         extend = False
     else:
         extend = True
+
+    # If individual months of interim data were found,
+    # the result will probably be a list of one or more lists. 
+    # Flatten to a single list. 
+    files = flatten(files)
     
     print('Using files:')
     for f in files:
@@ -367,6 +397,7 @@ if __name__ == '__main__':
         ldd_file=config['filesystem']['interim_data']['GloFAS_ldd'],
         glofas_template=config['filesystem']['interim_data']['GloFAS_v4'],
         glofas_interim=config['filesystem']['interim_data']['GloFAS_interim'],
+        glofas_interim_monthly=config['filesystem']['interim_data']['GloFAS_interim_monthly'],
         glofas_subset=subset,
         extension_climo=config['filesystem']['interim_data']['GloFAS_extension_climatology'],
         outdir=Path(config['filesystem']['nowcast_input_data']) / 'rivers',

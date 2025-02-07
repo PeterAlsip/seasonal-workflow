@@ -10,8 +10,6 @@ workflow:
   cycledef:
     - attrs:
         group: default
-      # spec: "202412010000 202412010000 06:00:00"
-      #spec: "202501010000 202501010000 06:00:00"
       spec: "202502010000 202502010000 06:00:00"
   log: 
     cyclestr:
@@ -62,7 +60,7 @@ workflow:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
-          value: "&ENV_SETUP; python write_boundary_reanalysis.py -c &CONFIG; -y @Y"
+          value: "&ENV_SETUP; python write_boundary_reanalysis.py -c &CONFIG; -y @Y -m @m"
       partition: analysis
       nodes: 1:ppn=4
       walltime: 04:00:00
@@ -219,43 +217,43 @@ workflow:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/2m_dewpoint_temperature/ERA5_d2m_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/2m_dewpoint_temperature/ERA5_2m_dewpoint_temperature_@m@Y.nc
           datadep_msl:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/mean_sea_level_pressure/ERA5_msl_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/mean_sea_level_pressure/ERA5_mean_sea_level_pressure_@m@Y.nc
           datadep_sf:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/snowfall/ERA5_sf_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/snowfall/ERA5_snowfall_@m@Y.nc
           datadep_sp:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/surface_pressure/ERA5_sp_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/surface_pressure/ERA5_surface_pressure_@m@Y.nc
           datadep_ssrd:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/surface_solar_radiation_downwards/ERA5_ssrd_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/surface_solar_radiation_downwards/ERA5_surface_solar_radiation_downwards_@m@Y.nc
           datadep_strd:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/surface_thermal_radiation_downwards/ERA5_strd_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/surface_thermal_radiation_downwards/ERA5_surface_thermal_radiation_downwards_@m@Y.nc
           datadep_t2m:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/2m_temperature/ERA5_t2m_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/2m_temperature/ERA5_2m_temperature_@m@Y.nc
           datadep_tp:
             value:
               cyclestr: 
@@ -267,13 +265,13 @@ workflow:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/10m_u_component_of_wind/ERA5_u10_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/10m_u_component_of_wind/ERA5_10m_u_component_of_wind_@m@Y.nc
           datadep_v10:
             value:
               cyclestr: 
                 attrs:
                   offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/10m_v_component_of_wind/ERA5_v10_@m@Y.nc
+                value: /archive/uda/CEFI/ERA5/10m_v_component_of_wind/ERA5_10m_v_component_of_wind_@m@Y.nc
     task_era5_lp:
       attrs:
         cycledefs: default
@@ -329,33 +327,35 @@ workflow:
           taskdep_lp:
             attrs:
               task: era5_lp
-    # # After analysis simulation has run:
-    # task_write_ics:
-    #   attrs:
-    #     cycledefs: default
-    #   command: 
-    #     cyclestr:
-    #       value: "&ENV_SETUP; python write_ics_from_snapshot.py -c &CONFIG; -y @Y -m @m --new --rerun"
-    #   partition: batch
-    #   nodes: 1:ppn=1
-    #   walltime: 02:00:00
-    #   native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
-    #   dependency:
-    #     datadep:
-    #       value:
-    #         cyclestr:
-    #           value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_now_nudgets-90d/gfdl.ncrc6-intel23-prod/3/history/@Y@m01.nc.tar"
-    # task_ics_gaea:
-    #   attrs:
-    #     cycledefs: default
-    #   command: 
-    #     cyclestr:
-    #       value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
-    #   partition: batch
-    #   nodes: 1:ppn=1
-    #   walltime: 03:00:00
-    #   native: --output=&LOGS;/ics_gaea_%j.out
-    #   dependency:
-    #     taskdep:
-    #       attrs:
-    #         task: write_ics
+    # After analysis simulation has run:
+    task_write_ics:
+      attrs:
+        cycledefs: default
+      command: 
+        cyclestr:
+          value: "&ENV_SETUP; python write_ics_from_snapshot.py -c &CONFIG; -y @Y -m @m --now --rerun"
+      partition: analysis
+      nodes: 1:ppn=1
+      walltime: 02:00:00
+      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
+      dependency:
+        datadep:
+          value:
+            cyclestr:
+              attrs:
+                offset: "-01:00:00:00" # TODO: will this always be the beginning of the year?
+              value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i202502/gfdl.ncrc6-intel23-prod/history/@Y@m01.nc.tar"
+    task_ics_gaea:
+      attrs:
+        cycledefs: default
+      command: 
+        cyclestr:
+          value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 03:00:00
+      native: --output=&LOGS;/ics_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_ics
