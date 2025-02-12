@@ -11,7 +11,6 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').squeeze().load()
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
-    # todo: different method if lead has units months or days
     if isinstance(model_ds.lead.values[0], np.timedelta64):
         valid_time = (model_ds.init + model_ds.lead).data
     elif 'units' in model_ds['lead'].attrs and model_ds['lead'].attrs['units'] == 'days':
@@ -34,7 +33,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
             print(f'Climatology not found for month {m}. Setting anomalies to nan')
             res = model_ds[[var, 'valid_time']].copy()
             res[f'{var}_anom'] = res[var] * np.nan
-        res = res.swap_dims({'lead': 'valid_time'}).transpose('valid_time', 'member', ...)
+        res = res.transpose('lead', 'member', ...)
         encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month', 'valid_time'] if v in res}
         # Compress main variable to reduce space
         encoding.update({v: dict(zlib=True, complevel=3) for v in [var, f'{var}_anom']})
