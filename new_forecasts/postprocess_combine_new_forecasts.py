@@ -12,7 +12,9 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
     # todo: different method if lead has units months or days
-    if model_ds['lead'].attrs['units'] == 'days':
+    if isinstance(model_ds.lead.values[0], np.timedelta64):
+        valid_time = (model_ds.init + model_ds.lead).data
+    elif 'units' in model_ds['lead'].attrs and model_ds['lead'].attrs['units'] == 'days':
         valid_time = [model_ds.init.values + pd.Timedelta(days=int(l)) for l in model_ds.lead]
     else:
         valid_time = [model_ds.init.values + pd.DateOffset(months=int(l)) for l in model_ds.lead]

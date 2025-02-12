@@ -1,3 +1,4 @@
+import numpy as np
 import os
 from pathlib import Path
 from subprocess import run
@@ -33,7 +34,12 @@ def process_var(var, config, cmdargs):
         for e in range(1, nens+1):
             out_file = tmp / f'{cmdargs.domain}_{var}_e{e:02d}.nc'
             if not out_file.exists() or cmdargs.rerun:
-                files = list((model_output_data / 'extracted' / cmdargs.domain).glob(f'????-??-e{e:02d}.{cmdargs.domain}.nc'))
+                files = []
+                for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
+                    for m in config['retrospective_forecasts']['months']:
+                        tentative = model_output_data / 'extracted' / cmdargs.domain / f'{y}-{m:02d}-e{e:02d}.{cmdargs.domain}.nc'
+                        if tentative.is_file():
+                            files.append(tentative)
                 if len(files) > 0:
                     file_str = ' '.join(map(lambda x: x.as_posix(), files))
                     print(f'ncrcat {len(files)} files to {out_file}')
@@ -44,6 +50,7 @@ def process_var(var, config, cmdargs):
     print(f'Concat by {concat_dim}')
     model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim=concat_dim).sortby('init') # sorting is important for slicing later
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').load()
+    model_ds['lead'] = np.arange(len(model_ds['lead']))
     print('Ensemble mean and anomalies')
     if cmdargs.mean:
         ensmean = model_ds
@@ -58,13 +65,13 @@ def process_var(var, config, cmdargs):
     model_ds = xarray.merge([model_ds, anom])
     # Write the climatology, being sure that appropriate coords are ints.
     # Also trying to remove the empty dimension "time" from the output.
-    encoding = {v: {'dtype': 'int32'} for v in ['lead', 'month']}
+    encoding = {v: {'dtype': 'int32'} for v in ['month']}
     climo.encoding = {}
     print('Writing climatology')
     climo.to_netcdf(model_output_data / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc',
         encoding=encoding)
     # Do the same for the full set of forecasts
-    encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month'] if v in model_ds}
+    encoding = {v: {'dtype': 'int32'} for v in ['member', 'month'] if v in model_ds}
     print('Writing forecasts')
     fname = f'forecasts_{cmdargs.domain}_{var}_ensmean.nc' if cmdargs.mean else f'forecasts_{cmdargs.domain}_{var}.nc'
     model_ds.to_netcdf(model_output_data / fname, encoding=encoding)
