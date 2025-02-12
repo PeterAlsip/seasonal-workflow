@@ -27,6 +27,7 @@ if __name__ == '__main__':
     # Note: this will pull in new forecasts in addition to retrospective
     for e in range(1, nens+1):
         print(f'Member {e}')
+        print(model_output_data / 'extracted_region_average' / args.domain)
         files = sorted(list((model_output_data / 'extracted_region_average' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')))
         if len(files) > 0:
             ds = xarray.open_mfdataset(files).load()

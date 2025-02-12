@@ -49,8 +49,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-v', '--var', type=str, default='all')
     parser.add_argument('-r','--rerun', action='store_true')
-    parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
-    parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config') 
+    parser.add_argument('-y', '--year', type=int, required=True, help='Initial year of new forecast')
+    parser.add_argument('-m', '--month', type=int, required=True, help='Initial month of new forecast') 
     parser.add_argument('-o', '--output', type=str, help='Where to place output files', required=False)   
     args = parser.parse_args()
     with open(args.config, 'r') as file: 

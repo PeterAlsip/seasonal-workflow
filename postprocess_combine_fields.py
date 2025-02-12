@@ -85,7 +85,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-v', '--var', type=str, required=True)
-    parser.add_argument('-r','--rerun', action='store_true')
+    parser.add_argument('-r', '--rerun', action='store_true')
     parser.add_argument('-m', '--mean', action='store_true', help='Include only ensemble mean in combined result, dropping individual members.')
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
