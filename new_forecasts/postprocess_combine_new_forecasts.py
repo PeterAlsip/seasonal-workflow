@@ -7,7 +7,7 @@ import xarray
 def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
     model_output_data = Path(config['filesystem']['forecast_output_data'])
     members = (model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc')
-    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member')
+    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member', combine_attrs='drop_conflicts')
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').squeeze().load()
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
@@ -34,6 +34,8 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
             res = model_ds[[var, 'valid_time']].copy()
             res[f'{var}_anom'] = res[var] * np.nan
         res = res.transpose('lead', 'member', ...)
+        # Could also add this attribute?
+        #res.attrs['cefi_climatology_file'] = str(climo_file.name)
         encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month', 'valid_time'] if v in res}
         # Compress main variable to reduce space
         encoding.update({v: dict(zlib=True, complevel=3) for v in [var, f'{var}_anom']})
