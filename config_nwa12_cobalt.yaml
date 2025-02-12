@@ -2,7 +2,7 @@ name: nwa12_cobalt
 
 retrospective_forecasts:
   first_year: 1994
-  last_year: 2022
+  last_year: 2023
   months:
     - 2
     - 6
@@ -19,8 +19,8 @@ snapshots:
   - ocean_cobalt_tracers
 
 climatology:
-  first_year: 1993
-  last_year: 2022
+  first_year: 1994
+  last_year: 2023
 
 domain:
   south_lat: 5
