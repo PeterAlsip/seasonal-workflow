@@ -222,8 +222,10 @@ if __name__ == '__main__':
             elif (run.ptmp_dir / run.file_name).is_file():
                 run.copy_from_ptmp()
                 run.process_file(variables=variables)
-            else:
+            elif run.exists:
                 run.copy_from_archive()
                 run.copy_from_ptmp()
                 run.process_file(variables=variables)
+            else:
+                print(f'{run.archive_dir/run.tar_file} not found; skipping.')
 
