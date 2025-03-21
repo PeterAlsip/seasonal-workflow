@@ -27,7 +27,7 @@ if __name__ == '__main__':
             if not outname.exists() or args.rerun:
                 print(f)
                 averages = []
-                with xarray.open_dataset(f) as ds:
+                with xarray.open_dataset(f, decode_timedelta=False) as ds:
                     if 'xh_sub01' in ds and 'yh_sub01' in ds:
                         ds = ds.rename({'xh_sub01': 'xh', 'yh_sub01': 'yh'})
                     for reg in config['regions']['names']:

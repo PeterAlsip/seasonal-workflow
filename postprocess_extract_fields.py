@@ -115,7 +115,7 @@ class ForecastRun:
             outfile = self.outdir / self.out_name
         print(f'process_file({infile})')
         if not self.dry_run:
-            with xarray.open_dataset(infile) as ds:
+            with xarray.open_dataset(infile, decode_timedelta=False) as ds:
                 if variables is None:
                     variables = list(ds.data_vars)
                 ds = ds[variables]

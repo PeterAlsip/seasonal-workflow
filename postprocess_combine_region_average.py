@@ -30,7 +30,7 @@ if __name__ == '__main__':
         print(model_output_data / 'extracted_region_average' / args.domain)
         files = sorted(list((model_output_data / 'extracted_region_average' / args.domain).glob(f'????-??-e{e:02d}.{args.domain}.nc')))
         if len(files) > 0:
-            ds = xarray.open_mfdataset(files).load()
+            ds = xarray.open_mfdataset(files, decode_timedelta=False).load()
             ds['member'] = e
             members.append(ds)
             ds.close()

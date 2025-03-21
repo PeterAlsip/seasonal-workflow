@@ -48,7 +48,7 @@ def process_var(var, config, cmdargs):
 
     concat_dim = 'init' if cmdargs.mean else 'member'
     print(f'Concat by {concat_dim}')
-    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim=concat_dim).sortby('init') # sorting is important for slicing later
+    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim=concat_dim, decode_timedelta=False).sortby('init') # sorting is important for slicing later
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').load()
     model_ds['lead'] = np.arange(len(model_ds['lead']))
     print('Ensemble mean and anomalies')
