@@ -152,6 +152,15 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
                 if new_var not in snapshot:
                     print(f'Adding {new_var} to snapshot')
                     snapshot[new_var] = snapshot[f'n{s}'] / 16.0
+    elif 'ice' in component:
+        # Convert ice and snow thickness from the outpu units (m)
+        # to the units that the model expects for initial conditions
+        # (kg m-2) by using the constant densities of ice and snow.
+        scaling = {'hice': 905.0, 'hsnow': 330.0}
+        for var, scale in scaling.items():
+            if var in snapshot:
+                print(f'Converting {var} to kg m-2')
+                snapshot[var] *= scale
 
     # write the results to tmp
     print('writing')
@@ -174,7 +183,7 @@ def main_single(config, cmdargs):
     outdir.mkdir(exist_ok=True)
     tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month) for c in config['snapshots']]
     file_str = ' '.join(map(lambda x: x.name, tmp_files))
-    tarfile = f'{outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
+    tarfile = f'{outdir.as_posix()}/forecast_ics_fixedice_{cmdargs.year}-{cmdargs.month:02d}.tar'
     cmd = f'tar cvf {tarfile} -C {TMP} {file_str}'
     run_cmd(cmd)
     for f in tmp_files:
