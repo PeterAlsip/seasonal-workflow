@@ -130,7 +130,7 @@ class ForecastRun:
                 ds = ds.expand_dims('init')
                 ds = ds.transpose('init', 'lead', ...)
                 ds = ds.drop_vars('time')
-                ds.attrs[f'cefi_archive_version_ens{self.ens:02d}'] = str(self.archive_dir / self.tar_file)
+                ds.attrs[f'cefi_archive_version_ens{self.ens:02d}'] = str(self.archive_dir.parent)
                 # Compress output to significantly reduce space
                 encoding = {var: dict(zlib=True, complevel=3) for var in variables}
                 ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
