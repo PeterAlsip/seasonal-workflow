@@ -97,6 +97,7 @@ filesystem:
   gaea_input_data: /gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input/forecast_input_data
   yearly_river_files: /work/acr/mom6/nwa12/analysis_input_data/rivers/glofasv4_runoff_{year}.nc
   open_boundary_files: /work/acr/mom6/nwa12/glorys/updated # TODO
+  glorys_interpolated: /work/acr/glorys/interpolated
   interim_data:
     ERA5: /archive/uda/CEFI/ERA5
     GLORYS_reanalysis: /archive/uda/Global_Ocean_Physics_Reanalysis/global/daily

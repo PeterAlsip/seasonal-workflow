@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from os import environ
 from getpass import getuser
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import re
 from shutil import which
@@ -139,3 +140,24 @@ def smooth_climatology(da, window=5, dim='dayofyear'):
             .isel(**{dim: slice(window, -window)})
         )
     return smooth
+
+
+def match_obs_to_forecasts(obs, forecasts, init_dim='init', lead_dim='lead'):
+    matching_obs = []
+    for l in forecasts[lead_dim]:
+        # TODO: this is hard-coded to assume monthly data
+        target_times = forecasts[init_dim].to_index() + pd.DateOffset(months=l)
+        try:
+            match = obs.sel(time=target_times)
+        except KeyError as err:
+            missing_times = [t for t in target_times if t not in obs['time']]
+            print('These forecast times are not in the observations:')
+            print(missing_times)
+            raise err
+        match['time'] = forecasts['init'].values
+        match['lead'] = l
+        matching_obs.append(match)
+    matching_obs = xarray.concat(matching_obs, dim='lead').rename({'time': 'init'})
+    matching_obs = matching_obs.transpose('init', 'lead', ...)
+    return matching_obs
+    
