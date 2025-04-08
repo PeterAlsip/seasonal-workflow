@@ -38,7 +38,7 @@ def slice_ds(ds, xslice, yslice):
 
 def process_spear(root, domain, freq, var, ens=None, xslice=None, yslice=None):
     files = sorted(glob(os.path.join(root, f'{domain}.*-*.{var}.nc')))
-    processed = xarray.open_mfdataset(files, preprocess=prepro, combine='nested', concat_dim='start', chunks=None, parallel=False)[var]
+    processed = xarray.open_mfdataset(files, preprocess=prepro, combine='nested', concat_dim='init', chunks=None, parallel=False, decode_timedelta=False)[var]
     processed = slice_ds(processed, xslice, yslice)
 
     if ens != 'pp_ensemble':
