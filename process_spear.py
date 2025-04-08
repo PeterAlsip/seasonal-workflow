@@ -6,7 +6,7 @@ import xarray
 
 
 def prepro(ds):
-    ds['start'] = (('start', ), [dt.datetime(int(ds['time.year'][0]), int(ds['time.month'][0]), 1)])
+    ds['init'] = (('init', ), [dt.datetime(int(ds['time.year'][0]), int(ds['time.month'][0]), 1)])
     ds['lead'] = (('time', ), np.arange(len(ds['time'])))
     ds = ds.swap_dims({'time': 'lead'})
     ds = ds.rename({'time': 'valid_time'})
