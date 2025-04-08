@@ -60,7 +60,7 @@ workflow:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
-          value: "&ENV_SETUP; python write_boundary_reanalysis.py -c &CONFIG; -y @Y -m @m"
+          value: "&ENV_SETUP; python write_boundary_reanalysis.py -c &CONFIG; -y @Y -m @m --update"
       partition: analysis
       nodes: 1:ppn=4
       walltime: 04:00:00

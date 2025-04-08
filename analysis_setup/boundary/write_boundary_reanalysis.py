@@ -73,9 +73,10 @@ def thread_worker(in_file, out_dir, lon_lat_box):
     return out_file
 
 
-def main(year, mon, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=False):
-    if mon == 'all':
-        for m in range(1, 13):
+def main(year, mon, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, update=False, dry=False):
+    if mon == 'all' or update:
+        last_month = 12 if mon == 'all' else int(mon)
+        for m in range(1, last_month+1):
             print(m)
             main(year, m, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=dry)
     else:
@@ -128,6 +129,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--month', default='all')
     parser.add_argument('-v', '--var', default='all')
     parser.add_argument('-t', '--threads', type=int, default=4)
+    parser.add_argument('-u', '--update', action='store_true', help='Update/rerun all months leading up to the current month.')
     parser.add_argument('-D', '--dry', action='store_true', help='Dry run: only print out the files that would be worked on.')
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
@@ -144,5 +146,6 @@ if __name__ == '__main__':
          lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
          reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
          analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']),
+         update=args.update,
          dry=args.dry
          )
