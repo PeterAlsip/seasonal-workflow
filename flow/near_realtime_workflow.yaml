@@ -181,7 +181,7 @@ workflow:
             cyclestr: 
               attrs:
                 offset: "-01:00:00:00"
-              value: /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@m@Y_v4.0.nc
+              value: /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@Y_v4.0.nc
     task_runoff_gaea:
       attrs:
         cycledefs: default
