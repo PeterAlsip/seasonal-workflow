@@ -183,7 +183,7 @@ def main_single(config, cmdargs):
     outdir.mkdir(exist_ok=True)
     tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month) for c in config['snapshots']]
     file_str = ' '.join(map(lambda x: x.name, tmp_files))
-    tarfile = f'{outdir.as_posix()}/forecast_ics_fixedice_{cmdargs.year}-{cmdargs.month:02d}.tar'
+    tarfile = f'{outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
     cmd = f'tar cvf {tarfile} -C {TMP} {file_str}'
     run_cmd(cmd)
     for f in tmp_files:
