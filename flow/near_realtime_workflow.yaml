@@ -342,9 +342,7 @@ workflow:
         datadep:
           value:
             cyclestr:
-              attrs:
-                offset: "-01:00:00:00" # TODO: will this always be the beginning of the year?
-              value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i202502/gfdl.ncrc6-intel23-prod/history/@Y@m01.nc.tar"
+              value: "/archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i@Y@m/gfdl.ncrc6-intel23-prod/history/@Y0101.nc.tar"
     task_ics_gaea:
       attrs:
         cycledefs: default
