@@ -53,8 +53,6 @@ def main(year, target_grid, input_dir, output_dir):
     all_vars = list(bounded.data_vars.keys()) + list(bounded.coords.keys())
     encodings = {v: {'_FillValue': None} for v in all_vars}
     encodings['time'].update({'dtype':'float64', 'calendar': 'gregorian', 'units': 'days since 1993-01-01'})
-    for v in ['xh', 'yh']:
-        encodings[v].update({'dtype': np.int32})
     bounded['depth'].attrs = {
         'units': 'meter',
         'cartesian_axis': 'Z',
