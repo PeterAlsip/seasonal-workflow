@@ -177,8 +177,10 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
 
 
 def main_single(config, cmdargs):
-    history_type = 'nowcast_history' if cmdargs.now else 'analysis_history'
-    history = Path(config['filesystem'][history_type])
+    if cmdargs.now:
+        history = Path(config['filesystem']['nowcast_history'].format(year=cmdargs.year, month=cmdargs.month))
+    else:
+        history = Path(config['filesystem']['analysis_history'])
     outdir = Path(config['filesystem']['forecast_input_data']) / 'initial'
     outdir.mkdir(exist_ok=True)
     tmp_files = [ics_from_snapshot(c, history, cmdargs.year, cmdargs.month) for c in config['snapshots']]
@@ -198,8 +200,10 @@ def main_single(config, cmdargs):
 
 def main_ensemble(config, cmdargs):
     ens = cmdargs.ensemble
-    history_type = 'nowcast_history' if cmdargs.now else 'analysis_history'
-    history = Path(config['filesystem'][history_type].format(ensemble=ens))
+    if cmdargs.now:
+        history = Path(config['filesystem']['nowcast_history'].format(year=cmdargs.year, month=cmdargs.month, ens=ens))
+    else:
+        history = Path(config['filesystem']['analysis_history'].format(ens=ens))
     outdir = Path(config['filesystem']['forecast_input_data']) / f'e{ens:02d}' / 'initial'
     tarfile = outdir / f'forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
     if cmdargs.rerun or not tarfile.exists():
