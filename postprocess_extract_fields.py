@@ -79,11 +79,11 @@ class ForecastRun:
     
     @property
     def exists(self):
-         return (run.archive_dir / run.tar_file).is_file()
+         return (self.archive_dir / self.tar_file).is_file()
     
     @property
     def needs_dmget(self):
-        return self.exists and not (run.vftmp_dir / run.file_name).is_file() and not (run.ptmp_dir / run.file_name).is_file()
+        return self.exists and not (self.vftmp_dir / self.file_name).is_file() and not (self.ptmp_dir / self.file_name).is_file()
     
     def run_cmd(self, cmd):
         print(cmd)
@@ -136,19 +136,7 @@ class ForecastRun:
                 ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
 
-if __name__ == '__main__':
-    import argparse
-    from pathlib import Path
-    from yaml import safe_load
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, required=True)
-    parser.add_argument('-d', '--domain', type=str, default='ocean_month')
-    parser.add_argument('-r','--rerun', action='store_true')
-    parser.add_argument('-n','--new', action='store_true')
-    parser.add_argument('-D','--dry', action='store_true')
-    parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
-    parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config')
-    args = parser.parse_args()
+def main(args):
     with open(args.config, 'r') as file: 
         config = safe_load(file)
     if args.new:
@@ -229,3 +217,18 @@ if __name__ == '__main__':
             else:
                 print(f'{run.archive_dir/run.tar_file} not found; skipping.')
 
+
+if __name__ == '__main__':
+    import argparse
+    from pathlib import Path
+    from yaml import safe_load
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, required=True)
+    parser.add_argument('-d', '--domain', type=str, default='ocean_month')
+    parser.add_argument('-r','--rerun', action='store_true')
+    parser.add_argument('-n','--new', action='store_true')
+    parser.add_argument('-D','--dry', action='store_true')
+    parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
+    parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config')
+    args = parser.parse_args()
+    main(args)
