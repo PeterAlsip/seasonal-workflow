@@ -1,6 +1,6 @@
 # Can also do something like:
 # sbatch --export=ALL --wrap="python postprocess_extract_fields.py -c config_nwa12_physics.yaml -d ocean_daily -y 2019 -m 3"
-
+import concurrent.futures as futures
 from dataclasses import dataclass
 import datetime as dt
 from getpass import getuser
@@ -135,6 +135,23 @@ class ForecastRun:
                 encoding = {var: dict(zlib=True, complevel=3) for var in variables}
                 ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
+    def process_run(self, variables, rerun=False):
+        # Check if a processed file exists
+        if not (self.outdir / self.out_name).is_file() or rerun:
+            # Check if an extracted data file exists
+            if (self.vftmp_dir / self.file_name).is_file():
+                self.process_file(variables=variables)
+            # Check if a cached tar file exists
+            elif (self.ptmp_dir / self.file_name).is_file():
+                self.copy_from_ptmp()
+                self.process_file(variables=variables)
+            elif self.exists:
+                self.copy_from_archive()
+                self.copy_from_ptmp()
+                self.process_file(variables=variables)
+            else:
+                print(f'{self.archive_dir/self.tar_file} not found; skipping.')
+
 
 def main(args):
     with open(args.config, 'r') as file: 
@@ -200,22 +217,8 @@ def main(args):
     else:
         print('No files to dmget')
 
-    for run in all_runs:
-        # Check if a processed file exists
-        if not (run.outdir / run.out_name).is_file() or args.rerun:
-            # Check if an extracted data file exists
-            if (run.vftmp_dir / run.file_name).is_file():
-                run.process_file(variables=variables)
-            # Check if a cached tar file exists
-            elif (run.ptmp_dir / run.file_name).is_file():
-                run.copy_from_ptmp()
-                run.process_file(variables=variables)
-            elif run.exists:
-                run.copy_from_archive()
-                run.copy_from_ptmp()
-                run.process_file(variables=variables)
-            else:
-                print(f'{run.archive_dir/run.tar_file} not found; skipping.')
+    with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
+        executor.map(lambda x: x.process_run(variables, rerun=args.rerun), all_runs)
 
 
 if __name__ == '__main__':
@@ -228,6 +231,7 @@ if __name__ == '__main__':
     parser.add_argument('-r','--rerun', action='store_true')
     parser.add_argument('-n','--new', action='store_true')
     parser.add_argument('-D','--dry', action='store_true')
+    parser.add_argument('-t', '--threads', type=int, default=2)
     parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
     parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config')
     args = parser.parse_args()
