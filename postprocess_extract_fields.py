@@ -13,14 +13,6 @@ import xarray
 # Using ptmp to cache full history files
 PTMP = Path('/ptmp') / getuser()
 
-# Using /vftmp/$USER as a cache for nc files extracted from tar files.
-# This means this script must be run on analysis,
-# and ideally it should always be run on the 
-# same analysis node because each node has a 
-# different /vftmp.
-VFTMP = Path('/vftmp') / getuser()
-
-
 @dataclass
 class ForecastRun:
     ystart: int
@@ -31,6 +23,7 @@ class ForecastRun:
     name: str = ''
     domain: str = 'ocean_month'
     dry_run: bool = False
+    vftmp: Path = Path('/vftmp') / getuser()
 
     @property
     def archive_dir(self):
@@ -61,7 +54,7 @@ class ForecastRun:
         """
         Location on vftmp to cache extracted data.
         """
-        return VFTMP / 'forecast_data' / self.name / f'e{self.ens:02d}'
+        return self.vftmp / 'forecast_data' / self.name / f'e{self.ens:02d}'
 
     @property
     def file_name(self):
@@ -135,7 +128,7 @@ class ForecastRun:
                 encoding = {var: dict(zlib=True, complevel=3) for var in variables}
                 ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
-    def process_run(self, variables, rerun=False):
+    def process_run(self, variables, rerun=False, clean=False):
         # Check if a processed file exists
         if not (self.outdir / self.out_name).is_file() or rerun:
             # Check if an extracted data file exists
@@ -151,6 +144,9 @@ class ForecastRun:
                 self.process_file(variables=variables)
             else:
                 print(f'{self.archive_dir/self.tar_file} not found; skipping.')
+                return
+            if clean:
+                (self.vftmp_dir / self.file_name).unlink()
 
 
 def main(args):
@@ -170,6 +166,11 @@ def main(args):
     outdir = Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
     outdir.mkdir(exist_ok=True, parents=True)
     variables = config['variables'][args.domain]
+    if args.tmp:
+        from os import environ
+        vftmp = Path(environ['TMPDIR'])
+    else:
+        vftmp = Path('/vftmp') / getuser()
     all_runs = [
         ForecastRun(
             ystart=ystart, 
@@ -179,7 +180,8 @@ def main(args):
             template=config['filesystem']['forecast_history'],
             domain=args.domain,
             dry_run=args.dry,
-            outdir=outdir
+            outdir=outdir,
+            vftmp=vftmp
         )
         for ystart in range(first_year, last_year+1) 
             for mstart in months 
@@ -218,7 +220,7 @@ def main(args):
         print('No files to dmget')
 
     with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-        executor.map(lambda x: x.process_run(variables, rerun=args.rerun), all_runs)
+        executor.map(lambda x: x.process_run(variables, rerun=args.rerun, clean=args.tmp), all_runs)
 
 
 if __name__ == '__main__':
@@ -228,11 +230,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
-    parser.add_argument('-r','--rerun', action='store_true')
-    parser.add_argument('-n','--new', action='store_true')
-    parser.add_argument('-D','--dry', action='store_true')
     parser.add_argument('-t', '--threads', type=int, default=2)
-    parser.add_argument('-y', '--year', type=int, help='Only extract from this year, instead of all years in config')
-    parser.add_argument('-m', '--month', type=int, help='Only extract from this month, instead of all months in config')
+    parser.add_argument('-y', '--year', type=int, 
+        help='Only extract from this year, instead of all years in config')
+    parser.add_argument('-m', '--month', type=int, 
+        help='Only extract from this month, instead of all months in config')
+    parser.add_argument('-r','--rerun', action='store_true')
+    parser.add_argument('-n','--new', action='store_true',
+        help='Flag if this is a new near real time forecast instead of a retrospective.')
+    parser.add_argument('-D','--dry', action='store_true')
+    parser.add_argument('--tmp', action='store_true', 
+        help='Store data in $TMPDIR instead of top level /vftmp/$USER')
     args = parser.parse_args()
     main(args)
