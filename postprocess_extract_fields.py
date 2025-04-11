@@ -22,7 +22,6 @@ class ForecastRun:
     outdir: Path
     name: str = ''
     domain: str = 'ocean_month'
-    dry_run: bool = False
     vftmp: Path = Path('/vftmp') / getuser()
 
     @property
@@ -80,8 +79,7 @@ class ForecastRun:
     
     def run_cmd(self, cmd):
         print(cmd)
-        if not self.dry_run:
-            subprocess.run([cmd], shell=True, check=True)
+        subprocess.run([cmd], shell=True, check=True)
 
     def copy_from_archive(self):
         """
@@ -107,26 +105,25 @@ class ForecastRun:
         if outfile is None:
             outfile = self.outdir / self.out_name
         print(f'process_file({infile})')
-        if not self.dry_run:
-            with xarray.open_dataset(infile, decode_timedelta=False) as ds:
-                if variables is None:
-                    variables = list(ds.data_vars)
-                ds = ds[variables]
-                ds['member'] = int(self.ens)
-                ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
-                ds['lead'] = (('time', ), np.arange(len(ds['time'])))
-                if 'daily' in self.domain or len(ds['lead']) > 12:
-                    ds['lead'].attrs['units'] = 'days'
-                else:
-                    ds['lead'].attrs['units'] = 'months'
-                ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
-                ds = ds.expand_dims('init')
-                ds = ds.transpose('init', 'lead', ...)
-                ds = ds.drop_vars('time')
-                ds.attrs[f'cefi_archive_version_ens{self.ens:02d}'] = str(self.archive_dir.parent)
-                # Compress output to significantly reduce space
-                encoding = {var: dict(zlib=True, complevel=3) for var in variables}
-                ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
+        with xarray.open_dataset(infile, decode_timedelta=False) as ds:
+            if variables is None:
+                variables = list(ds.data_vars)
+            ds = ds[variables]
+            ds['member'] = int(self.ens)
+            ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
+            ds['lead'] = (('time', ), np.arange(len(ds['time'])))
+            if 'daily' in self.domain or len(ds['lead']) > 12:
+                ds['lead'].attrs['units'] = 'days'
+            else:
+                ds['lead'].attrs['units'] = 'months'
+            ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
+            ds = ds.expand_dims('init')
+            ds = ds.transpose('init', 'lead', ...)
+            ds = ds.drop_vars('time')
+            ds.attrs[f'cefi_archive_version_ens{self.ens:02d}'] = str(self.archive_dir.parent)
+            # Compress output to significantly reduce space
+            encoding = {var: dict(zlib=True, complevel=3) for var in variables}
+            ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
     def process_run(self, variables, rerun=False, clean=False):
         # Check if a processed file exists
@@ -179,7 +176,6 @@ def main(args):
             name=config['name'],
             template=config['filesystem']['forecast_history'],
             domain=args.domain,
-            dry_run=args.dry,
             outdir=outdir,
             vftmp=vftmp
         )
@@ -197,25 +193,24 @@ def main(args):
     # Try running one dmget command for all files.
     if len(runs_to_dmget) > 0:
         print(f'dmgetting {len(runs_to_dmget)} files')
-        if not args.dry:
-            file_names = [str(run.archive_dir / run.tar_file) for run in runs_to_dmget]
-            dmget = subprocess.run([f'dmget {" ".join(file_names)}'], shell=True, capture_output=True, universal_newlines=True)
-            # If a tape is bad, the single dmget will fail.
-            # Try running dmget separately for each individual file.
-            # If the dmget fails, remove the run from the all_runs list
-            # so that it is not extracted or worked on later. 
-            if dmget.returncode > 0:
-                if 'unable to recall the requested file' in dmget.stderr:
-                    print('dmget failed. Running dmget separately for each file.')
-                    for run in runs_to_dmget:
-                        try:
-                            subprocess.run([f'dmget {run.archive_dir / run.tar_file}'], shell=True, check=True)
-                        except subprocess.CalledProcessError:
-                            print(f'Could not dmget {run.archive_dir / run.tar_file}. Removing from list of files to extract.')
-                            all_runs.remove(run)
-                else:
-                    # dmget failed, but not with the usual error associated with a bad file/tape.
-                    raise subprocess.CalledProcessError(dmget.returncode, str(dmget.args), output=dmget.stdout, stderr=dmget.stderr)
+        file_names = [str(run.archive_dir / run.tar_file) for run in runs_to_dmget]
+        dmget = subprocess.run([f'dmget {" ".join(file_names)}'], shell=True, capture_output=True, universal_newlines=True)
+        # If a tape is bad, the single dmget will fail.
+        # Try running dmget separately for each individual file.
+        # If the dmget fails, remove the run from the all_runs list
+        # so that it is not extracted or worked on later. 
+        if dmget.returncode > 0:
+            if 'unable to recall the requested file' in dmget.stderr:
+                print('dmget failed. Running dmget separately for each file.')
+                for run in runs_to_dmget:
+                    try:
+                        subprocess.run([f'dmget {run.archive_dir / run.tar_file}'], shell=True, check=True)
+                    except subprocess.CalledProcessError:
+                        print(f'Could not dmget {run.archive_dir / run.tar_file}. Removing from list of files to extract.')
+                        all_runs.remove(run)
+            else:
+                # dmget failed, but not with the usual error associated with a bad file/tape.
+                raise subprocess.CalledProcessError(dmget.returncode, str(dmget.args), output=dmget.stdout, stderr=dmget.stderr)
     else:
         print('No files to dmget')
 
@@ -238,7 +233,6 @@ if __name__ == '__main__':
     parser.add_argument('-r','--rerun', action='store_true')
     parser.add_argument('-n','--new', action='store_true',
         help='Flag if this is a new near real time forecast instead of a retrospective.')
-    parser.add_argument('-D','--dry', action='store_true')
     parser.add_argument('--tmp', action='store_true', 
         help='Store data in $TMPDIR instead of top level /vftmp/$USER')
     args = parser.parse_args()
