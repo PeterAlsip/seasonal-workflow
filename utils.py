@@ -20,7 +20,7 @@ class HSMGet():
         esc = re.sub(r'([\(\)])', r'\\\1', cmd)
         return run(esc, shell=True, check=True, stdout=stdout, stderr=stderr)
 
-    def __call__(self, path_or_paths):
+    def __call__(self, path_or_paths, **kwargs):
         if which('hsmget') is None:
             print('Not using hsmget')
             return path_or_paths
@@ -28,7 +28,7 @@ class HSMGet():
             relative = path_or_paths.relative_to(self.archive)
             # hsmget will do the dmget first and this is fine since it's one file
             cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {relative.as_posix()}'
-            self._run(cmd)
+            self._run(cmd, **kwargs)
             return (self.tmp / relative)
         elif iter(path_or_paths):
             p_str = ' '.join([p.as_posix() for p in path_or_paths])
@@ -36,7 +36,7 @@ class HSMGet():
             relative = [p.relative_to(self.archive) for p in path_or_paths]
             rel_str = ' '.join([r.as_posix() for r in relative])
             cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {rel_str}'
-            self._run(cmd)
+            self._run(cmd, **kwargs)
             return [self.tmp / r for r in relative]
         else:
             raise Exception('Need a Path or iterable of Paths to get')
