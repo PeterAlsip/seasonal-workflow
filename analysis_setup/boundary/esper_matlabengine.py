@@ -22,10 +22,10 @@ for segment in [1, 2, 3]:
     print(f'Segment {segment:03d}')
     segstr = f'_segment_{segment:03d}'
     year_data = []
-    for yr in range(1993, 2026):
+    for yr in range(1992, 2026):
         print(yr)
         # temporary fix for partial years
-        fileyear = 2023 if yr > 2023 else yr
+        fileyear = int(np.clip(yr, 1993, 2024))
         timeslice = slice(f'{fileyear}-01-01', f'{fileyear}-12-31')
         print('Loading data')
         salt = xarray.open_dataset(f'/work/acr/mom6/nwa12/analysis_input_data/boundary/so_{segment:03d}_{fileyear}.nc')
@@ -80,4 +80,7 @@ for segment in [1, 2, 3]:
     )
 
 eng.quit()
-# TODO: cdo merge
+# TODO: merge using something like:
+# cp esper_glorys_001.nc esper_glorys_vyyyymmdd.nc
+# ncks -A esper_glorys_002.nc esper_glorys_vyyyymmdd.nc
+# ncks -A esper_glorys_003.nc esper_glorys_vyyyymmdd.nc
