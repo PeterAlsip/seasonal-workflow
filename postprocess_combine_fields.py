@@ -72,10 +72,10 @@ def process_var(var, config, cmdargs):
         encoding=encoding)
     # Do the same for the full set of forecasts
     encoding = {v: {'dtype': 'int32'} for v in ['member', 'month'] if v in model_ds}
+    encoding.update({var: dict(zlib=True, complevel=3) for var in model_ds.data_vars})
     print('Writing forecasts')
     fname = f'forecasts_{cmdargs.domain}_{var}_ensmean.nc' if cmdargs.mean else f'forecasts_{cmdargs.domain}_{var}.nc'
     model_ds.to_netcdf(model_output_data / fname, encoding=encoding)
-
 
 
 if __name__ == '__main__':
