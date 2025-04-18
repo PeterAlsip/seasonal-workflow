@@ -5,13 +5,12 @@ retrospective_forecasts:
   last_year: 2023
   months:
     - 2
-    - 6
-    - 9
-    - 12
-  ensemble_size: 5
+    - 3
+    - 4
+  ensemble_size: 10
 
 new_forecasts:
-  ensemble_size: 5
+  ensemble_size: 10
 
 snapshots:
   - ocean_month
@@ -57,11 +56,11 @@ variables:
     - tos
     - tob
     - sos
-    - ssh
     - MLD_003
   ocean_cobalt_btm:
     - btm_o2
     - btm_co3_sol_arag
+    - btm_co3_sol_calc
     - btm_co3_ion
     - btm_htotal
   ocean_cobalt_omip_sfc:
@@ -83,6 +82,7 @@ variables:
     - MLD_003
     - so
     - thetao
+    - ustar
   ocean_cobalt_daily_2d:
     - chlos
     - btm_o2
@@ -112,5 +112,5 @@ filesystem:
   nowcast_history: /archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i{year}{month:02d}/gfdl.ncrc6-intel23-prod/history/    
   forecast_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_cobalt_forecast_2024_09_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc6-intel23-prod/history/
   # TODO: this should also format frequency (monthly/daily)
-  combined_name: "{var}.nwa.full.ss_fcast.monthly.raw.r20250210.enss.i{year}{month:02d}.nc"
+  combined_name: "{var}.nwa.full.ss_fcast.monthly.raw.r20250410.enss.i{year}{month:02d}.nc"
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here
