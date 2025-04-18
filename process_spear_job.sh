@@ -13,7 +13,7 @@
 # Newer prebuilt python envs
 # are missing dask and/or yaml
 module load miniforge
-conda activate /nbhome/acr/python/envs/medpy3111_20240702
+conda activate /nbhome/acr/python/envs/medpy311_20250213
 module load gcp
     
 set domain=$1
