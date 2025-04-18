@@ -1,0 +1,74 @@
+# conda activate uwtools
+# uw rocoto realize --config-file retrospective_workflow.yaml --output-file retrospective_workflow.xml
+# /home/acr/git/rocoto/bin/rocotorun -d retrospective_workflow.db -w retrospective_workflow.xml
+# /home/acr/git/rocoto/bin/rocotostat -d retrospective_workflow.db -w retrospective_workflow.xml
+# or /home/acr/git/rocoto/bin/rocotoboot -d retrospective_workflow.db -w retrospective_workflow.xml -c all -t <TASK_TO_RUN>
+workflow:
+  attrs:
+    realtime: false
+    scheduler: slurm
+    cyclethrottle: 3
+  cycledef:
+    - attrs:
+        group: default
+      spec: "0 0 1 3 1994-2023 *"
+  log: 
+    cyclestr:
+      value: /home/acr/git/seasonal-workflow/flow/log_@Y-@m.log
+  entities:
+    ANALYSIS_INPUT: /work/acr/mom6/nwa12/analysis_input_data
+    FORECAST_INPUT: /work/acr/mom6/nwa12/forecast_input_data
+    GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
+    CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
+    ENV_SETUP: "source /home/acr/git/seasonal-workflow/flow/env_setup.sh;"
+    LOGS: /home/acr/git/seasonal-workflow/flow/logs
+  tasks:
+    task_write_spear_atmos:
+      attrs:
+        cycledefs: default
+      command: 
+        cyclestr:
+          value: "&ENV_SETUP; python write_spear_atmos.py -c &CONFIG; -y @Y -m @m"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 02:00:00
+      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/spear_atmos_%j.out
+    task_spear_gaea:
+      attrs:
+        cycledefs: default
+      command: 
+        cyclestr:
+          value: "&ENV_SETUP; gcp -cd -r -v &FORECAST_INPUT;/atmos/@Y-@m-e?? &GAEA_INPUT;/forecast_input_data/atmos"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 0:30:00
+      native: --output=&LOGS;/spear_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_spear_atmos
+    # After analysis simulation has run:
+    task_write_ics:
+      attrs:
+        cycledefs: default
+      command: 
+        cyclestr:
+          value: "&ENV_SETUP; python write_ics_from_snapshot.py -c &CONFIG; -y @Y -m @m --rerun"
+      partition: analysis
+      nodes: 1:ppn=1
+      walltime: 02:00:00
+      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
+    task_ics_gaea:
+      attrs:
+        cycledefs: default
+      command: 
+        cyclestr:
+          value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 03:00:00
+      native: --output=&LOGS;/ics_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_ics
