@@ -57,7 +57,7 @@ def process_var(var, config, cmdargs):
     else:
         ensmean = model_ds.mean('member')
     climo = ensmean[var].sel(init=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('init.month').mean('init')
-    if 'daily' in cmdargs.domain: # todo: would this work for neus?
+    if 'daily' in cmdargs.domain or len(model_ds.lead) >= 365:
         print('Smoothing daily climatology')
         climo = smooth_climatology(climo, dim='lead')
     anom = model_ds.groupby('init.month') - climo
