@@ -13,10 +13,13 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
     last_year = config['climatology']['last_year']
     if isinstance(model_ds.lead.values[0], np.timedelta64):
         valid_time = (model_ds.init + model_ds.lead).data
+        freq = 'daily' if len(valid_time) > 12 else 'monthly'
     elif 'units' in model_ds['lead'].attrs and model_ds['lead'].attrs['units'] == 'days':
         valid_time = [model_ds.init.values + pd.Timedelta(days=int(l)) for l in model_ds.lead]
+        freq = 'daily'
     else:
         valid_time = [model_ds.init.values + pd.DateOffset(months=int(l)) for l in model_ds.lead]
+        freq = 'monthly'
     model_ds['valid_time'] = (('lead', ), valid_time)
     for var in all_vars:
         print(var)
@@ -39,7 +42,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month', 'valid_time'] if v in res}
         # Compress main variable to reduce space
         encoding.update({v: dict(zlib=True, complevel=3) for v in [var, f'{var}_anom']})
-        fname = config['filesystem']['combined_name'].format(var=var, year=y, month=m)
+        fname = config['filesystem']['combined_name'].format(freq=freq, var=var, year=y, month=m)
         res.to_netcdf(output_dir / fname, encoding=encoding)
 
 
