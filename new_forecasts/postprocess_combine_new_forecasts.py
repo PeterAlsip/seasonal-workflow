@@ -7,7 +7,7 @@ import xarray
 def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
     model_output_data = Path(config['filesystem']['forecast_output_data'])
     members = (model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc')
-    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member', combine_attrs='drop_conflicts')
+    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member', combine_attrs='drop_conflicts', decode_timedelta=False)
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').squeeze().load()
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
@@ -23,7 +23,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         climo_file = model_output_data / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc'
         climo_exists = False
         if climo_file.exists():
-            climo = xarray.open_dataset(climo_file)
+            climo = xarray.open_dataset(climo_file, decode_timedelta=False)
             if m in climo.month:
                 climo_exists = True
                 anom = model_ds[var] - climo[var].sel(month=m)
