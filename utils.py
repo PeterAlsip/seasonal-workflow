@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import errno
 from os import environ
 from getpass import getuser
 import numpy as np
@@ -42,22 +43,31 @@ class HSMGet():
             raise Exception('Need a Path or iterable of Paths to get')
             
 
-def open_var(pp_root, kind, var, hsmget=HSMGet()):
-    print(pp_root)
-    freq = 'daily' if 'daily' in kind or 'nwshelf' in kind else 'monthly'
-    longslice1 = '19930101-20221231' if freq == 'daily' else '199301-202212'
-    longfile1 = pp_root / 'pp' / kind / 'ts' / freq / '30yr' / f'{kind}.{longslice1}.{var}.nc'
-    if longfile1.exists():
-        tmpfile = hsmget(longfile1)
-        return xarray.open_dataset(tmpfile)[var]
+def open_var(pp_root: Path, kind: str, var: str, hsmget: HSMGet = HSMGet()) -> xarray.DataArray:
+    freq = 'daily' if 'daily' in kind else 'monthly'
+    pp_dir = pp_root / 'pp' / kind / 'ts' / freq
+    if not pp_dir.is_dir():
+        raise FileNotFoundError(errno.ENOENT, 'Could not find post-processed directory', str(pp_dir))
+    # Get all of the available post-processing chunk directories (assuming chunks in units of years)
+    available_chunks = list(pp_dir.glob('*yr'))
+    if len(available_chunks) == 0:
+        raise FileNotFoundError(errno.ENOENT, 'Could not find post-processed chunk subdirectory')
+    # Sort from longest to shortest chunk
+    sorted_chunks = sorted(available_chunks, key=lambda x: int(x.name[0:-2]), reverse=True)
+    for chunk in sorted_chunks:
+        # Look through the available chunks and return for the 
+        # largest chunk that has file(s). 
+        matching_files = list(chunk.glob(f'{kind}.*.{var}.nc'))
+        # Treat 1 and > 1 files separately, though the > 1 case could probably handle both. 
+        if len(matching_files) > 1:
+            tmpfiles = hsmget(sorted(matching_files))
+            return xarray.open_mfdataset(tmpfiles, decode_timedelta=True)[var] # Avoid FutureWarning about decode_timedelta
+        elif len(matching_files) == 1:
+            tmpfile = hsmget(matching_files[0])
+            return xarray.open_dataset(tmpfile, decode_timedelta=True)[var] # Avoid FutureWarning about decode_timedelta
     else:
-        short_files = list((pp_root / 'pp' / kind / 'ts' / freq / '5yr').glob(f'{kind}.*.{var}.nc'))
-        if len(short_files) > 0:
-            tmpfiles = hsmget(sorted(short_files))
-            return xarray.open_mfdataset(tmpfiles)[var]
-        else:
-            raise Exception('Did not find postprocessed files')
-
+        raise FileNotFoundError(errno.ENOENT, 'Could not find any post-processed files. Check if frepp failed.')
+    
 
 def pad_ds(ds):
     if not isinstance(ds.time.values[0], np.datetime64):
