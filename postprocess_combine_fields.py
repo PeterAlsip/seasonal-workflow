@@ -1,50 +1,67 @@
+from argparse import ArgumentParser, Namespace
+import concurrent.futures
 import numpy as np
 import os
 from pathlib import Path
-from subprocess import run
+from subprocess import run, CompletedProcess
+from typing import Any
 import xarray
 from utils import smooth_climatology
 
 
-def process_var(var, config, cmdargs):
+def run_nco(nco_tool: str, var: str, in_files: str, out_file: Path) -> CompletedProcess:
+    cmd = f'{nco_tool} -v {var} -h {in_files} -O {out_file}'
+    print(cmd)
+    return run(cmd, shell=True, check=True)
+
+
+def process_var(var: str, config: Any, cmdargs: Namespace) -> None:
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
     nens = config['retrospective_forecasts']['ensemble_size']
     tmp = Path(os.environ['TMPDIR'])
     model_output_data = Path(config['filesystem']['forecast_output_data'])
+    threads = cmdargs.threads
     members = []
+    futures = []
 
     if cmdargs.mean:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
         # Large files: ensemble average, then concatenate averages
-        for m in config['retrospective_forecasts']['months']:
-            for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
-                month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
-                files = list((model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'))
-                if len(files) == 1: # single ensemble member
-                    run(f'ncks -v {var} -h {files[0].as_posix()} -O {month_file}', shell=True, check=True)
-                    members.append(month_file)
-                    print(month_file)
-                elif len(files) > 1: 
-                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
-                    run(f'ncea -v {var} -h {file_str} -O {month_file}', shell=True, check=True)
-                    members.append(month_file)  
-                    print(month_file)
-    else:
-        # Regular files: concatenate initializations together
-        for e in range(1, nens+1):
-            out_file = tmp / f'{cmdargs.domain}_{var}_e{e:02d}.nc'
-            if not out_file.exists() or cmdargs.rerun:
-                files = []
+            for m in config['retrospective_forecasts']['months']:
                 for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
-                    for m in config['retrospective_forecasts']['months']:
-                        tentative = model_output_data / 'extracted' / cmdargs.domain / f'{y}-{m:02d}-e{e:02d}.{cmdargs.domain}.nc'
-                        if tentative.is_file():
-                            files.append(tentative)
-                if len(files) > 0:
-                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
-                    print(f'ncrcat {len(files)} files to {out_file}')
-                    run(f'ncrcat -v {var},member -h {file_str} -O {out_file}', shell=True, check=True)
-            members.append(out_file)
+                    month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
+                    files = list((model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'))
+                    if len(files) == 1: # single ensemble member
+                        futures.append(executor.submit(run_nco, 'ncks', var, str(files[0]), month_file))
+                        members.append(month_file)
+                    elif len(files) > 1: 
+                        file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                        futures.append(executor.submit(run_nco, 'ncea', var, file_str, month_file))
+                        members.append(month_file)  
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+            # Regular files: concatenate initializations together
+            for e in range(1, nens+1):
+                out_file = tmp / f'{cmdargs.domain}_{var}_e{e:02d}.nc'
+                if not out_file.exists() or cmdargs.rerun:
+                    files = []
+                    for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
+                        for m in config['retrospective_forecasts']['months']:
+                            tentative = model_output_data / 'extracted' / cmdargs.domain / f'{y}-{m:02d}-e{e:02d}.{cmdargs.domain}.nc'
+                            if tentative.is_file():
+                                files.append(tentative)
+                    if len(files) > 0:
+                        file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                        futures.append(executor.submit(run_nco, 'ncrcat', f'{var},member', file_str, out_file))
+                        # futures.append(executor.submit(run(f'ncrcat -v {var},member -h {file_str} -O {out_file}', shell=True, check=True)))
+                members.append(out_file)
+
+    for future in futures:
+        try:
+            _ = future.result()
+        except Exception as e:
+            print(f"Task generated an exception: {e}")
 
     concat_dim = 'init' if cmdargs.mean else 'member'
     print(f'Concat by {concat_dim}')
@@ -79,14 +96,14 @@ def process_var(var, config, cmdargs):
 
 
 if __name__ == '__main__':
-    import argparse
     from yaml import safe_load
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-v', '--var', type=str, required=True)
     parser.add_argument('-r', '--rerun', action='store_true')
     parser.add_argument('-m', '--mean', action='store_true', help='Include only ensemble mean in combined result, dropping individual members.')
+    parser.add_argument('-t', '--threads', type=int, default=1)
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
