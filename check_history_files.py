@@ -1,6 +1,6 @@
 import argparse
 from yaml import safe_load
-from postprocess_extract_fields import ForecastRun
+from forecast_lib import ForecastRun
 
 def colorprint(msg, color):
     colors = {

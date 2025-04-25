@@ -1,149 +1,61 @@
 # Can also do something like:
 # sbatch --export=ALL --wrap="python postprocess_extract_fields.py -c config_nwa12_physics.yaml -d ocean_daily -y 2019 -m 3"
 import concurrent.futures as futures
-from dataclasses import dataclass
 import datetime as dt
-from getpass import getuser
 import numpy as np
 from pathlib import Path
 import subprocess
 import xarray
 
+from forecast_lib import ForecastRun
 
-# Using ptmp to cache full history files
-PTMP = Path('/ptmp') / getuser()
 
-@dataclass
-class ForecastRun:
-    ystart: int
-    mstart: int
-    ens: int
-    template: str
-    outdir: Path
-    name: str = ''
-    domain: str = 'ocean_month'
-    vftmp: Path = Path('/vftmp') / getuser()
+def process_file(forecast: ForecastRun, variables: list[str] | None = None, infile: Path | str | None = None, outfile: Path | str | None = None) -> None:
+    if infile is None:
+        infile = forecast.vftmp_dir / forecast.file_name
+    if outfile is None:
+        outfile = forecast.outdir / forecast.out_name
+    print(f'process_file({infile})')
+    with xarray.open_dataset(infile, decode_timedelta=False) as ds:
+        if variables is None:
+            variables = list(ds.data_vars)
+        ds = ds[variables]
+        ds['member'] = int(forecast.ens)
+        ds['init'] = dt.datetime(int(forecast.ystart), int(forecast.mstart), 1)   
+        ds['lead'] = (('time', ), np.arange(len(ds['time'])))
+        if 'daily' in forecast.domain or len(ds['lead']) > 12:
+            ds['lead'].attrs['units'] = 'days'
+        else:
+            ds['lead'].attrs['units'] = 'months'
+        ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
+        ds = ds.expand_dims('init')
+        ds = ds.transpose('init', 'lead', ...)
+        ds = ds.drop_vars('time')
+        ds.attrs[f'cefi_archive_version_ens{forecast.ens:02d}'] = str(forecast.archive_dir.parent)
+        # Compress output to significantly reduce space
+        encoding = {var: dict(zlib=True, complevel=3) for var in variables}
+        ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
-    @property
-    def archive_dir(self):
-        """
-        Using a string template for the name of a single forecast's
-        history directory on archive, and format it with the current forecast's
-        year, month, and ensemble member.
-        """
-        return Path(self.template.format(year=self.ystart, month=self.mstart, ensemble=self.ens))
 
-    @property
-    def tar_file(self):
-        """
-        Name of the tar file stored on archive.
-        """
-        return f'{self.ystart}{self.mstart:02d}01.nc.tar'
-
-    @property
-    def ptmp_dir(self):
-        """
-        Location on /ptmp to cache data. This is intended to be the same path used by frepp
-        so that it can take advantage of the frepp cache.
-        """
-        return PTMP / self.archive_dir.relative_to(self.archive_dir.root) / f'{self.ystart}{self.mstart:02d}01.nc'
-    
-    @property 
-    def vftmp_dir(self):
-        """
-        Location on vftmp to cache extracted data.
-        """
-        return self.vftmp / 'forecast_data' / self.name / f'e{self.ens:02d}'
-
-    @property
-    def file_name(self):
-        """
-        Name of the file in the tar file to extract.
-        """
-        return f'{self.ystart}{self.mstart:02d}01.{self.domain}.nc'
-
-    @property
-    def out_name(self):
-        """
-        Name to give the final processed file.
-        """
-        return f'{self.ystart}-{self.mstart:02d}-e{self.ens:02d}.{self.domain}.nc'
-    
-    @property
-    def exists(self):
-         return (self.archive_dir / self.tar_file).is_file()
-    
-    @property
-    def needs_dmget(self):
-        return self.exists and not (self.vftmp_dir / self.file_name).is_file() and not (self.ptmp_dir / self.file_name).is_file()
-    
-    def run_cmd(self, cmd):
-        print(cmd)
-        subprocess.run([cmd], shell=True, check=True)
-
-    def copy_from_archive(self):
-        """
-        Extract the file for this domain, from the tar file on archive, to the path on /ptmp.
-        """
-        if not self.exists:
-            raise FileNotFoundError(f'File {(self.archive_dir / self.tar_file)} does not exist.')
-        self.ptmp_dir.mkdir(parents=True, exist_ok=True)
-        cmd = f'tar xf {(self.archive_dir / self.tar_file).as_posix()} -C {self.ptmp_dir.as_posix()} ./{self.file_name}'
-        self.run_cmd(cmd)
-    
-    def copy_from_ptmp(self):
-        """
-        Copy the file for this domain from ptmp to vftmp.
-        """
-        self.vftmp_dir.mkdir(parents=True, exist_ok=True)
-        cmd = f'gcp {(self.ptmp_dir / self.file_name).as_posix()} {self.vftmp_dir.as_posix()}'
-        self.run_cmd(cmd)
-
-    def process_file(self, variables=None, infile=None, outfile=None):
-        if infile is None:
-            infile = self.vftmp_dir / self.file_name
-        if outfile is None:
-            outfile = self.outdir / self.out_name
-        print(f'process_file({infile})')
-        with xarray.open_dataset(infile, decode_timedelta=False) as ds:
-            if variables is None:
-                variables = list(ds.data_vars)
-            ds = ds[variables]
-            ds['member'] = int(self.ens)
-            ds['init'] = dt.datetime(int(self.ystart), int(self.mstart), 1)   
-            ds['lead'] = (('time', ), np.arange(len(ds['time'])))
-            if 'daily' in self.domain or len(ds['lead']) > 12:
-                ds['lead'].attrs['units'] = 'days'
-            else:
-                ds['lead'].attrs['units'] = 'months'
-            ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
-            ds = ds.expand_dims('init')
-            ds = ds.transpose('init', 'lead', ...)
-            ds = ds.drop_vars('time')
-            ds.attrs[f'cefi_archive_version_ens{self.ens:02d}'] = str(self.archive_dir.parent)
-            # Compress output to significantly reduce space
-            encoding = {var: dict(zlib=True, complevel=3) for var in variables}
-            ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
-
-    def process_run(self, variables, rerun=False, clean=False):
-        # Check if a processed file exists
-        if not (self.outdir / self.out_name).is_file() or rerun:
-            # Check if an extracted data file exists
-            if (self.vftmp_dir / self.file_name).is_file():
-                self.process_file(variables=variables)
-            # Check if a cached tar file exists
-            elif (self.ptmp_dir / self.file_name).is_file():
-                self.copy_from_ptmp()
-                self.process_file(variables=variables)
-            elif self.exists:
-                self.copy_from_archive()
-                self.copy_from_ptmp()
-                self.process_file(variables=variables)
-            else:
-                print(f'{self.archive_dir/self.tar_file} not found; skipping.')
-                return
-            if clean:
-                (self.vftmp_dir / self.file_name).unlink()
+def process_run(forecast: ForecastRun, variables: list[str], rerun: bool = False, clean: bool = False) -> None:
+    # Check if a processed file exists
+    if not (forecast.outdir / forecast.out_name).is_file() or rerun:
+        # Check if an extracted data file exists
+        if (forecast.vftmp_dir / forecast.file_name).is_file():
+            process_file(forecast, variables=variables)
+        # Check if a cached tar file exists
+        elif (forecast.ptmp_dir / forecast.file_name).is_file():
+            forecast.copy_from_ptmp()
+            process_file(forecast, variables=variables)
+        elif forecast.exists:
+            forecast.copy_from_archive()
+            forecast.copy_from_ptmp()
+            process_file(forecast, variables=variables)
+        else:
+            print(f'{forecast.archive_dir/forecast.tar_file} not found; skipping.')
+            return
+        if clean:
+            (forecast.vftmp_dir / forecast.file_name).unlink()
 
 
 def main(args):
@@ -167,6 +79,7 @@ def main(args):
         from os import environ
         vftmp = Path(environ['TMPDIR'])
     else:
+        from getpass import getuser
         vftmp = Path('/vftmp') / getuser()
     all_runs = [
         ForecastRun(
