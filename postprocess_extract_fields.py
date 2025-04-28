@@ -128,7 +128,7 @@ def main(args):
         print('No files to dmget')
 
     with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-        executor.map(lambda x: x.process_run(variables, rerun=args.rerun, clean=args.tmp), all_runs)
+        executor.map(lambda x: process_run(x, variables, rerun=args.rerun, clean=args.tmp), all_runs)
 
 
 if __name__ == '__main__':
