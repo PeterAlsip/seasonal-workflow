@@ -7,7 +7,7 @@ from pathlib import Path, PurePath
 SPEAR_ROOT = Path('/archive') / 'l1j' / 'spear_med' / 'rf_hist' / 'fcst' / 's_j11_OTA_IceAtmRes_L33'
 
 
-def get_spear_file(ystart, mstart, domain, freq, var):
+def get_spear_file(ystart: int, mstart: int, domain: str, freq: str, var: str) -> PurePath:
     """
     Find the filename for SPEAR post-processed forecast output.
     ystart: forecast start year
@@ -48,7 +48,7 @@ def get_spear_file(ystart, mstart, domain, freq, var):
     return PurePath(fname)
 
 
-def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=SPEAR_ROOT):
+def get_spear_path(ystart: int, mstart: int, domain: str, freq: str, var: str, ens: int | str = 'pp_ensemble', root: Path = SPEAR_ROOT) -> Path:
     """
     Find the complete path to SPEAR post-processed forecast output on archive.
     Includes logic to identify which of several re-runs to use where available.
@@ -94,12 +94,12 @@ def get_spear_path(ystart, mstart, domain, freq, var, ens=None, root=SPEAR_ROOT)
     return final_path
 
 
-def get_spear_files(variables, *args, **kwargs):
+def get_spear_files(variables: list[str], *args, **kwargs) -> list[PurePath]:
     fun = partial(get_spear_file, *args, **kwargs)
     return [fun(v) for v in variables]
 
 
-def get_spear_paths(variables, *args, **kwargs):
+def get_spear_paths(variables: list[str], *args, **kwargs) -> list[Path]:
     fun = partial(get_spear_path, *args, **kwargs)
     return [fun(v) for v in variables]
 

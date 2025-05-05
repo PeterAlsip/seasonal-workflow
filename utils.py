@@ -17,11 +17,11 @@ class HSMGet():
     ptmp: Path = Path('/ptmp') / getuser()
     tmp: Path = Path(environ.get('TMPDIR', ptmp)) # can this ref self already?
 
-    def _run(self, cmd, stdout=DEVNULL, stderr=DEVNULL):
+    def _run(self, cmd: str, stdout=DEVNULL, stderr=DEVNULL) -> None:
         esc = re.sub(r'([\(\)])', r'\\\1', cmd)
-        return run(esc, shell=True, check=True, stdout=stdout, stderr=stderr)
+        run(esc, shell=True, check=True, stdout=stdout, stderr=stderr)
 
-    def __call__(self, path_or_paths, **kwargs):
+    def __call__(self, path_or_paths: Path | list[Path], **kwargs) -> Path | list[Path]:
         if which('hsmget') is None:
             print('Not using hsmget')
             return path_or_paths
@@ -69,7 +69,7 @@ def open_var(pp_root: Path, kind: str, var: str, hsmget: HSMGet = HSMGet()) -> x
         raise FileNotFoundError(errno.ENOENT, 'Could not find any post-processed files. Check if frepp failed.')
     
 
-def pad_ds(ds):
+def pad_ds(ds: xarray.Dataset) -> xarray.Dataset:
     if not isinstance(ds.time.values[0], np.datetime64):
         # use python datetimes
         ds['time'] = ds['time'].to_index().to_datetimeindex()
@@ -107,7 +107,7 @@ def pad_ds(ds):
     return tcomb
     
 
-def write_ds(ds, fout):
+def write_ds(ds: xarray.Dataset, fout: str | Path) -> None:
     for v in ds:
         if ds[v].dtype == 'float64':
             ds[v].encoding['_FillValue']= 1.0e20
@@ -120,7 +120,7 @@ def write_ds(ds, fout):
     )
 
 
-def modulo(ds):
+def modulo(ds: xarray.Dataset) -> xarray.Dataset:
     ds['time'] = np.arange(0, 365, dtype='float')
     ds['time'].attrs['units'] = 'days since 0001-01-01'
     ds['time'].attrs['calendar'] = 'noleap'
@@ -129,13 +129,17 @@ def modulo(ds):
     return ds
 
 
-def round_coords(ds, to, lat='latitude', lon='longitude'):
+def round_coords(ds: xarray.Dataset, to: float, lat: str = 'latitude', lon: str = 'longitude') -> xarray.Dataset:
     ds[lat] = np.round(ds[lat] * to ) / to
     ds[lon] = np.round(ds[lon] * to) / to
     return ds
 
 
-def smooth_climatology(da, window=5, dim='dayofyear'):
+def smooth_climatology(
+        da: xarray.DataArray |  xarray.Dataset, 
+        window: int = 5, 
+        dim: str = 'dayofyear'
+    ) ->  xarray.DataArray:
     smooth = da.copy()
     for _ in range(2):
         smooth = xarray.concat([
@@ -152,7 +156,12 @@ def smooth_climatology(da, window=5, dim='dayofyear'):
     return smooth
 
 
-def match_obs_to_forecasts(obs, forecasts, init_dim='init', lead_dim='lead'):
+def match_obs_to_forecasts(
+        obs: xarray.DataArray |  xarray.Dataset, 
+        forecasts: xarray.DataArray |  xarray.Dataset, 
+        init_dim: str = 'init', 
+        lead_dim: str = 'lead'
+    ) ->  xarray.DataArray |  xarray.Dataset:
     matching_obs = []
     for l in forecasts[lead_dim]:
         # TODO: this is hard-coded to assume monthly data
