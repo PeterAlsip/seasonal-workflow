@@ -4,7 +4,7 @@ from utils import modulo, smooth_climatology
 
 def write_boundary(ystart, yend, pathin, pathout, n_segments):
     for var in ['zos', 'thetao', 'so', 'uv']:
-        for segment in range(1, n_segments+1):
+        for segment in range(1, n_segments + 1):
             print(f'{var} {segment}')
             boundary = xarray.open_dataset(pathin / f'{var}_{segment:03d}.nc')
             boundary = boundary.sel(time=slice(str(ystart), str(yend)))
@@ -12,10 +12,16 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
             assert int(boundary['time.year'].min()) == ystart
             assert int(boundary['time.year'].max()) == yend
             if var == 'uv':
-                vardata = boundary[[f'u_segment_{segment:03d}', f'v_segment_{segment:03d}']]
+                vardata = boundary[
+                    [f'u_segment_{segment:03d}', f'v_segment_{segment:03d}']
+                ]
             else:
                 vardata = boundary[f'{var}_segment_{segment:03d}']
-            ave = vardata.groupby('time.dayofyear').mean('time').sel(dayofyear=slice(1, 365))
+            ave = (
+                vardata.groupby('time.dayofyear')
+                .mean('time')
+                .sel(dayofyear=slice(1, 365))
+            )
             smoothed = smooth_climatology(ave).rename({'dayofyear': 'time'})
 
             encoding = {
@@ -32,16 +38,35 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
                 # z coordinates don't really vary in time. use the first coord and expand over time.
                 # do it for both u and v if it is a velocity file.
                 if var == 'uv':
-                    z = boundary[[f'dz_u_segment_{segment:03d}', f'dz_v_segment_{segment:03d}']].isel(time=0).drop('time').expand_dims(time=365)
+                    z = (
+                        boundary[
+                            [
+                                f'dz_u_segment_{segment:03d}',
+                                f'dz_v_segment_{segment:03d}',
+                            ]
+                        ]
+                        .isel(time=0)
+                        .drop('time')
+                        .expand_dims(time=365)
+                    )
                     encoding = {
                         'time': dict(_FillValue=1.0e20),
-                        f'lon_segment_{segment:03d}': dict(dtype='float64', _FillValue=1.0e20),
-                        f'lat_segment_{segment:03d}': dict(dtype='float64', _FillValue=1.0e20),
+                        f'lon_segment_{segment:03d}': dict(
+                            dtype='float64', _FillValue=1.0e20
+                        ),
+                        f'lat_segment_{segment:03d}': dict(
+                            dtype='float64', _FillValue=1.0e20
+                        ),
                         f'u_segment_{segment:03d}': dict(_FillValue=1.0e20),
-                        f'v_segment_{segment:03d}': dict(_FillValue=1.0e20)
+                        f'v_segment_{segment:03d}': dict(_FillValue=1.0e20),
                     }
                 else:
-                    z = boundary[f'dz_{var}_segment_{segment:03d}'].isel(time=0).drop('time').expand_dims(time=365)
+                    z = (
+                        boundary[f'dz_{var}_segment_{segment:03d}']
+                        .isel(time=0)
+                        .drop('time')
+                        .expand_dims(time=365)
+                    )
 
                 z['time'] = smoothed['time']
                 res = xarray.merge([smoothed, z])
@@ -57,7 +82,7 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
                 format='NETCDF3_64BIT',
                 engine='netcdf4',
                 encoding=encoding,
-                unlimited_dims='time'
+                unlimited_dims='time',
             )
 
 
@@ -65,16 +90,20 @@ if __name__ == '__main__':
     import argparse
     from pathlib import Path
     from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config')
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']                   
+    last_year = config['climatology']['last_year']
     pathin = Path(config['filesystem']['open_boundary_files'])
-    pathout = Path(config['filesystem']['forecast_input_data']) / 'boundary' / f'climatology_{first_year}_{last_year}'
+    pathout = (
+        Path(config['filesystem']['forecast_input_data'])
+        / 'boundary'
+        / f'climatology_{first_year}_{last_year}'
+    )
     pathout.mkdir(exist_ok=True, parents=True)
     n_seg = len(config['domain']['boundaries'])
-    write_boundary(first_year, last_year, pathin, pathout), n_segments=n_seg
-    
+    write_boundary(first_year, last_year, pathin, pathout, n_segments=n_seg)

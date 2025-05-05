@@ -1,8 +1,9 @@
-import numpy as np
-import pandas as pd
 import sys
-from xesmf import Regridder
+
+import pandas as pd
 import xarray
+from xesmf import Regridder
+
 sys.path.append('../..')
 from utils import round_coords
 
@@ -14,8 +15,16 @@ def add_bounds(ds):
     # All points extend to 23:59:59 at end of month, except
     # for the end of the year which is padded to 00:00:00 the next Jan 1.
     # normalize=True rolls down to midnight
-    mstart = [d - pd.offsets.MonthBegin(normalize=True) if d.day > 1 else d for d in ds['time'].to_pandas()]
-    mend = [d + pd.DateOffset(months=1) if d.month == 12 else d + pd.DateOffset(months=1) - pd.Timedelta(seconds=1) for d in mstart]
+    mstart = [
+        d - pd.offsets.MonthBegin(normalize=True) if d.day > 1 else d
+        for d in ds['time'].to_pandas()
+    ]
+    mend = [
+        d + pd.DateOffset(months=1)
+        if d.month == 12
+        else d + pd.DateOffset(months=1) - pd.Timedelta(seconds=1)
+        for d in mstart
+    ]
     starts = ds.copy()
     starts['time'] = mstart
     ends = ds.copy()
@@ -26,37 +35,38 @@ def add_bounds(ds):
     return bounded
 
 
-
 def main(year, target_grid, input_dir, output_dir):
     files = list(input_dir.glob(f'glorys_*_{year}-??.nc'))
     glorys = (
-        xarray.open_mfdataset(files, chunks='auto', preprocess=lambda x: round_coords(x, to=12)) # without auto, chunks will be weird and loading will be slow
+        xarray.open_mfdataset(
+            files, chunks='auto', preprocess=lambda x: round_coords(x, to=12)
+        )  # without auto, chunks will be weird and loading will be slow
         .rename({'latitude': 'lat', 'longitude': 'lon'})
-        .sel(depth=slice(None, 5300)) # make sure empty last depth is excluded
-        [VARIABLES]
+        .sel(depth=slice(None, 5300))[  # make sure empty last depth is excluded
+            VARIABLES
+        ]
     ).load()
     print('Interpolating')
     glorys_to_t = Regridder(
-        glorys, target_grid, 
-        method='nearest_s2d', 
-        reuse_weights=False, #! Not reusing
-        periodic=False
+        glorys,
+        target_grid,
+        method='nearest_s2d',
+        reuse_weights=False,  #! Not reusing
+        periodic=False,
     )
-    interped = (
-        glorys_to_t(glorys)
-        .drop_vars(['lon', 'lat'], errors='ignore')
-        .compute()
-    ) 
+    interped = glorys_to_t(glorys).drop_vars(['lon', 'lat'], errors='ignore').compute()
     bounded = add_bounds(interped)
-    bounded['xh'] = (('xh', ), target_grid.xh.data)
-    bounded['yh'] = (('yh', ), target_grid.yh.data)
+    bounded['xh'] = (('xh',), target_grid.xh.data)
+    bounded['yh'] = (('yh',), target_grid.yh.data)
     all_vars = list(bounded.data_vars.keys()) + list(bounded.coords.keys())
     encodings = {v: {'_FillValue': None} for v in all_vars}
-    encodings['time'].update({'dtype':'float64', 'calendar': 'gregorian', 'units': 'days since 1993-01-01'})
+    encodings['time'].update(
+        {'dtype': 'float64', 'calendar': 'gregorian', 'units': 'days since 1993-01-01'}
+    )
     bounded['depth'].attrs = {
         'units': 'meter',
         'cartesian_axis': 'Z',
-        'positive': 'down'
+        'positive': 'down',
     }
     bounded['time'].attrs['cartesian_axis'] = 'T'
     bounded['xh'].attrs = {'cartesian_axis': 'X'}
@@ -67,7 +77,7 @@ def main(year, target_grid, input_dir, output_dir):
         format='NETCDF3_64BIT',
         engine='netcdf4',
         encoding=encodings,
-        unlimited_dims='time'
+        unlimited_dims='time',
     )
     glorys.close()
 
@@ -75,16 +85,21 @@ def main(year, target_grid, input_dir, output_dir):
 if __name__ == '__main__':
     import argparse
     from pathlib import Path
+
     from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int, required=True)
     parser.add_argument('-c', '--config', required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     static = xarray.open_dataset(config['domain']['ocean_static_file'])
-    target_grid = static[['geolat', 'geolon']].rename({'geolat': 'lat', 'geolon': 'lon'})
-    input_dir = Path(config['filesystem']['nowcast_input_data']) / 'sponge' / 'monthly_filled'
+    target_grid = static[['geolat', 'geolon']].rename(
+        {'geolat': 'lat', 'geolon': 'lon'}
+    )
+    input_dir = (
+        Path(config['filesystem']['nowcast_input_data']) / 'sponge' / 'monthly_filled'
+    )
     output_dir = input_dir.parents[0]
     main(args.year, target_grid, input_dir, output_dir)
-

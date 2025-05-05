@@ -1,0 +1,5 @@
+{
+    "exclude": ["docs"],
+    "pythonVersion": "3.11",
+    "typeCheckingMde": "basic"
+}
