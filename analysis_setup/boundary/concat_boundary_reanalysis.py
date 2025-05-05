@@ -1,18 +1,19 @@
 from pathlib import Path
 from subprocess import run
 
+
 def run_cmd(cmd):
     run([cmd], shell=True, check=True)
 
 
 def main(year, input_dir, output_dir, n_segments):
     for var in ['thetao', 'so', 'uv', 'zos']:
-        for seg in range(1, n_segments+1):
+        for seg in range(1, n_segments + 1):
             available_months = []
             # Search for December of the previous year to use
             # to pad the beginning of the yearly file.
             # If not found, roll the time of the first day back by one.
-            prev_month = input_dir / f'{var}_{seg:03d}_{year-1}-12.nc'
+            prev_month = input_dir / f'{var}_{seg:03d}_{year - 1}-12.nc'
             if prev_month.exists():
                 tail_file = prev_month.with_suffix('.tail.nc')
                 run_cmd(f'ncks {prev_month} -d time,-1,-1 -O {tail_file}')
@@ -33,12 +34,12 @@ def main(year, input_dir, output_dir, n_segments):
                     available_months.append(expected_file)
                 else:
                     break
-            if len(available_months) < 2: # end of prev year plus this year
+            if len(available_months) < 2:  # end of prev year plus this year
                 raise Exception('Did not find data')
             # Search for January of the next year to use
             # to pad the end of the yearly file.
             # If not found, roll the time of the last day forward by one.
-            next_month = input_dir / f'{var}_{seg:03d}_{year+1}-01.nc'
+            next_month = input_dir / f'{var}_{seg:03d}_{year + 1}-01.nc'
             if len(available_months) == 13 and next_month.exists():
                 head_file = next_month.with_suffix('.head.nc')
                 run_cmd(f'ncks {next_month} -d time,0,0 -O {head_file}')
@@ -55,10 +56,10 @@ def main(year, input_dir, output_dir, n_segments):
             cmd = f'ncrcat {" ".join(map(str, available_months))} -O {output_file}'
             print(cmd)
             run_cmd(cmd)
-            # TODO: proleptic_gregorian attribute carries over because of setting 
+            # TODO: proleptic_gregorian attribute carries over because of setting
             # the time units when extracting.
             # Fix it here for now.
-            # Also, time is an int but this could be ok since it's not int64. 
+            # Also, time is an int but this could be ok since it's not int64.
             run_cmd(f'ncatted -a calendar,time,o,c,gregorian -O {output_file}')
             tail_file.unlink()
             head_file.unlink()
@@ -68,12 +69,14 @@ def main(year, input_dir, output_dir, n_segments):
 if __name__ == '__main__':
     import argparse
     from pathlib import Path
-    from yaml import safe_load    
+
+    from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     in_dir = Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
     out_dir = in_dir.parents[0]

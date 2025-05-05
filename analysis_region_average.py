@@ -1,18 +1,21 @@
-import numpy as np
 from pathlib import Path
-import xarray
-from utils import open_var
 
+import numpy as np
+import xarray
+
+from utils import open_var
 
 if __name__ == '__main__':
     import argparse
+
     from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-v', '--var', type=str, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
 
     outdir = Path(config['filesystem']['forecast_output_data']) / 'analysis'
@@ -33,7 +36,11 @@ if __name__ == '__main__':
         print(reg)
         weights = masks['areacello'].where(masks[reg]).fillna(0)
         average = ds.weighted(weights).mean(['yh', 'xh'])
-        climo = average.sel(time=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('time.month').mean('time')
+        climo = (
+            average.sel(time=slice(f'{first_year}-01-01', f'{last_year}-12-31'))
+            .groupby('time.month')
+            .mean('time')
+        )
         anom = average.groupby('time.month') - climo
         anom.name = args.var
         persist = anom.shift(time=1)
@@ -58,4 +65,6 @@ if __name__ == '__main__':
     anoms = xarray.concat(anoms, dim='region')
     anoms.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_anom_regionmean.nc')
     persists = xarray.concat(persists, dim='region')
-    persists.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_persist_regionmean.nc')
+    persists.to_netcdf(
+        outdir / f'analysis_{args.domain}_{args.var}_persist_regionmean.nc'
+    )

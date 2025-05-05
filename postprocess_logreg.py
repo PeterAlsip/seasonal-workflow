@@ -1,8 +1,9 @@
-from numba import jit, prange
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 import pandas as pd
 import xarray
+from numba import jit, prange
 
 from utils import match_obs_to_forecasts
 
@@ -21,12 +22,12 @@ def logreg_mle(X, y, tol=1e-5, max_iter=50):
         gradient = X.T @ (y - sigmoid)
         # Hessian matrix
         V = np.diag(sigmoid * (1 - sigmoid))
-        hessian = - X.T @ V @ X
-        # Make sure the matrix isn't singular 
-        # in a way that is friendly to numba. 
+        hessian = -X.T @ V @ X
+        # Make sure the matrix isn't singular
+        # in a way that is friendly to numba.
         # https://stackoverflow.com/a/13270760
-        if np.linalg.cond(hessian) < 1/np.finfo(hessian.dtype).eps:
-            # Update parameters 
+        if np.linalg.cond(hessian) < 1 / np.finfo(hessian.dtype).eps:
+            # Update parameters
             w -= np.linalg.inv(hessian) @ gradient
             # Check convergence
             if np.sum(np.abs(w - w_old)) < tol:
@@ -61,7 +62,7 @@ def apply_logreg_mle(xd, qd, yd):
                 X = np.vstack((x0, x1, x2)).T
                 # Flatten outcomes to match
                 z = yd[:, y, x, :].flatten()
-                # Make sure there are both possibilities in the data.     
+                # Make sure there are both possibilities in the data.
                 if np.min(z) < 1 and np.max(z) > 0:
                     fit = logreg_mle(X, z)
                     a[y, x] = fit[0]
@@ -73,18 +74,35 @@ def apply_logreg_mle(xd, qd, yd):
 def main(config, var, quantiles):
     forecast_output_data = Path(config['filesystem']['forecast_output_data'])
     print('Load forecasts')
-    retro = xarray.open_dataset(forecast_output_data / f'forecasts_ocean_month_{var}.nc')
-    retro = retro.sel(init=slice('1994', '2022')) # Limit forecasts used for regression to this time period.
-    retro['valid_time'] = (('lead', 'init'), 
-        [retro.indexes['init'] + pd.DateOffset(months=l) for l in retro['lead'].astype('int')])
+    retro = xarray.open_dataset(
+        forecast_output_data / f'forecasts_ocean_month_{var}.nc'
+    )
+    retro = retro.sel(
+        init=slice('1994', '2022')
+    )  # Limit forecasts used for regression to this time period.
+    retro['valid_time'] = (
+        ('lead', 'init'),
+        [
+            retro.indexes['init'] + pd.DateOffset(months=l)
+            for l in retro['lead'].astype('int')
+        ],
+    )
     retro['valid_time'] = retro['valid_time'].transpose('init', 'lead')
     ensmean = retro[var].mean('member')
 
-    glorys_rg = xarray.open_dataarray(Path(config['filesystem']['glorys_interpolated']) / f'glorys_{var}.nc')
-    qs_file = forecast_output_data / 'post_post_processed' / f'logreg_quantiles_glorys_{var}.nc'
+    glorys_rg = xarray.open_dataarray(
+        Path(config['filesystem']['glorys_interpolated']) / f'glorys_{var}.nc'
+    )
+    qs_file = (
+        forecast_output_data
+        / 'post_post_processed'
+        / f'logreg_quantiles_glorys_{var}.nc'
+    )
     # Calculating quantiles is slow, so try to avoid it where possible
     if qs_file.is_file():
-        glorys_qs = xarray.open_dataarray(qs_file).load() # exceeds memory if not loaded
+        glorys_qs = xarray.open_dataarray(
+            qs_file
+        ).load()  # exceeds memory if not loaded
     else:
         print('Calculate quantiles from GLORYS')
         glorys_qs = glorys_rg.groupby('time.month').quantile(quantiles, dim='time')
@@ -101,23 +119,28 @@ def main(config, var, quantiles):
         print(int(mon))
         all_leads = []
         for lead in np.unique(retro.lead):
-            print(int(lead), end=" ", flush=True)
-            ysub = exceeded_match.sel(lead=lead, init=exceeded_match['init.month']==mon)
-            xsub = ensmean.sel(lead=lead, init=ensmean['init.month']==mon)
-            qsub = match_qs.sel(lead=lead, init=match_qs['init.month']==mon)
+            print(int(lead), end=' ', flush=True)
+            ysub = exceeded_match.sel(
+                lead=lead, init=exceeded_match['init.month'] == mon
+            )
+            xsub = ensmean.sel(lead=lead, init=ensmean['init.month'] == mon)
+            qsub = match_qs.sel(lead=lead, init=match_qs['init.month'] == mon)
             yd = ysub.values
             xd = xsub.values
             qd = qsub.values
             intercept, b1, b2 = apply_logreg_mle(xd, qd, yd)
-            coefs = xarray.Dataset({
-                'intercept': (('yh', 'xh'), intercept), 
-                'b1': (('yh', 'xh'), b1),
-                'b2': (('yh', 'xh'), b2)
-            }, coords={'yh': ysub.yh.values, 'xh': xsub.xh.values}).squeeze()
+            coefs = xarray.Dataset(
+                {
+                    'intercept': (('yh', 'xh'), intercept),
+                    'b1': (('yh', 'xh'), b1),
+                    'b2': (('yh', 'xh'), b2),
+                },
+                coords={'yh': ysub.yh.values, 'xh': xsub.xh.values},
+            ).squeeze()
             coefs['lead'] = lead
             coefs = coefs.set_coords('lead')
             all_leads.append(coefs)
-        
+
         print('\n')
         all_leads = xarray.concat(all_leads, dim='lead')
         all_leads['month'] = mon
@@ -126,17 +149,22 @@ def main(config, var, quantiles):
 
     coefs = xarray.concat(all_coefs, dim='month')
     # This directory should already exist since it was used for the quantiles file above
-    coefs.to_netcdf(forecast_output_data / 'post_post_processed' / f'logreg_coefs_forecast_{var}.nc')
+    coefs.to_netcdf(
+        forecast_output_data / 'post_post_processed' / f'logreg_coefs_forecast_{var}.nc'
+    )
+
 
 if __name__ == '__main__':
     import argparse
+
     from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-v', '--var', required=True)
     args = parser.parse_args()
     var = args.var
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     # Currently hard coding quantiles.
     quantiles = [0.1, 0.33, 0.5, 0.67, 0.9]

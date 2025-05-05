@@ -1,45 +1,53 @@
-from calendar import monthrange
 import concurrent.futures as futures
+import re
+import sys
+from calendar import monthrange
 from functools import partial
 from pathlib import Path
-import re
+from subprocess import DEVNULL, run
+
 import xarray
-from subprocess import run, DEVNULL
-import sys
+
 sys.path.append('../..')
-from utils import HSMGet, round_coords
 from boundary import Segment
 
+from utils import HSMGet, round_coords
 
 
 def run_cmd(cmd):
     # Some file names contain (1) or similar, which
     # will cause problems if sent directly to dmget.
-    # Put a backslash in front of these. 
+    # Put a backslash in front of these.
     esc = re.sub(r'([\(\)])', r'\\\1', cmd)
-    #esc = cmd.replace('(', '\(').replace(')', '\)')
+    # esc = cmd.replace('(', '\(').replace(')', '\)')
     run([esc], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
+
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 TMP = hsmget.tmp
+
 
 def find_best_files(year, mon, var, reanalysis_path, analysis_path):
     if var == 'uv':
         # For velocity, find the individual components separately.
         # Since u and v are in the same file for the analysis,
         # analysis files will be duplicated; remove them.
-        files  = find_best_files(year, mon, 'uo', reanalysis_path, analysis_path)
+        files = find_best_files(year, mon, 'uo', reanalysis_path, analysis_path)
         files += find_best_files(year, mon, 'vo', reanalysis_path, analysis_path)
         files = sorted(set(files))
     else:
         # Use reanalysis files when they are available,
         # and find and use the analysis files when not.
         files = []
-        for day in range(1, monthrange(year, mon)[1]+1):
+        for day in range(1, monthrange(year, mon)[1] + 1):
             # Search for reanalysis file for the day.
             # If there are multiple files with different R* for the day,
             # choose the last one by sorted order.
-            reanalysis_file = sorted((reanalysis_path / var / str(year)).glob(f'*_{year}{mon:02d}{day:02d}_R????????.nc'))
+            reanalysis_file = sorted(
+                (reanalysis_path / var / str(year)).glob(
+                    f'*_{year}{mon:02d}{day:02d}_R????????.nc'
+                )
+            )
             if len(reanalysis_file) > 0:
                 files.append(reanalysis_file[-1])
             else:
@@ -48,13 +56,40 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                 # The ???? before _R* could be hcst or nwct or fcst. Currently there is no checking if both are matched;
                 # the last one by sorted order will be returned.
                 if var == 'zos':
-                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc 
-                    analysis_file = sorted((analysis_path / 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_2D_????_R*.nc'))
+                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc
+                    analysis_file = sorted(
+                        (
+                            analysis_path
+                            / 'cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406'
+                            / str(year)
+                            / f'{mon:02d}'
+                        ).glob(
+                            f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_2D_????_R*.nc'
+                        )
+                    )
                 elif var in ['thetao', 'so']:
-                    analysis_file = sorted((analysis_path / f'cmems_mod_glo_phy-{var}_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-{var}_????_R*.nc'))
+                    analysis_file = sorted(
+                        (
+                            analysis_path
+                            / f'cmems_mod_glo_phy-{var}_anfc_0.083deg_P1D-m_202406'
+                            / str(year)
+                            / f'{mon:02d}'
+                        ).glob(
+                            f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-{var}_????_R*.nc'
+                        )
+                    )
                 elif var in ['uo', 'vo']:
                     # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_3D-uovo_hcst_R20241002.nc
-                    analysis_file = sorted((analysis_path / 'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406' / str(year) / f'{mon:02d}').glob(f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-uovo_????_R*.nc'))
+                    analysis_file = sorted(
+                        (
+                            analysis_path
+                            / 'cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406'
+                            / str(year)
+                            / f'{mon:02d}'
+                        ).glob(
+                            f'glo12_rg_1d-m_{year}{mon:02d}{day:02d}-{year}{mon:02d}{day:02d}_3D-uovo_????_R*.nc'
+                        )
+                    )
                 else:
                     raise Exception('Unknown variable')
                 if len(analysis_file) > 0:
@@ -68,84 +103,162 @@ def thread_worker(in_file, out_dir, lon_lat_box):
     out_file = out_dir / in_file.name
     lonmin, lonmax, latmin, latmax = lon_lat_box
     # run_cmd(f'ncks -d latitude,{float(latmin)},{float(latmax)} -d longitude,{float(lonmin)},{float(lonmax)} {in_file.as_posix()} -O {out_file.as_posix()}')
-    run_cmd(f'cdo setmisstonn -sellevidx,1/49 -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} {in_file.as_posix()} {out_file.as_posix()}')
+    run_cmd(
+        f'cdo setmisstonn -sellevidx,1/49 -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} {in_file.as_posix()} {out_file.as_posix()}'
+    )
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
 
 
-def main(year, mon, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, update=False, dry=False):
+def main(
+    year,
+    mon,
+    var,
+    threads,
+    analysis_path,
+    reanalysis_path,
+    lon_lat_box,
+    segments,
+    update=False,
+    dry=False,
+):
     if mon == 'all' or update:
         last_month = 12 if mon == 'all' else int(mon)
-        for m in range(1, last_month+1):
+        for m in range(1, last_month + 1):
             print(m)
-            main(year, m, var, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=dry)
+            main(
+                year,
+                m,
+                var,
+                threads,
+                analysis_path,
+                reanalysis_path,
+                lon_lat_box,
+                segments,
+                dry=dry,
+            )
     else:
         mon = int(mon)
         if var == 'all':
             for v in ['so', 'thetao', 'uv', 'zos']:
-                main(year, mon, v, threads, analysis_path, reanalysis_path, lon_lat_box, segments, dry=dry)
+                main(
+                    year,
+                    mon,
+                    v,
+                    threads,
+                    analysis_path,
+                    reanalysis_path,
+                    lon_lat_box,
+                    segments,
+                    dry=dry,
+                )
         else:
             print(var)
-            files = find_best_files(year, mon, var, analysis_path=analysis_path, reanalysis_path=reanalysis_path)
+            files = find_best_files(
+                year,
+                mon,
+                var,
+                analysis_path=analysis_path,
+                reanalysis_path=reanalysis_path,
+            )
             if dry:
                 print(f'Found {len(files)} files')
                 for f in files:
                     print(f.as_posix())
             else:
-                # Make sure that data was found for every day of the month. 
+                # Make sure that data was found for every day of the month.
                 n_expected = monthrange(year, mon)[1]
                 if len(files) == n_expected:
                     copied_files = hsmget(files)
 
                     with futures.ThreadPoolExecutor(max_workers=threads) as executor:
-                        processed_files = sorted(executor.map(partial(thread_worker, out_dir=TMP, lon_lat_box=lon_lat_box), copied_files))
+                        processed_files = sorted(
+                            executor.map(
+                                partial(
+                                    thread_worker, out_dir=TMP, lon_lat_box=lon_lat_box
+                                ),
+                                copied_files,
+                            )
+                        )
 
                     # Save data for use with sponge. TODO: config output path
                     if var in ['so', 'thetao']:
-                        run_cmd(f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc')
-                    ds = (
-                        xarray.open_mfdataset(processed_files, preprocess=partial(round_coords, to=12))
-                        .rename({'latitude': 'lat', 'longitude': 'lon'})
-                    )
+                        run_cmd(
+                            f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc'
+                        )
+                    ds = xarray.open_mfdataset(
+                        processed_files, preprocess=partial(round_coords, to=12)
+                    ).rename({'latitude': 'lat', 'longitude': 'lon'})
                     if 'depth' in ds.coords:
                         ds = ds.rename({'depth': 'z'})
                     for seg in segments:
                         if var == 'uv':
-                            seg.regrid_velocity(ds['uo'], ds['vo'], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
+                            seg.regrid_velocity(
+                                ds['uo'],
+                                ds['vo'],
+                                suffix=f'{year}-{mon:02d}',
+                                additional_encoding={
+                                    'time': {'units': 'hours since 1990-01-01 00:00:00'}
+                                },
+                            )
                         else:
-                            seg.regrid_tracer(ds[var], suffix=f'{year}-{mon:02d}', additional_encoding={'time': {'units': 'hours since 1990-01-01 00:00:00'}})
+                            seg.regrid_tracer(
+                                ds[var],
+                                suffix=f'{year}-{mon:02d}',
+                                additional_encoding={
+                                    'time': {'units': 'hours since 1990-01-01 00:00:00'}
+                                },
+                            )
                     for f in processed_files:
-                            f.unlink()
+                        f.unlink()
                 else:
                     print('Did not find all files')
 
 
 if __name__ == '__main__':
     import argparse
+
     from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     parser.add_argument('-m', '--month', default='all')
     parser.add_argument('-v', '--var', default='all')
     parser.add_argument('-t', '--threads', type=int, default=4)
-    parser.add_argument('-u', '--update', action='store_true', help='Update/rerun all months leading up to the current month.')
-    parser.add_argument('-D', '--dry', action='store_true', help='Dry run: only print out the files that would be worked on.')
+    parser.add_argument(
+        '-u',
+        '--update',
+        action='store_true',
+        help='Update/rerun all months leading up to the current month.',
+    )
+    parser.add_argument(
+        '-D',
+        '--dry',
+        action='store_true',
+        help='Dry run: only print out the files that would be worked on.',
+    )
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     d = config['domain']
     hgrid = xarray.open_dataset(d['hgrid_file'])
-    output_dir = Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
+    output_dir = (
+        Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
+    )
     segments = [
         Segment(num, edge, hgrid, output_dir=output_dir)
         for edge, num in d['boundaries'].items()
     ]
-    main(args.year, args.month, args.var, args.threads,
-         segments=segments,
-         lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
-         reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
-         analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']),
-         update=args.update,
-         dry=args.dry
-         )
+    main(
+        args.year,
+        args.month,
+        args.var,
+        args.threads,
+        segments=segments,
+        lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
+        reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
+        analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']),
+        update=args.update,
+        dry=args.dry,
+    )

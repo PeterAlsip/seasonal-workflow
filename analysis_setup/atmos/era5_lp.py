@@ -10,8 +10,10 @@ def main(tp_file, sf_file, outdir):
     print(cmd)
     run(cmd, shell=True, check=True)
 
+
 if __name__ == '__main__':
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--tp', required=True)
     parser.add_argument('-s', '--sf', required=True)

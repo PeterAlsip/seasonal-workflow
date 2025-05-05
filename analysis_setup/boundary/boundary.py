@@ -247,7 +247,6 @@ def z_to_dz(ds, max_depth=6500.):
     dz = zi - np.roll(zi, shift=1)
     dz[0] = zi[0]
     nt = len(ds['time'])
-    nz = len(ds['z'])
     nx = len(ds['locations']) 
     dz = np.tile(dz.data[np.newaxis, :, np.newaxis], (nt, 1, nx))
     da_dz = xarray.DataArray(

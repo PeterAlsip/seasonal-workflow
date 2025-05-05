@@ -1,17 +1,21 @@
 import concurrent.futures as futures
-from functools import partial 
-import pandas as pd
-from pathlib import Path
 import subprocess
-import xarray
 import sys
+from functools import partial
+from pathlib import Path
+
+import pandas as pd
+import xarray
+
 sys.path.append('../..')
 from utils import HSMGet
+
 hsmget = HSMGet(archive=Path('/archive/uda'))
 
 
 def run_cmd(cmd):
-   subprocess.run([cmd], shell=True, check=True) 
+    subprocess.run([cmd], shell=True, check=True)
+
 
 # Location to save temporary data to.
 TMP = hsmget.tmp
@@ -27,16 +31,20 @@ variables = {
     '2m_temperature': 't2m',
     '2m_dewpoint_temperature': 'd2m',
     '10m_u_component_of_wind': 'u10',
-    '10m_v_component_of_wind': 'v10'
+    '10m_v_component_of_wind': 'v10',
 }
 
 
 def thread_worker(month_file, region_slice):
-    out_file = (TMP / month_file.name)
+    out_file = TMP / month_file.name
     # Slice to subregion and make time unlimited
-    run_cmd(f'ncks {region_slice} --mk_rec_dmn time {month_file.as_posix()} -O {out_file.as_posix()}')
+    run_cmd(
+        f'ncks {region_slice} --mk_rec_dmn time {month_file.as_posix()} -O {out_file.as_posix()}'
+    )
     # Flip latitude so it is south to north.
-    run_cmd(f'ncpdq -a "time,-latitude,longitude" {out_file.as_posix()} -O {out_file.as_posix()}')
+    run_cmd(
+        f'ncpdq -a "time,-latitude,longitude" {out_file.as_posix()} -O {out_file.as_posix()}'
+    )
     return out_file
 
 
@@ -52,9 +60,9 @@ def main(year, interim_path, output_dir, lon_lat_box):
                 if mon == 1:
                     raise Exception('Did not find any files for this year')
                 else:
-                    print(f'Found files for month 1 to {mon-1}')
+                    print(f'Found files for month 1 to {mon - 1}')
                     break
-        
+
         print('hsmget')
         tmp_files = hsmget(found_files)
         print('add record dim')
@@ -62,7 +70,11 @@ def main(year, interim_path, output_dir, lon_lat_box):
         # (nco requires decimal point)
         region_slice = f'-d longitude,{lon_lat_box[0]},{lon_lat_box[1]} -d latitude,{lon_lat_box[2]},{lon_lat_box[3]}'
         with futures.ThreadPoolExecutor(max_workers=4) as executor:
-            processed_files = sorted(executor.map(partial(thread_worker, region_slice=region_slice), tmp_files))
+            processed_files = sorted(
+                executor.map(
+                    partial(thread_worker, region_slice=region_slice), tmp_files
+                )
+            )
 
         # Join together and format metadata using xarray.
         # Using xarray partly because ncrcat is strangely slow on these files.
@@ -74,7 +86,13 @@ def main(year, interim_path, output_dir, lon_lat_box):
         ds = xarray.concat((ds, tail), dim='time').transpose('time', ...)
         all_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
         encodings = {v: {'_FillValue': None, 'dtype': 'float32'} for v in all_vars}
-        encodings['time'].update({'dtype':'float64', 'calendar': 'gregorian', 'units': 'hours since 1990-01-01'})
+        encodings['time'].update(
+            {
+                'dtype': 'float64',
+                'calendar': 'gregorian',
+                'units': 'hours since 1990-01-01',
+            }
+        )
         out_file = output_dir / f'ERA5_{file_var}_{year}_padded.nc'
         ds.to_netcdf(out_file, encoding=encodings, unlimited_dims='time')
         ds.close()
@@ -83,16 +101,23 @@ def main(year, interim_path, output_dir, lon_lat_box):
 if __name__ == '__main__':
     import argparse
     from pathlib import Path
-    from yaml import safe_load    
+
+    from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     interim_path = Path(config['filesystem']['interim_data']['ERA5'])
     output_dir = Path(config['filesystem']['nowcast_input_data']) / 'atmos'
     output_dir.mkdir(exist_ok=True)
     d = config['domain']
-    box = [float(d['west_lon'])%360, float(d['east_lon'])%360, float(d['south_lat']), float(d['north_lat'])]
+    box = [
+        float(d['west_lon']) % 360,
+        float(d['east_lon']) % 360,
+        float(d['south_lat']),
+        float(d['north_lat']),
+    ]
     main(args.year, interim_path, output_dir, box)
