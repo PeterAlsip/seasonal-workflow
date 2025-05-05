@@ -1,5 +1,6 @@
 from argparse import ArgumentParser, Namespace
 import concurrent.futures
+from functools import partial
 import numpy as np
 import os
 from pathlib import Path
@@ -15,66 +16,76 @@ def run_nco(nco_tool: str, var: str, in_files: str, out_file: Path) -> Completed
     return run(cmd, shell=True, check=True)
 
 
-def process_var(var: str, config: Any, cmdargs: Namespace) -> None:
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
-    nens = config['retrospective_forecasts']['ensemble_size']
-    tmp = Path(os.environ['TMPDIR'])
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
-    threads = cmdargs.threads
-    members = []
-    futures = []
-
-    if cmdargs.mean:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-        # Large files: ensemble average, then concatenate averages
-            for m in config['retrospective_forecasts']['months']:
-                for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
-                    month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
-                    files = list((model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'))
-                    if len(files) == 1: # single ensemble member
-                        futures.append(executor.submit(run_nco, 'ncks', var, str(files[0]), month_file))
-                        members.append(month_file)
-                    elif len(files) > 1: 
-                        file_str = ' '.join(map(lambda x: x.as_posix(), files))
-                        futures.append(executor.submit(run_nco, 'ncea', var, file_str, month_file))
-                        members.append(month_file)  
-    else:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-            # Regular files: concatenate initializations together
-            for e in range(1, nens+1):
-                out_file = tmp / f'{cmdargs.domain}_{var}_e{e:02d}.nc'
-                if not out_file.exists() or cmdargs.rerun:
-                    files = []
-                    for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
-                        for m in config['retrospective_forecasts']['months']:
-                            tentative = model_output_data / 'extracted' / cmdargs.domain / f'{y}-{m:02d}-e{e:02d}.{cmdargs.domain}.nc'
-                            if tentative.is_file():
-                                files.append(tentative)
-                    if len(files) > 0:
-                        file_str = ' '.join(map(lambda x: x.as_posix(), files))
-                        futures.append(executor.submit(run_nco, 'ncrcat', f'{var},member', file_str, out_file))
-                        # futures.append(executor.submit(run(f'ncrcat -v {var},member -h {file_str} -O {out_file}', shell=True, check=True)))
-                members.append(out_file)
-
+def check_futures(futures: list[concurrent.futures.Future]) -> None:
     for future in futures:
         try:
             _ = future.result()
         except Exception as e:
             print(f"Task generated an exception: {e}")
 
-    concat_dim = 'init' if cmdargs.mean else 'member'
+
+def process_ensmean(config: Any, cmdargs: Namespace, var: str) -> list[Path]:
+    # Large files: ensemble average, then concatenate averages
+    tmp = Path(os.environ['TMPDIR'])
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    threads = cmdargs.threads
+    members = []
+    futures = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+        for m in config['retrospective_forecasts']['months']:
+            for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
+                month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
+                files = list((model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'))
+                if len(files) == 1: # single ensemble member
+                    futures.append(executor.submit(run_nco, 'ncks', var, str(files[0]), month_file))
+                    members.append(month_file)
+                elif len(files) > 1: 
+                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                    futures.append(executor.submit(run_nco, 'ncea', var, file_str, month_file))
+                    members.append(month_file)  
+    check_futures(futures)
+    return members
+
+
+def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]:
+    nens = config['retrospective_forecasts']['ensemble_size']
+    tmp = Path(os.environ['TMPDIR'])
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    threads = cmdargs.threads
+    members = []
+    futures = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
+        # Regular files: concatenate initializations together
+        for e in range(1, nens+1):
+            out_file = tmp / f'{cmdargs.domain}_{var}_e{e:02d}.nc'
+            if not out_file.exists() or cmdargs.rerun:
+                files = []
+                for y in range(config['retrospective_forecasts']['first_year'], config['retrospective_forecasts']['last_year']+1):
+                    for m in config['retrospective_forecasts']['months']:
+                        tentative = model_output_data / 'extracted' / cmdargs.domain / f'{y}-{m:02d}-e{e:02d}.{cmdargs.domain}.nc'
+                        if tentative.is_file():
+                            files.append(tentative)
+                if len(files) > 0:
+                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                    futures.append(executor.submit(run_nco, 'ncrcat', f'{var},member', file_str, out_file))
+            members.append(out_file)
+    check_futures(futures)
+    return members
+
+
+def combine(file_list: list[Path], var: str, first_year: int, last_year: int, domain: str, output_path: Path, mean: bool = False) -> None:
+    concat_dim = 'init' if mean else 'member'
     print(f'Concat by {concat_dim}')
-    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim=concat_dim, decode_timedelta=False).sortby('init') # sorting is important for slicing later
+    model_ds = xarray.open_mfdataset(file_list, combine='nested', concat_dim=concat_dim, decode_timedelta=False).sortby('init') # sorting is important for slicing later
     model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').load()
     model_ds['lead'] = np.arange(len(model_ds['lead']))
     print('Ensemble mean and anomalies')
-    if cmdargs.mean:
+    if mean:
         ensmean = model_ds
     else:
         ensmean = model_ds.mean('member')
     climo = ensmean[var].sel(init=slice(f'{first_year}-01-01', f'{last_year}-12-31')).groupby('init.month').mean('init')
-    if 'daily' in cmdargs.domain or len(model_ds.lead) >= 365:
+    if 'daily' in domain or len(model_ds.lead) >= 365:
         print('Smoothing daily climatology')
         climo = smooth_climatology(climo, dim='lead')
     anom = model_ds.groupby('init.month') - climo
@@ -85,14 +96,14 @@ def process_var(var: str, config: Any, cmdargs: Namespace) -> None:
     encoding = {v: {'dtype': 'int32'} for v in ['month']}
     climo.encoding = {}
     print('Writing climatology')
-    climo.to_netcdf(model_output_data / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc',
+    climo.to_netcdf(output_path / f'climatology_{domain}_{var}_{first_year}_{last_year}.nc',
         encoding=encoding)
     # Do the same for the full set of forecasts
     encoding = {v: {'dtype': 'int32'} for v in ['member', 'month'] if v in model_ds}
     encoding.update({var: dict(zlib=True, complevel=3) for var in model_ds.data_vars})
     print('Writing forecasts')
-    fname = f'forecasts_{cmdargs.domain}_{var}_ensmean.nc' if cmdargs.mean else f'forecasts_{cmdargs.domain}_{var}.nc'
-    model_ds.to_netcdf(model_output_data / fname, encoding=encoding)
+    fname = f'forecasts_{domain}_{var}_ensmean.nc' if mean else f'forecasts_{domain}_{var}.nc'
+    model_ds.to_netcdf(output_path / fname, encoding=encoding)
 
 
 if __name__ == '__main__':
@@ -107,10 +118,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.config, 'r') as file: 
         config = safe_load(file)
+    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    first_year = config['climatology']['first_year']
+    last_year = config['climatology']['last_year']
+    if args.mean:
+        processor = partial(process_ensmean, config, args)
+    else:
+        processor = partial(process_all_members, config, args)
     if ',' in args.var:
         cmdvar = args.var.split(',')
         for v in cmdvar:
-            process_var(v, config, args)
+            files = processor(v)
+            combine(files, args.var, first_year, last_year, args.domain, model_output_data, mean=args.mean)
     else:
-        process_var(args.var, config, args)
+        files = processor(args.var)
+        combine(files, args.var, first_year, last_year, args.domain, model_output_data, mean=args.mean)
 
