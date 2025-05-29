@@ -1,0 +1,5 @@
+variables:
+  time:
+    - name: frequency_check
+      args:
+        expected_freq: D

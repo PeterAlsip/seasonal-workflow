@@ -1,0 +1,49 @@
+variables:
+  lwdn_sfc:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: 100
+        max_val: 500
+  precip:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 0.005        
+  q_ref:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: 0.0001
+        max_val: 0.03      
+  slp:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: 95000
+        max_val: 105000  
+  swdn_sfc:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 350        
+  t_ref:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: 240
+        max_val: 310
+  u_ref:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: -35
+        max_val: 35
+  v_ref:
+    - no_nans
+    - name: range_check
+      args:
+        min_val: -35
+        max_val: 35        

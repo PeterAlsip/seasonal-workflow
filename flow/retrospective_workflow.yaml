@@ -11,7 +11,7 @@ workflow:
   cycledef:
     - attrs:
         group: default
-      spec: "0 0 1 3 1994-2023 *"
+      spec: "0 0 1 1 2022-2023 *"
   log: 
     cyclestr:
       value: /home/acr/git/seasonal-workflow/flow/log_@Y-@m.log
@@ -21,6 +21,7 @@ workflow:
     GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
     CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
     ENV_SETUP: "source /home/acr/git/seasonal-workflow/flow/env_setup.sh;"
+    QC_SETUP: "source /home/acr/git/ncqc/.venv/bin/activate;"
     LOGS: /home/acr/git/seasonal-workflow/flow/logs
   tasks:
     task_write_spear_atmos:
@@ -33,6 +34,49 @@ workflow:
       nodes: 1:ppn=1
       walltime: 02:00:00
       native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/spear_atmos_%j.out
+    metatask_qc_spear_atmos_daily:
+      var:
+        variable: lwdn_sfc precip q_ref slp swdn_sfc t_ref
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_qc_spear_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 1
+        command: 
+          cyclestr:
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -exec sh -c \"/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py {} -c flow/qc_atmos.yaml flow/qc_daily.yaml --fail-on-error\" \\;"
+            # This will wrongly succeed if find doesn't return any files.
+        partition: batch
+        nodes: 1:ppn=1
+        walltime: 0:05:00
+        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: write_spear_atmos
+    metatask_qc_spear_atmos_4xdaily:
+      var:
+        variable: u_ref v_ref
+      attrs:
+        mode: parallel
+        throttle: 2
+      task_qc_spear_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 1
+        command: 
+          cyclestr:
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -exec sh -c \"/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py {} -c flow/qc_atmos.yaml --fail-on-error\" \\;"
+        partition: batch
+        nodes: 1:ppn=1
+        walltime: 0:05:00
+        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: write_spear_atmos
     task_spear_gaea:
       attrs:
         cycledefs: default
@@ -44,9 +88,13 @@ workflow:
       walltime: 0:30:00
       native: --output=&LOGS;/spear_gaea_%j.out
       dependency:
-        taskdep:
-          attrs:
-            task: write_spear_atmos
+        and:
+          metataskdep_daily:
+            attrs:
+              metatask: qc_spear_atmos_daily
+          metataskdep_4xdaily:
+            attrs:
+              metatask: qc_spear_atmos_4xdaily
     # After analysis simulation has run:
     task_write_ics:
       attrs:
