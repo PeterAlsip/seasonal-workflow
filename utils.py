@@ -1,11 +1,13 @@
 import errno
 import re
 from dataclasses import dataclass
+from functools import singledispatchmethod
 from getpass import getuser
 from os import environ
 from pathlib import Path
 from shutil import which
 from subprocess import DEVNULL, run
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -22,26 +24,38 @@ class HSMGet:
         esc = re.sub(r'([\(\)])', r'\\\1', cmd)
         run(esc, shell=True, check=True, stdout=stdout, stderr=stderr)
 
-    def __call__(self, path_or_paths: Path | list[Path], **kwargs) -> Path | list[Path]:
+    @singledispatchmethod
+    def __call__(self, path_or_paths: Any, **kwargs: Any) -> Any:
+        raise TypeError('Unsupported type for path to hsmget. Expected str, Path, or list[Path]')
+
+    @__call__.register
+    def _call_str(self, path: str, **kwargs: Any) -> Path:
+        cast_path = Path(path)
+        return self.__call__(cast_path, **kwargs)
+    
+    @__call__.register
+    def _call_path(self, path: Path, **kwargs: Any) -> Path:
         if which('hsmget') is None:
             print('Not using hsmget')
-            return path_or_paths
-        elif isinstance(path_or_paths, Path):
-            relative = path_or_paths.relative_to(self.archive)
-            # hsmget will do the dmget first and this is fine since it's one file
-            cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {relative.as_posix()}'
-            self._run(cmd, **kwargs)
-            return self.tmp / relative
-        elif iter(path_or_paths):
-            p_str = ' '.join([p.as_posix() for p in path_or_paths])
-            self._run(f'dmget {p_str}')
-            relative = [p.relative_to(self.archive) for p in path_or_paths]
-            rel_str = ' '.join([r.as_posix() for r in relative])
-            cmd = f'hsmget -q -a {self.archive.as_posix()} -w {self.tmp.as_posix()} -p {self.ptmp.as_posix()} {rel_str}'
-            self._run(cmd, **kwargs)
-            return [self.tmp / r for r in relative]
-        else:
-            raise Exception('Need a Path or iterable of Paths to get')
+            return path
+        relative = path.relative_to(self.archive)
+        # hsmget will do the dmget first and this is fine since it's one file
+        cmd = f'hsmget -q -a {self.archive} -w {self.tmp} -p {self.ptmp} {relative.as_posix()}'
+        self._run(cmd, **kwargs)
+        return self.tmp / relative
+
+    @__call__.register
+    def _call_paths(self, paths: list, **kwargs: Any) -> list[Path]:
+        if which('hsmget') is None:
+            print('Not using hsmget')
+            return paths
+        p_str = ' '.join([p.as_posix() for p in paths])
+        self._run(f'dmget {p_str}')
+        relative = [p.relative_to(self.archive) for p in paths]
+        rel_str = ' '.join([r.as_posix() for r in relative])
+        cmd = f'hsmget -q -a {self.archive} -w {self.tmp} -p {self.ptmp} {rel_str}'
+        self._run(cmd, **kwargs)
+        return [self.tmp / r for r in relative]
 
 
 def open_var(
