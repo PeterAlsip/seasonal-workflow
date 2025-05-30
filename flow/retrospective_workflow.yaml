@@ -39,14 +39,14 @@ workflow:
         variable: lwdn_sfc precip q_ref slp swdn_sfc t_ref
       attrs:
         mode: parallel
-        throttle: 3
+        throttle: 6
       task_qc_spear_#variable#:
         attrs:
           cycledefs: default
           maxtries: 1
         command: 
           cyclestr:
-            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -exec sh -c \"/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py {} -c flow/qc_atmos.yaml flow/qc_daily.yaml --fail-on-error\" \\;"
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c flow/qc_atmos.yaml flow/qc_daily.yaml --fail-on-error || exit 255' _"
             # This will wrongly succeed if find doesn't return any files.
         partition: batch
         nodes: 1:ppn=1
@@ -68,7 +68,7 @@ workflow:
           maxtries: 1
         command: 
           cyclestr:
-            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -exec sh -c \"/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py {} -c flow/qc_atmos.yaml --fail-on-error\" \\;"
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c flow/qc_atmos.yaml --fail-on-error || exit 255' _"
         partition: batch
         nodes: 1:ppn=1
         walltime: 0:05:00
