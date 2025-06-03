@@ -43,7 +43,7 @@ workflow:
       task_qc_spear_#variable#:
         attrs:
           cycledefs: default
-          maxtries: 1
+          maxtries: 2 # Sometimes failure is just failure to load python
         command: 
           cyclestr:
             value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c flow/qc_atmos.yaml flow/qc_daily.yaml --fail-on-error || exit 255' _"
