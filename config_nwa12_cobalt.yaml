@@ -4,9 +4,10 @@ retrospective_forecasts:
   first_year: 1994
   last_year: 2023
   months:
-    - 2
-    - 3
+    - 1
     - 4
+    - 7
+    - 10
   ensemble_size: 10
 
 new_forecasts:
