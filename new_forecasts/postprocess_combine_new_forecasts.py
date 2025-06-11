@@ -1,29 +1,51 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import xarray
 
 
 def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
     model_output_data = Path(config['filesystem']['forecast_output_data'])
-    members = (model_output_data / 'extracted' / cmdargs.domain).glob(f'{y}-{m:02d}-e??.{cmdargs.domain}.nc')
-    model_ds = xarray.open_mfdataset(members, combine='nested', concat_dim='member', combine_attrs='drop_conflicts', decode_timedelta=False)
-    model_ds = model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore').squeeze().load()
+    members = (model_output_data / 'extracted' / cmdargs.domain).glob(
+        f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'
+    )
+    model_ds = xarray.open_mfdataset(
+        members,
+        combine='nested',
+        concat_dim='member',
+        combine_attrs='drop_conflicts',
+        decode_timedelta=False,
+    )
+    model_ds = (
+        model_ds.drop_vars(['ens', 'verif', 'mstart', 'ystart'], errors='ignore')
+        .squeeze()
+        .load()
+    )
     first_year = config['climatology']['first_year']
     last_year = config['climatology']['last_year']
     if isinstance(model_ds.lead.values[0], np.timedelta64):
         valid_time = (model_ds.init + model_ds.lead).data
         freq = 'daily' if len(valid_time) > 12 else 'monthly'
-    elif 'units' in model_ds['lead'].attrs and model_ds['lead'].attrs['units'] == 'days':
-        valid_time = [model_ds.init.values + pd.Timedelta(days=int(l)) for l in model_ds.lead]
+    elif (
+        'units' in model_ds['lead'].attrs and model_ds['lead'].attrs['units'] == 'days'
+    ):
+        valid_time = [
+            model_ds.init.values + pd.Timedelta(days=int(l)) for l in model_ds.lead
+        ]
         freq = 'daily'
     else:
-        valid_time = [model_ds.init.values + pd.DateOffset(months=int(l)) for l in model_ds.lead]
+        valid_time = [
+            model_ds.init.values + pd.DateOffset(months=int(l)) for l in model_ds.lead
+        ]
         freq = 'monthly'
-    model_ds['valid_time'] = (('lead', ), valid_time)
+    model_ds['valid_time'] = (('lead',), valid_time)
     for var in all_vars:
         print(var)
-        climo_file = model_output_data / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc'
+        climo_file = (
+            model_output_data
+            / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc'
+        )
         climo_exists = False
         if climo_file.exists():
             climo = xarray.open_dataset(climo_file, decode_timedelta=False)
@@ -38,28 +60,40 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
             res[f'{var}_anom'] = res[var] * np.nan
         res = res.transpose('lead', 'member', ...)
         # Could also add this attribute?
-        #res.attrs['cefi_climatology_file'] = str(climo_file.name)
-        encoding = {v: {'dtype': 'int32'} for v in ['lead', 'member', 'month', 'valid_time'] if v in res}
+        # res.attrs['cefi_climatology_file'] = str(climo_file.name)
+        encoding = {
+            v: {'dtype': 'int32'}
+            for v in ['lead', 'member', 'month', 'valid_time']
+            if v in res
+        }
         # Compress main variable to reduce space
         encoding.update({v: dict(zlib=True, complevel=3) for v in [var, f'{var}_anom']})
-        fname = config['filesystem']['combined_name'].format(freq=freq, var=var, year=y, month=m)
+        fname = config['filesystem']['combined_name'].format(
+            freq=freq, var=var, year=y, month=m
+        )
         res.to_netcdf(output_dir / fname, encoding=encoding)
-
 
 
 if __name__ == '__main__':
     import argparse
     from yaml import safe_load
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-v', '--var', type=str, default='all')
-    parser.add_argument('-r','--rerun', action='store_true')
-    parser.add_argument('-y', '--year', type=int, required=True, help='Initial year of new forecast')
-    parser.add_argument('-m', '--month', type=int, required=True, help='Initial month of new forecast') 
-    parser.add_argument('-o', '--output', type=str, help='Where to place output files', required=False)   
+    parser.add_argument('-r', '--rerun', action='store_true')
+    parser.add_argument(
+        '-y', '--year', type=int, required=True, help='Initial year of new forecast'
+    )
+    parser.add_argument(
+        '-m', '--month', type=int, required=True, help='Initial month of new forecast'
+    )
+    parser.add_argument(
+        '-o', '--output', type=str, help='Where to place output files', required=False
+    )
     args = parser.parse_args()
-    with open(args.config, 'r') as file: 
+    with open(args.config, 'r') as file:
         config = safe_load(file)
     if args.output is None:
         output_dir = Path(config['filesystem']['forecast_output_data']) / 'individual'
@@ -73,4 +107,3 @@ if __name__ == '__main__':
     else:
         all_vars = [args.var]
     process_all_vars(args.year, args.month, all_vars, output_dir, config, args)
-
