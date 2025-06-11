@@ -32,6 +32,7 @@ if __name__ == '__main__':
     climos = []
     anoms = []
     persists = []
+    persist_vals = []
     for reg in config['regions']['names']:
         print(reg)
         weights = masks['areacello'].where(masks[reg]).fillna(0)
@@ -48,6 +49,12 @@ if __name__ == '__main__':
         persist_lead = persist_lead.transpose('init', 'lead', ...)
         persist_lead['lead'].attrs['units'] = 'months'
         persist_lead.name = args.var
+        # Same but with actual values instead of anomalies
+        pv = average.shift(time=1)
+        pv_lead = pv.expand_dims(lead=np.arange(12)).rename({'time': 'init'})
+        pv_lead = pv_lead.transpose('init', 'lead', ...)
+        pv_lead['lead'].attrs['units'] = 'months'
+        pv_lead.name = args.var
         # This needs to be last
         average['region'] = reg
         averages.append(average)
@@ -57,6 +64,8 @@ if __name__ == '__main__':
         anoms.append(anom)
         persist_lead['region'] = reg
         persists.append(persist_lead)
+        pv_lead['region'] = reg
+        persist_vals.append(pv_lead)
 
     averages = xarray.concat(averages, dim='region')
     averages.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_regionmean.nc')
@@ -66,5 +75,9 @@ if __name__ == '__main__':
     anoms.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_anom_regionmean.nc')
     persists = xarray.concat(persists, dim='region')
     persists.to_netcdf(
-        outdir / f'analysis_{args.domain}_{args.var}_persist_regionmean.nc'
+        outdir / f'analysis_{args.domain}_{args.var}_persist_anom_regionmean.nc'
+    )
+    persist_vals = xarray.concat(persist_vals, dim='region')
+    persist_vals.to_netcdf(
+        outdir / f'analysis_{args.domain}_{args.var}_persist_value_regionmean.nc'
     )
