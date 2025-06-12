@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
@@ -73,7 +74,7 @@ def apply_logreg_mle(xd, qd, yd):
 
 def main(config, var, quantiles):
     forecast_output_data = Path(config['filesystem']['forecast_output_data'])
-    print('Load forecasts')
+    logger.info('Load forecasts')
     retro = xarray.open_dataset(
         forecast_output_data / f'forecasts_ocean_month_{var}.nc'
     )
@@ -104,22 +105,22 @@ def main(config, var, quantiles):
             qs_file
         ).load()  # exceeds memory if not loaded
     else:
-        print('Calculate quantiles from GLORYS')
+        logger.info('Calculate quantiles from GLORYS')
         glorys_qs = glorys_rg.groupby('time.month').quantile(quantiles, dim='time')
         qs_file.parent.mkdir(exist_ok=True)
         glorys_qs.to_netcdf(qs_file)
     match_qs = glorys_qs.sel(month=retro['valid_time.month'])
-    print('Convert to binary exceedance')
+    logger.info('Convert to binary exceedance')
     exceeded = (glorys_rg.groupby('time.month') > glorys_qs).astype('int')
     exceeded_match = match_obs_to_forecasts(exceeded, retro)
 
-    print('Logistic regression')
+    logger.info('Logistic regression')
     all_coefs = []
     for mon in np.unique(retro.init.month):
-        print(int(mon))
+        logger.trace(int(mon))
         all_leads = []
         for lead in np.unique(retro.lead):
-            print(int(lead), end=' ', flush=True)
+            logger.trace(int(lead), end=' ', flush=True)
             ysub = exceeded_match.sel(
                 lead=lead, init=exceeded_match['init.month'] == mon
             )
@@ -141,7 +142,6 @@ def main(config, var, quantiles):
             coefs = coefs.set_coords('lead')
             all_leads.append(coefs)
 
-        print('\n')
         all_leads = xarray.concat(all_leads, dim='lead')
         all_leads['month'] = mon
         all_leads = all_leads.set_coords('month')

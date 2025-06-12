@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from getpass import getuser
 from pathlib import Path
 
+from loguru import logger
+
 
 @dataclass
 class ForecastRun:
@@ -81,7 +83,7 @@ class ForecastRun:
         )
 
     def run_cmd(self, cmd: str) -> None:
-        print(cmd)
+        logger.debug(cmd)
         subprocess.run([cmd], shell=True, check=True)
 
     def copy_from_archive(self) -> None:

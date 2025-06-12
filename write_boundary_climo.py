@@ -1,11 +1,13 @@
+from loguru import logger
 import xarray
+
 from utils import modulo, smooth_climatology
 
 
 def write_boundary(ystart, yend, pathin, pathout, n_segments):
     for var in ['zos', 'thetao', 'so', 'uv']:
         for segment in range(1, n_segments + 1):
-            print(f'{var} {segment}')
+            logger.info(f'{var} {segment}')
             boundary = xarray.open_dataset(pathin / f'{var}_{segment:03d}.nc')
             boundary = boundary.sel(time=slice(str(ystart), str(yend)))
             # To be sure

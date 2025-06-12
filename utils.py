@@ -9,6 +9,7 @@ from shutil import which
 from subprocess import DEVNULL, run
 from typing import Any
 
+from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
@@ -36,7 +37,7 @@ class HSMGet:
     @__call__.register
     def _call_path(self, path: Path, **kwargs: Any) -> Path:
         if which('hsmget') is None:
-            print('Not using hsmget')
+            logger.info('Not using hsmget')
             return path
         relative = path.relative_to(self.archive)
         # hsmget will do the dmget first and this is fine since it's one file
@@ -47,7 +48,7 @@ class HSMGet:
     @__call__.register
     def _call_paths(self, paths: list, **kwargs: Any) -> list[Path]:
         if which('hsmget') is None:
-            print('Not using hsmget')
+            logger.info('Not using hsmget')
             return paths
         p_str = ' '.join([p.as_posix() for p in paths])
         self._run(f'dmget {p_str}')
@@ -206,8 +207,7 @@ def match_obs_to_forecasts(
             match = obs.sel(time=target_times)
         except KeyError as err:
             missing_times = [t for t in target_times if t not in obs['time']]
-            print('These forecast times are not in the observations:')
-            print(missing_times)
+            logger.info(f'These forecast times are not in the observations: {missing_times}')
             raise err
         match['time'] = forecasts['init'].values
         match['lead'] = l

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from loguru import logger
 import xarray
 
 
@@ -19,7 +20,7 @@ def process_var(var, config, cmdargs):
 
     averages = []
     for reg in config['regions']['names']:
-        print(reg)
+        logger.info(reg)
         weights = masks['areacello'].where(masks[reg]).fillna(0)
         ave = ds.weighted(weights).mean(['yh', 'xh']).load()
         ave['region'] = reg

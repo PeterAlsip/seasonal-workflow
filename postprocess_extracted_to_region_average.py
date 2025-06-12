@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from loguru import logger
 import xarray
 
 if __name__ == '__main__':
@@ -28,7 +29,7 @@ if __name__ == '__main__':
         for f in files:
             outname = outdir / f.name
             if not outname.exists() or args.rerun:
-                print(f)
+                logger.info(f)
                 averages = []
                 with xarray.open_dataset(f, decode_timedelta=False) as ds:
                     if 'xh_sub01' in ds and 'yh_sub01' in ds:

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
@@ -41,7 +42,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         freq = 'monthly'
     model_ds['valid_time'] = (('lead',), valid_time)
     for var in all_vars:
-        print(var)
+        logger.info(var)
         climo_file = (
             model_output_data
             / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc'
@@ -55,7 +56,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
                 anom.name = f'{var}_anom'
                 res = xarray.merge((model_ds[[var, 'valid_time']], anom))
         if not climo_exists:
-            print(f'Climatology not found for month {m}. Setting anomalies to nan')
+            logger.warning(f'Climatology not found for month {m}. Setting anomalies to nan')
             res = model_ds[[var, 'valid_time']].copy()
             res[f'{var}_anom'] = res[var] * np.nan
         res = res.transpose('lead', 'member', ...)

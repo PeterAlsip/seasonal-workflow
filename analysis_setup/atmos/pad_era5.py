@@ -4,6 +4,7 @@ import sys
 from functools import partial
 from pathlib import Path
 
+from loguru import logger
 import pandas as pd
 import xarray
 
@@ -50,7 +51,7 @@ def thread_worker(month_file, region_slice):
 
 def main(year, interim_path, output_dir, lon_lat_box):
     for long_name, file_var in variables.items():
-        print(file_var)
+        logger.info(file_var)
         found_files = []
         for mon in range(1, 13):
             uda_file = interim_path / long_name / f'ERA5_{long_name}_{mon:02d}{year}.nc'
@@ -60,12 +61,12 @@ def main(year, interim_path, output_dir, lon_lat_box):
                 if mon == 1:
                     raise Exception('Did not find any files for this year')
                 else:
-                    print(f'Found files for month 1 to {mon - 1}')
+                    logger.info(f'Found files for month 1 to {mon - 1}')
                     break
 
-        print('hsmget')
+        logger.info('hsmget')
         tmp_files = hsmget(found_files)
-        print('add record dim')
+        logger.info('add record dim')
         # These should be formatted ok if they are floats
         # (nco requires decimal point)
         region_slice = f'-d longitude,{lon_lat_box[0]},{lon_lat_box[1]} -d latitude,{lon_lat_box[2]},{lon_lat_box[3]}'
@@ -78,7 +79,7 @@ def main(year, interim_path, output_dir, lon_lat_box):
 
         # Join together and format metadata using xarray.
         # Using xarray partly because ncrcat is strangely slow on these files.
-        print('concat')
+        logger.info('concat')
         ds = xarray.open_mfdataset(processed_files)
         # pad
         tail = ds.isel(time=-1)

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
 import xarray
 
@@ -29,7 +30,7 @@ if __name__ == '__main__':
     # experiments, open them too. 
     if 'analysis_extensions' in config['filesystem']:
         for ext_path in config['filesystem']['analysis_extensions']:
-           print(f'Extending with {ext_path}')
+           logger.info(f'Extending with {ext_path}')
            ext_ds = open_var(Path(ext_path).parents[0], args.domain, args.var)
            ds = xarray.concat((ds, ext_ds), dim='time')
     # Quick check for subregion files, which have coordinates
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     persists = []
     persist_vals = []
     for reg in config['regions']['names']:
-        print(reg)
+        logger.info(reg)
         weights = masks['areacello'].where(masks[reg]).fillna(0)
         average = ds.weighted(weights).mean(['yh', 'xh'])
         climo = (

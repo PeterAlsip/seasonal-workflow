@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 from subprocess import DEVNULL, run
 
+from loguru import logger
 import xarray
 
 sys.path.append('../..')
@@ -95,7 +96,7 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                 if len(analysis_file) > 0:
                     files.append(analysis_file[-1])
                 else:
-                    print(f'Did not a find a file for {year}-{mon:02d}-{day:02d} {var}')
+                    logger.error(f'Did not a find a file for {year}-{mon:02d}-{day:02d} {var}')
     return files
 
 
@@ -125,7 +126,7 @@ def main(
     if mon == 'all' or update:
         last_month = 12 if mon == 'all' else int(mon)
         for m in range(1, last_month + 1):
-            print(m)
+            logger.trace(m)
             main(
                 year,
                 m,
@@ -153,7 +154,7 @@ def main(
                     dry=dry,
                 )
         else:
-            print(var)
+            logger.info(var)
             files = find_best_files(
                 year,
                 mon,
@@ -162,9 +163,9 @@ def main(
                 reanalysis_path=reanalysis_path,
             )
             if dry:
-                print(f'Found {len(files)} files')
+                logger.info(f'Found {len(files)} files')
                 for f in files:
-                    print(f.as_posix())
+                    logger.info(f.as_posix())
             else:
                 # Make sure that data was found for every day of the month.
                 n_expected = monthrange(year, mon)[1]
@@ -212,7 +213,7 @@ def main(
                     for f in processed_files:
                         f.unlink()
                 else:
-                    print('Did not find all files')
+                    logger.error('Did not find all files')
 
 
 if __name__ == '__main__':
@@ -236,7 +237,7 @@ if __name__ == '__main__':
         '-D',
         '--dry',
         action='store_true',
-        help='Dry run: only print out the files that would be worked on.',
+        help='Dry run: print out the files that would be worked on.',
     )
     args = parser.parse_args()
     with open(args.config, 'r') as file:

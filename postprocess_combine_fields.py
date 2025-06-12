@@ -6,6 +6,7 @@ from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Any
 
+from loguru import logger
 import numpy as np
 import xarray
 
@@ -14,7 +15,7 @@ from utils import smooth_climatology
 
 def run_nco(nco_tool: str, var: str, in_files: str, out_file: Path) -> CompletedProcess:
     cmd = f'{nco_tool} -v {var} -h {in_files} -O {out_file}'
-    print(cmd)
+    logger.debug(cmd)
     return run(cmd, shell=True, check=True)
 
 
@@ -23,7 +24,7 @@ def check_futures(futures: list[concurrent.futures.Future]) -> None:
         try:
             _ = future.result()
         except Exception as e:
-            print(f'Task generated an exception: {e}')
+            logger.error(f'Task generated an exception: {e}')
 
 
 def process_ensmean(config: Any, cmdargs: Namespace, var: str) -> list[Path]:
@@ -108,7 +109,7 @@ def combine(
     mean: bool = False,
 ) -> None:
     concat_dim = 'init' if mean else 'member'
-    print(f'Concat by {concat_dim}')
+    logger.info(f'Concat by {concat_dim}')
     model_ds = xarray.open_mfdataset(
         file_list, combine='nested', concat_dim=concat_dim, decode_timedelta=False
     ).sortby('init')  # sorting is important for slicing later
@@ -116,7 +117,7 @@ def combine(
         ['ens', 'verif', 'mstart', 'ystart'], errors='ignore'
     ).load()
     model_ds['lead'] = np.arange(len(model_ds['lead']))
-    print('Ensemble mean and anomalies')
+    logger.info('Ensemble mean and anomalies')
     if mean:
         ensmean = model_ds
     else:
@@ -128,7 +129,7 @@ def combine(
         .mean('init')
     )
     if 'daily' in domain or len(model_ds.lead) >= 365:
-        print('Smoothing daily climatology')
+        logger.info('Smoothing daily climatology')
         climo = smooth_climatology(climo, dim='lead')
     anom = model_ds.groupby('init.month') - climo
     anom = anom.rename({v: f'{v}_anom' for v in anom.data_vars})
@@ -137,7 +138,7 @@ def combine(
     # Also trying to remove the empty dimension "time" from the output.
     encoding = {v: {'dtype': 'int32'} for v in ['month']}
     climo.encoding = {}
-    print('Writing climatology')
+    logger.info('Writing climatology')
     climo.to_netcdf(
         output_path / f'climatology_{domain}_{var}_{first_year}_{last_year}.nc',
         encoding=encoding,
@@ -145,7 +146,7 @@ def combine(
     # Do the same for the full set of forecasts
     encoding = {v: {'dtype': 'int32'} for v in ['member', 'month'] if v in model_ds}
     encoding.update({var: dict(zlib=True, complevel=3) for var in model_ds.data_vars})
-    print('Writing forecasts')
+    logger.info('Writing forecasts')
     fname = (
         f'forecasts_{domain}_{var}_ensmean.nc'
         if mean

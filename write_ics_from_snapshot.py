@@ -4,6 +4,7 @@ import subprocess
 import tarfile
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
 import xarray
 
@@ -88,9 +89,8 @@ _EXPECTED_BGC_VARS = [
 ]
 
 
-def run_cmd(cmd, print_cmd=True):
-    if print_cmd:
-        print(cmd)
+def run_cmd(cmd):
+    logger.debug(cmd)
     subprocess.run([cmd], shell=True, check=True)
 
 
@@ -107,13 +107,13 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
     if force_extract or not (TMP / f'./{yfile}0101.{component}_snap.nc').exists():
         # dmget the tar file
         run_cmd(f'dmget {snapshot_file.as_posix()}')
-        print('extracting')
+        logger.info('extracting')
         tar = tarfile.open(snapshot_file, mode='r:')
         member = tar.getmember(f'./{yfile}0101.{component}_snap.nc')
         tar.extractall(path=TMP, members=[member])
 
     # open and modify the tmp snapshot file
-    print('modifying')
+    logger.info('modifying')
     ds = xarray.open_dataset(
         TMP / f'./{yfile}0101.{component}_snap.nc', decode_cf=False
     )
@@ -136,7 +136,7 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
         nx = len(snapshot['xh'])
         for v in _EXPECTED_BGC_VARS:
             if v not in snapshot:
-                print(f'Adding zero {v} to dataset')
+                logger.info(f'Adding zero {v} to dataset')
                 if '_btf' in v:
                     val = 0.0
                 else:
@@ -146,17 +146,17 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
         for v in ['si', 'fe', 'n']:
             new_var = f'{v}md'
             if new_var not in snapshot:
-                print(f'Adding approx {new_var} to dataset')
+                logger.info(f'Adding approx {new_var} to dataset')
                 snapshot[new_var] = snapshot[f'{v}lg']
 
         for s in ['lg', 'md', 'sm', 'di']:
             if s == 'di' and 'pdi' not in snapshot:
-                print('Adding approx pdi to dataset')
+                logger.info('Adding approx pdi to dataset')
                 snapshot['pdi'] = snapshot['ndi'] / 40.0
             else:
                 new_var = f'p{s}'
                 if new_var not in snapshot:
-                    print(f'Adding {new_var} to snapshot')
+                    logger.info(f'Adding {new_var} to snapshot')
                     snapshot[new_var] = snapshot[f'n{s}'] / 16.0
     elif 'ice' in component:
         # Convert ice and snow thickness from the outpu units (m)
@@ -165,11 +165,11 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
         scaling = {'hice': 905.0, 'hsnow': 330.0}
         for var, scale in scaling.items():
             if var in snapshot:
-                print(f'Converting {var} to kg m-2')
+                logger.info(f'Converting {var} to kg m-2')
                 snapshot[var] *= scale
 
     # write the results to tmp
-    print('writing')
+    logger.info('writing')
     output_name = f'forecast_ics_{component}_{ystart}-{mstart:02d}.nc'
     tmp_output = TMP / output_name
     snapshot.to_netcdf(
@@ -204,13 +204,13 @@ def main_single(config, cmdargs):
     for f in tmp_files:
         f.unlink()
     if cmdargs.gaea:
-        print('transferring to Gaea')
+        logger.info('transferring to Gaea')
         from subprocess import run
         cmd = (
             f'gcp -cd {tarfile} gaea:{config["filesystem"]["gaea_input_data"]}/initial/'
         )
         run([cmd], shell=True, check=True)
-    print(tarfile)
+    logger.success(tarfile)
 
 
 def main_ensemble(config, cmdargs):
@@ -241,12 +241,12 @@ def main_ensemble(config, cmdargs):
         for f in tmp_files:
             f.unlink()
         if cmdargs.gaea:
-            print('transferring to Gaea')
+            logger.info('transferring to Gaea')
             from subprocess import run
 
             cmd = f'gcp -cd {tarfile.as_posix()} gaea:{config["filesystem"]["gaea_input_data"]}/e{ens:02d}/initial/'
             run([cmd], shell=True, check=True)
-    print(tarfile)
+    logger.success(tarfile)
 
 
 if __name__ == '__main__':

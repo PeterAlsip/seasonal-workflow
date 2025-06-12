@@ -5,6 +5,7 @@ import datetime as dt
 import subprocess
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
 import xarray
 
@@ -21,7 +22,7 @@ def process_file(
         infile = forecast.vftmp_dir / forecast.file_name
     if outfile is None:
         outfile = forecast.outdir / forecast.out_name
-    print(f'process_file({infile})')
+    logger.info(f'process_file({infile})')
     with xarray.open_dataset(infile, decode_timedelta=False) as ds:
         if variables is None:
             variables = list(ds.data_vars)
@@ -65,7 +66,7 @@ def process_run(
             forecast.copy_from_ptmp()
             process_file(forecast, variables=variables)
         else:
-            print(f'{forecast.archive_dir / forecast.tar_file} not found; skipping.')
+            logger.info(f'{forecast.archive_dir / forecast.tar_file} not found; skipping.')
             return
         if clean:
             (forecast.vftmp_dir / forecast.file_name).unlink()
@@ -136,7 +137,7 @@ def main(args):
 
     # Try running one dmget command for all files.
     if len(runs_to_dmget) > 0:
-        print(f'dmgetting {len(runs_to_dmget)} files')
+        logger.info(f'dmgetting {len(runs_to_dmget)} files')
         file_names = [str(run.archive_dir / run.tar_file) for run in runs_to_dmget]
         dmget = subprocess.run(
             [f'dmget {" ".join(file_names)}'],
@@ -150,7 +151,7 @@ def main(args):
         # so that it is not extracted or worked on later.
         if dmget.returncode > 0:
             if 'unable to recall the requested file' in dmget.stderr:
-                print('dmget failed. Running dmget separately for each file.')
+                logger.warning('dmget failed. Running dmget separately for each file.')
                 for run in runs_to_dmget:
                     try:
                         subprocess.run(
@@ -159,7 +160,7 @@ def main(args):
                             check=True,
                         )
                     except subprocess.CalledProcessError:
-                        print(
+                        logger.error(
                             f'Could not dmget {run.archive_dir / run.tar_file}. Removing from list of files to extract.'
                         )
                         all_runs.remove(run)
@@ -172,7 +173,7 @@ def main(args):
                     stderr=dmget.stderr,
                 )
     else:
-        print('No files to dmget')
+        logger.info('No files to dmget')
 
     with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
         executor.map(

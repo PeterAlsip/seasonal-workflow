@@ -2,6 +2,7 @@ import os
 from functools import partial
 from pathlib import Path
 
+from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
@@ -315,7 +316,7 @@ def main(
         npoints_new = int(adjacent.sum())
         # If the number of points hasn't changed, it has converged.
         if npoints_new == npoints:
-            print(f'Converged after {i + 1} iterations')
+            logger.info(f'Converged after {i + 1} iterations')
             break
     else:
         raise Exception('Did not converge')
@@ -345,11 +346,11 @@ def main(
     # Flatten to a single list.
     files = flatten(files)
 
-    print('Using files:')
+    logger.info('Using files:')
     for f in files:
-        print(f)
+        logger.info(f)
     if extend:
-        print('Extending with climatology')
+        logger.info('Extending with climatology')
 
     glofas = (
         xarray.open_mfdataset(
@@ -381,7 +382,7 @@ def main(
     # also have the effect of filling the missing part
     # with the climatology.
     if extend:
-        print('Extending to end of year using climatology')
+        logger.info('Extending to end of year using climatology')
         # TODO: This is the v3.0 climatology.
         climo = xarray.open_dataset(extension_climo)
         extend = climo.isel(time=slice(int(res['time.dayofyear'][-1]) - 1, None))

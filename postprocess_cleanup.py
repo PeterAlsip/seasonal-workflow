@@ -1,6 +1,8 @@
 from getpass import getuser
 from pathlib import Path
 
+from loguru import logger
+
 
 if __name__ == '__main__':
     import argparse
@@ -21,7 +23,7 @@ if __name__ == '__main__':
         f'????-??-e??.{args.domain}.nc'
     )
     for f in files:
-        print(f'rm {f.name}')
+        logger.info(f'rm {f.name}')
         if not args.dry:
             f.unlink()
 
@@ -32,6 +34,6 @@ if __name__ == '__main__':
         tmp_dir = VFTMP / 'forecast_data' / config['name'] / f'e{ens:02d}'
         files = tmp_dir.glob(f'????????.{args.domain}.nc')
         for f in files:
-            print(f'rm {f.name}')
+            logger.info(f'rm {f.name}')
             if not args.dry:
                 f.unlink()

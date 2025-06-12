@@ -1,6 +1,7 @@
 import numpy as np
 from os import path
 import warnings
+from loguru import logger
 import xarray as xarray
 import xesmf
 
@@ -798,7 +799,7 @@ class Segment():
         vimname = find_datavar(vimsource)
 
         if flood:
-            print('Flooding')
+            logger.info('Flooding')
             # Don't want to do this lazily, but there is a weird dimension mismatch error 
             # when using .compute() or .load(), so use .values.
             # Use "constituent" as the time dimension.
@@ -808,7 +809,7 @@ class Segment():
             vresource[vrename] = (vresource[vrename].dims, flood_missing(vresource[vrename], xdim=xdim, ydim=ydim, tdim='constituent').values)
             vimsource[vimname] = (vimsource[vimname].dims, flood_missing(vimsource[vimname], xdim=xdim, ydim=ydim, tdim='constituent').values)
 
-        print('Setting up regridders')
+        logger.info('Setting up regridders')
         regrid_u = reuse_regrid(
             uresource,
             self.coords,
@@ -830,7 +831,7 @@ class Segment():
             reuse_weights=True
         )
 
-        print('Regridding')
+        logger.info('Regridding')
         # Interpolate each real and imaginary parts to segment.
         uredest = regrid_u(uresource)[urename]
         uimdest = regrid_u(uimsource)[uimname]
@@ -844,7 +845,7 @@ class Segment():
         vredest = vredest.rename({xname: 'locations'})
         vimdest = vimdest.rename({xname: 'locations'})
         
-        print('Refilling missing data')
+        logger.info('Refilling missing data')
         # Fill missing data.
         # Need to do this first because complex would get converted to real
         uredest = fill_missing(uredest, zdim=None)
@@ -856,7 +857,7 @@ class Segment():
         ucplex = uredest + 1j * uimdest
         vcplex = vredest + 1j * vimdest
 
-        print('Rotating')
+        logger.info('Rotating')
         # Convert complex u and v to ellipse,
         # rotate ellipse from earth-relative to model-relative,
         # and convert ellipse back to amplitude and phase.
@@ -898,7 +899,7 @@ class Segment():
         ds_ap = self.rename_dims(ds_ap)
 
         if write:
-            print('Writing')
+            logger.info('Writing')
             self.to_netcdf(ds_ap, 'tu', **kwargs)
             
         return ds_ap
