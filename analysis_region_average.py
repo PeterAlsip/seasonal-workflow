@@ -25,6 +25,15 @@ if __name__ == '__main__':
     masks = xarray.open_dataset(config['regions']['mask_file'])
     pp = Path(config['filesystem']['analysis_history']).parents[0]
     ds = open_var(pp, args.domain, args.var)
+    # If later years of the analysis were run as separate 
+    # experiments, open them too. 
+    if 'analysis_extensions' in config['filesystem']:
+        for ext_path in config['filesystem']['analysis_extensions']:
+           print(f'Extending with {ext_path}')
+           ext_ds = open_var(Path(ext_path).parents[0], args.domain, args.var)
+           ds = xarray.concat((ds, ext_ds), dim='time')
+    # Quick check for subregion files, which have coordinates
+    # that need to be renamed.
     if 'yh_sub01' in ds and 'xh_sub01' in ds:
         ds = ds.rename({f'{v}_sub01': v for v in ['yh', 'xh']})
 
