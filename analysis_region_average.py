@@ -1,37 +1,33 @@
-from pathlib import Path
-
 from loguru import logger
 import numpy as np
 import xarray
 
+from config import load_config
 from utils import open_var
 
 if __name__ == '__main__':
     import argparse
-
-    from yaml import safe_load
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-v', '--var', type=str, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
 
-    outdir = Path(config['filesystem']['forecast_output_data']) / 'analysis'
+    outdir = config.filesystem.forecast_output_data / 'analysis'
     outdir.mkdir(exist_ok=True)
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
-    masks = xarray.open_dataset(config['regions']['mask_file'])
-    pp = Path(config['filesystem']['analysis_history']).parents[0]
+    first_year = config.climatology.first_year
+    last_year = config.climatology.last_year
+    masks = xarray.open_dataset(config.regions.mask_file)
+    pp = config.filesystem.analysis_history.parents[0]
     ds = open_var(pp, args.domain, args.var)
     # If later years of the analysis were run as separate 
     # experiments, open them too. 
-    if 'analysis_extensions' in config['filesystem']:
-        for ext_path in config['filesystem']['analysis_extensions']:
+    if hasattr(config.filesystem, 'analysis_extensions'):    
+        for ext_path in config.filesystem.analysis_extensions:
            logger.info(f'Extending with {ext_path}')
-           ext_ds = open_var(Path(ext_path).parents[0], args.domain, args.var)
+           ext_ds = open_var(ext_path.parents[0], args.domain, args.var)
            ds = xarray.concat((ds, ext_ds), dim='time')
     # Quick check for subregion files, which have coordinates
     # that need to be renamed.
@@ -43,7 +39,7 @@ if __name__ == '__main__':
     anoms = []
     persists = []
     persist_vals = []
-    for reg in config['regions']['names']:
+    for reg in config.regions.names:
         logger.info(reg)
         weights = masks['areacello'].where(masks[reg]).fillna(0)
         average = ds.weighted(weights).mean(['yh', 'xh'])

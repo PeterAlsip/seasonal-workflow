@@ -3,12 +3,14 @@
 import concurrent.futures as futures
 import datetime as dt
 import subprocess
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from loguru import logger
 import numpy as np
 import xarray
 
+from config import load_config
 from forecast_lib import ForecastRun
 
 
@@ -72,11 +74,10 @@ def process_run(
             (forecast.vftmp_dir / forecast.file_name).unlink()
 
 
-def main(args):
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+def main(args: Namespace) -> None:
+    config = load_config(args.config)
     if args.new:
-        nens = config['new_forecasts']['ensemble_size']
+        nens = config.new_forecasts.ensemble_size
         if args.year is None or args.month is None:
             raise Exception(
                 'Must provide year and month for the new forecast to extract'
@@ -87,24 +88,24 @@ def main(args):
         first_year = (
             args.year
             if args.year is not None
-            else config['retrospective_forecasts']['first_year']
+            else config.retrospective_forecasts.first_year
         )
         last_year = (
             args.year
             if args.year is not None
-            else config['retrospective_forecasts']['last_year']
+            else config.retrospective_forecasts.last_year
         )
         months = (
             [args.month]
             if args.month is not None
-            else config['retrospective_forecasts']['months']
+            else config.retrospective_forecasts.months
         )
-        nens = config['retrospective_forecasts']['ensemble_size']
+        nens = config.retrospective_forecasts.ensemble_size
     outdir = (
-        Path(config['filesystem']['forecast_output_data']) / 'extracted' / args.domain
+        config.filesystem.forecast_output_data / 'extracted' / args.domain
     )
     outdir.mkdir(exist_ok=True, parents=True)
-    variables = config['variables'][args.domain]
+    variables = config.variables[args.domain]
     if args.tmp:
         from os import environ
 
@@ -118,8 +119,8 @@ def main(args):
             ystart=ystart,
             mstart=mstart,
             ens=ens,
-            name=config['name'],
-            template=config['filesystem']['forecast_history'],
+            name=config.name,
+            template=config.filesystem.forecast_history,
             domain=args.domain,
             outdir=outdir,
             vftmp=vftmp,
@@ -183,12 +184,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    import argparse
-    from pathlib import Path
-
-    from yaml import safe_load
-
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     parser.add_argument('-t', '--threads', type=int, default=2)

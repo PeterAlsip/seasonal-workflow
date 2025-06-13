@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from pydantic import BaseModel
 from yaml import safe_load
@@ -23,10 +24,10 @@ class Boundaries(BaseModel):
     east: int
 
 class Domain(BaseModel):
-    south_lat: int
-    north_lat: int
-    west_lon: int
-    east_lon: int
+    south_lat: float
+    north_lat: float
+    west_lon: float
+    east_lon: float
     hgrid_file: Path
     ocean_mask_file: Path
     ocean_static_file: Path
@@ -41,9 +42,9 @@ class InterimData(BaseModel):
     GLORYS_reanalysis: Path
     GLORYS_analysis: Path
     GloFAS_ldd: Path
-    GloFAS_v4: Path
-    GloFAS_interim: Path
-    GloFAS_interim_monthly: Path
+    GloFAS_v4: str
+    GloFAS_interim: str
+    GloFAS_interim_monthly: str
     GloFAS_extension_climatology: Path
 
 class Filesystem(BaseModel):
@@ -51,15 +52,15 @@ class Filesystem(BaseModel):
     nowcast_input_data: Path
     forecast_output_data: Path
     gaea_input_data: Path
-    yearly_river_files: Path
+    yearly_river_files: str
     open_boundary_files: Path
     glorys_interpolated: Path
     interim_data: InterimData
     analysis_history: Path
-    analysis_extensions: list[Path]
-    nowcast_history: Path
-    forecast_history: Path
-    combined_name: Path
+    analysis_extensions: Optional[list[Path]] = []
+    nowcast_history: str
+    forecast_history: str
+    combined_name: str
 
 class Config(BaseModel):
     name: str
