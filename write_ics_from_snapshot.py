@@ -4,9 +4,9 @@ import subprocess
 import tarfile
 from pathlib import Path
 
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
 
 from config import Config, load_config
 
@@ -96,7 +96,7 @@ def run_cmd(cmd):
     subprocess.run([cmd], shell=True, check=True)
 
 
-def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
+def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):  # noqa: PLR0915
     target_time = f'{ystart}-{mstart:02d}-01'
     if mstart == 1:
         yfile = ystart - 1
@@ -199,7 +199,7 @@ def main(config: Config, year: int, month: int, now: bool):
         ics_from_snapshot(c, history, year, month)
         for c in config.snapshots
     ]
-    file_str = ' '.join(map(lambda x: x.name, tmp_files))
+    file_str = ' '.join(x.name for x in tmp_files)
     tarfile = f'{outdir.as_posix()}/forecast_ics_{year}-{month:02d}.tar'
     cmd = f'tar cvf {tarfile} -C {TMP} {file_str}'
     run_cmd(cmd)

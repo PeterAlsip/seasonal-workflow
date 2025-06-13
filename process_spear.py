@@ -29,7 +29,8 @@ def slice_ds(ds, xslice, yslice):
         for xcoord in ['xh', 'xq', 'xT', 'lon']:
             if xcoord in ds.coords:
                 if ds[xcoord].max() > 180:
-                    # If data longitude is 0--360, convert lon slice from config to 0--360
+                    # If data longitude is 0--360,
+                    # convert lon slice from config to 0--360
                     slice_dict.update(
                         {
                             xcoord: slice(

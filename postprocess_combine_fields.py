@@ -6,9 +6,9 @@ from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Any
 
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
 
 from config import Config, load_config
 from utils import smooth_climatology
@@ -53,7 +53,7 @@ def process_ensmean(config: Config, cmdargs: Namespace, var: str) -> list[Path]:
                     )
                     members.append(month_file)
                 elif len(files) > 1:
-                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                    file_str = ' '.join(x.as_posix() for x in files)
                     futures.append(
                         executor.submit(run_nco, 'ncea', var, file_str, month_file)
                     )
@@ -89,7 +89,7 @@ def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]
                         if tentative.is_file():
                             files.append(tentative)
                 if len(files) > 0:
-                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                    file_str = ' '.join(x.as_posix() for x in files)
                     futures.append(
                         executor.submit(
                             run_nco, 'ncrcat', f'{var},member', file_str, out_file
@@ -100,7 +100,7 @@ def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]
     return members
 
 
-def combine(
+def combine(  # noqa: PLR0913
     file_list: list[Path],
     var: str,
     first_year: int,
@@ -146,7 +146,7 @@ def combine(
     )
     # Do the same for the full set of forecasts
     encoding = {v: {'dtype': 'int32'} for v in ['member', 'month'] if v in model_ds}
-    encoding.update({var: dict(zlib=True, complevel=3) for var in model_ds.data_vars})
+    encoding.update({var: {'zlib': True, 'complevel': 3} for var in model_ds.data_vars})
     logger.info('Writing forecasts')
     fname = (
         f'forecasts_{domain}_{var}_ensmean.nc'
@@ -166,7 +166,8 @@ if __name__ == '__main__':
         '-m',
         '--mean',
         action='store_true',
-        help='Include only ensemble mean in combined result, dropping individual members.',
+        help='Include only ensemble mean in combined result, \
+            dropping individual members.',
     )
     parser.add_argument('-t', '--threads', type=int, default=1)
     args = parser.parse_args()

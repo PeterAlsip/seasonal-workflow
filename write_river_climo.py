@@ -1,6 +1,6 @@
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
 
 from utils import modulo, smooth_climatology
 

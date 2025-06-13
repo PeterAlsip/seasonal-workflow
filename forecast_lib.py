@@ -40,7 +40,8 @@ class ForecastRun:
     @property
     def ptmp_dir(self) -> Path:
         """
-        Location on /ptmp to cache data. This is intended to be the same path used by frepp
+        Location on /ptmp to cache data.
+        This is intended to be the same path used by frepp
         so that it can take advantage of the frepp cache.
         """
         return (
@@ -88,14 +89,16 @@ class ForecastRun:
 
     def copy_from_archive(self) -> None:
         """
-        Extract the file for this domain, from the tar file on archive, to the path on /ptmp.
+        Extract the file for this domain, from the tar file on archive,
+        to the path on /ptmp.
         """
         if not self.exists:
             raise FileNotFoundError(
                 f'File {(self.archive_dir / self.tar_file)} does not exist.'
             )
         self.ptmp_dir.mkdir(parents=True, exist_ok=True)
-        cmd = f'tar xf {(self.archive_dir / self.tar_file).as_posix()} -C {self.ptmp_dir.as_posix()} ./{self.file_name}'
+        cmd = f'tar xf {(self.archive_dir / self.tar_file).as_posix()} -C \
+            {self.ptmp_dir.as_posix()} ./{self.file_name}'
         self.run_cmd(cmd)
 
     def copy_from_ptmp(self) -> None:
@@ -103,5 +106,6 @@ class ForecastRun:
         Copy the file for this domain from ptmp to vftmp.
         """
         self.vftmp_dir.mkdir(parents=True, exist_ok=True)
-        cmd = f'gcp {(self.ptmp_dir / self.file_name).as_posix()} {self.vftmp_dir.as_posix()}'
+        cmd = f'gcp {(self.ptmp_dir / self.file_name).as_posix()} \
+            {self.vftmp_dir.as_posix()}'
         self.run_cmd(cmd)

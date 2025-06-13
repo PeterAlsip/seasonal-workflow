@@ -1,9 +1,9 @@
 from getpass import getuser
 from pathlib import Path
 
-from config import load_config
 from loguru import logger
 
+from config import load_config
 
 if __name__ == '__main__':
     import argparse
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # on /vftmp
     VFTMP = Path('/vftmp') / getuser()
     for ens in range(1, config.retrospective_forecasts.ensemble_size + 1):
-        tmp_dir = VFTMP / 'forecast_data' / config['name'] / f'e{ens:02d}'
+        tmp_dir = VFTMP / 'forecast_data' / config.name / f'e{ens:02d}'
         files = tmp_dir.glob(f'????????.{args.domain}.nc')
         for f in files:
             logger.info(f'rm {f.name}')

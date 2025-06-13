@@ -1,13 +1,12 @@
-from pathlib import Path
 
-from loguru import logger
 import xarray
+from loguru import logger
 
 from config import load_config
 
 if __name__ == '__main__':
     import argparse
-    from yaml import safe_load
+
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
@@ -41,12 +40,12 @@ if __name__ == '__main__':
                         ave['region'] = reg
                         ave = ave.set_coords('region')
                         averages.append(ave)
-                    averages = xarray.concat(averages, dim='region')
+                    all_averages = xarray.concat(averages, dim='region')
                     encoding = {
                         v: {'dtype': 'int32'}
                         for v in ['lead', 'member', 'month']
                         if v in averages
                     }
-                    averages.to_netcdf(
+                    all_averages.to_netcdf(
                         outname, encoding=encoding, unlimited_dims=['init']
                     )

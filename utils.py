@@ -9,10 +9,10 @@ from shutil import which
 from subprocess import DEVNULL, run
 from typing import Any
 
-from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
+from loguru import logger
 
 
 @dataclass
@@ -27,13 +27,15 @@ class HSMGet:
 
     @singledispatchmethod
     def __call__(self, path_or_paths: Any, **kwargs: Any) -> Any:
-        raise TypeError('Unsupported type for path to hsmget. Expected str, Path, or list[Path]')
+        raise TypeError(
+            'Unsupported type for path to hsmget. Expected str, Path, or list[Path]'
+        )
 
     @__call__.register
     def _call_str(self, path: str, **kwargs: Any) -> Path:
         cast_path = Path(path)
         return self.__call__(cast_path, **kwargs)
-    
+
     @__call__.register
     def _call_path(self, path: Path, **kwargs: Any) -> Path:
         if which('hsmget') is None:
@@ -41,7 +43,7 @@ class HSMGet:
             return path
         relative = path.relative_to(self.archive)
         # hsmget will do the dmget first and this is fine since it's one file
-        cmd = f'hsmget -q -a {self.archive} -w {self.tmp} -p {self.ptmp} {relative.as_posix()}'
+        cmd = f'hsmget -q -a {self.archive} -w {self.tmp} -p {self.ptmp} {relative}'
         self._run(cmd, **kwargs)
         return self.tmp / relative
 
@@ -60,15 +62,18 @@ class HSMGet:
 
 
 def open_var(
-    pp_root: Path, kind: str, var: str, hsmget: HSMGet = HSMGet()
+    pp_root: Path, kind: str, var: str, hsmget: HSMGet | None = None
 ) -> xarray.DataArray:
+    if hsmget is None:
+        hsmget = HSMGet()
     freq = 'daily' if 'daily' in kind else 'monthly'
     pp_dir = pp_root / 'pp' / kind / 'ts' / freq
     if not pp_dir.is_dir():
         raise FileNotFoundError(
             errno.ENOENT, 'Could not find post-processed directory', str(pp_dir)
         )
-    # Get all of the available post-processing chunk directories (assuming chunks in units of years)
+    # Get all of the available post-processing chunk directories
+    # (assuming chunks in units of years)
     available_chunks = list(pp_dir.glob('*yr'))
     if len(available_chunks) == 0:
         raise FileNotFoundError(
@@ -82,7 +87,8 @@ def open_var(
         # Look through the available chunks and return for the
         # largest chunk that has file(s).
         matching_files = list(chunk.glob(f'{kind}.*.{var}.nc'))
-        # Treat 1 and > 1 files separately, though the > 1 case could probably handle both.
+        # Treat 1 and > 1 files separately,
+        # though the > 1 case could probably handle both.
         if len(matching_files) > 1:
             tmpfiles = hsmget(sorted(matching_files))
             return xarray.open_mfdataset(tmpfiles, decode_timedelta=True)[
@@ -93,11 +99,10 @@ def open_var(
             return xarray.open_dataset(tmpfile, decode_timedelta=True)[
                 var
             ]  # Avoid FutureWarning about decode_timedelta
-    else:
-        raise FileNotFoundError(
-            errno.ENOENT,
-            'Could not find any post-processed files. Check if frepp failed.',
-        )
+    raise FileNotFoundError(
+        errno.ENOENT,
+        'Could not find any post-processed files. Check if frepp failed.',
+    )
 
 
 def pad_ds(ds: xarray.Dataset) -> xarray.Dataset:
@@ -111,7 +116,8 @@ def pad_ds(ds: xarray.Dataset) -> xarray.Dataset:
             'int'
         )
 
-    # Pad by duplicating the first data point and inserting it as one day before the start
+    # Pad by duplicating the first data point and
+    # inserting it as one day before the oringal start
     tfirst = ds.isel(time=0).copy()
     for var in ['time', 'average_T1', 'average_T2']:
         if var in tfirst:
@@ -200,17 +206,19 @@ def match_obs_to_forecasts(
     lead_dim: str = 'lead',
 ) -> xarray.DataArray | xarray.Dataset:
     matching_obs = []
-    for l in forecasts[lead_dim]:
+    for lead in forecasts[lead_dim]:
         # TODO: this is hard-coded to assume monthly data
-        target_times = forecasts[init_dim].to_index() + pd.DateOffset(months=l)
+        target_times = forecasts[init_dim].to_index() + pd.DateOffset(months=lead)
         try:
             match = obs.sel(time=target_times)
         except KeyError as err:
             missing_times = [t for t in target_times if t not in obs['time']]
-            logger.info(f'These forecast times are not in the observations: {missing_times}')
+            logger.info(
+                f'These forecast times are not in the observations: {missing_times}'
+            )
             raise err
         match['time'] = forecasts['init'].values
-        match['lead'] = l
+        match['lead'] = lead
         matching_obs.append(match)
     matching_obs = xarray.concat(matching_obs, dim='lead').rename({'time': 'init'})
     matching_obs = matching_obs.transpose('init', 'lead', ...)

@@ -1,7 +1,7 @@
-from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
+from loguru import logger
 from numba import jit, prange
 
 from config import Config, load_config
@@ -9,7 +9,7 @@ from utils import match_obs_to_forecasts
 
 
 @jit(nogil=True)
-def logreg_mle(X, y, tol=1e-5, max_iter=50):
+def logreg_mle(X, y, tol=1e-5, max_iter=50):  # noqa: N803
     _n_samples, n_features = X.shape
     w = np.zeros(n_features)
     converged = False
@@ -21,7 +21,7 @@ def logreg_mle(X, y, tol=1e-5, max_iter=50):
         # Gradient of log-likelihood
         gradient = X.T @ (y - sigmoid)
         # Hessian matrix
-        V = np.diag(sigmoid * (1 - sigmoid))
+        V = np.diag(sigmoid * (1 - sigmoid))  # noqa: N806
         hessian = -X.T @ V @ X
         # Make sure the matrix isn't singular
         # in a way that is friendly to numba.
@@ -59,7 +59,7 @@ def apply_logreg_mle(xd, qd, yd):
                 # Flatten quantile predictors
                 x2 = qd[:, y, x, :].flatten()
                 # Combine to predictor matrix
-                X = np.vstack((x0, x1, x2)).T
+                X = np.vstack((x0, x1, x2)).T  # noqa: N806
                 # Flatten outcomes to match
                 z = yd[:, y, x, :].flatten()
                 # Make sure there are both possibilities in the data.
@@ -83,8 +83,8 @@ def main(config: Config, var: str, quantiles: list[float]):
     retro['valid_time'] = (
         ('lead', 'init'),
         [
-            retro.indexes['init'] + pd.DateOffset(months=l)
-            for l in retro['lead'].astype('int')
+            retro.indexes['init'] + pd.DateOffset(months=lead)
+            for lead in retro['lead'].astype('int')
         ],
     )
     retro['valid_time'] = retro['valid_time'].transpose('init', 'lead')

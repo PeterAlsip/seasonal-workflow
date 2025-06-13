@@ -1,5 +1,5 @@
-from loguru import logger
 import xarray
+from loguru import logger
 
 from utils import modulo, smooth_climatology
 
@@ -27,17 +27,22 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
             smoothed = smooth_climatology(ave).rename({'dayofyear': 'time'})
 
             encoding = {
-                'time': dict(_FillValue=1.0e20),
-                f'lon_segment_{segment:03d}': dict(dtype='float64', _FillValue=1.0e20),
-                f'lat_segment_{segment:03d}': dict(dtype='float64', _FillValue=1.0e20),
-                f'{var}_segment_{segment:03d}': dict(_FillValue=1.0e20),
+                'time':
+                    {'_FillValue': 1.0e20},
+                f'lon_segment_{segment:03d}':
+                    {'dtype': 'float64', '_FillValue': 1.0e20},
+                f'lat_segment_{segment:03d}':
+                    {'dtype': 'float64', '_FillValue': 1.0e20},
+                f'{var}_segment_{segment:03d}':
+                    {'_FillValue': 1.0e20},
             }
 
             if var == 'zos':
                 # zos doesn't have z coordinates to worry about
                 res = smoothed.to_dataset()
             else:
-                # z coordinates don't really vary in time. use the first coord and expand over time.
+                # z coordinates don't really vary in time.
+                # Use the first coord and expand over time.
                 # do it for both u and v if it is a velocity file.
                 if var == 'uv':
                     z = (
@@ -52,15 +57,15 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
                         .expand_dims(time=365)
                     )
                     encoding = {
-                        'time': dict(_FillValue=1.0e20),
-                        f'lon_segment_{segment:03d}': dict(
-                            dtype='float64', _FillValue=1.0e20
-                        ),
-                        f'lat_segment_{segment:03d}': dict(
-                            dtype='float64', _FillValue=1.0e20
-                        ),
-                        f'u_segment_{segment:03d}': dict(_FillValue=1.0e20),
-                        f'v_segment_{segment:03d}': dict(_FillValue=1.0e20),
+                        'time': {'_FillValue': 1.0e20},
+                        f'lon_segment_{segment:03d}': {
+                            'dtype': 'float64', '_FillValue': 1.0e20
+                        },
+                        f'lat_segment_{segment:03d}': {
+                            'dtype': 'float64', '_FillValue': 1.0e20
+                        },
+                        f'u_segment_{segment:03d}': {'_FillValue': 1.0e20},
+                        f'v_segment_{segment:03d}': {'_FillValue': 1.0e20},
                     }
                 else:
                     z = (
@@ -90,6 +95,7 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
 
 if __name__ == '__main__':
     import argparse
+
     from config import load_config
 
     parser = argparse.ArgumentParser()

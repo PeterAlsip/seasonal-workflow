@@ -48,9 +48,9 @@ def get_spear_file(
     if freq == 'monthly':
         fname = f'{domain}.{ystart}{mstart_f:02d}-{yend}{mend:02d}.{var}.nc'
     elif freq == 'daily':
-        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}-{yend}{mend:02d}{dend_f:02d}.{var}.nc'
+        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}-{yend}{mend:02d}{dend_f:02d}.{var}.nc'  # noqa: E501
     elif freq == '6hr':
-        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}00-{yend}{mend:02d}{dend_f:02d}23.{var}.nc'
+        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}00-{yend}{mend:02d}{dend_f:02d}23.{var}.nc'  # noqa: E501
     else:
         raise Exception(f'Unknown frequency: {freq}')
     return PurePath(fname)
@@ -73,7 +73,8 @@ def get_spear_path(
     domain: diagnostic domain (e.g., ocean, ocean_z)
     freq: output frequency (typically monthly or daily)
     variable: post-processed diagnostic variable
-    ens: ensemble member; either an integer, to get a single member, or "pp_ensemble" to get the post-processed ensemble mean.
+    ens: ensemble member; either an integer, to get a single member,
+      or "pp_ensemble" to get the post-processed ensemble mean.
     """
     if ens != 'pp_ensemble':
         ens = f'pp_ens_{int(ens):02d}'

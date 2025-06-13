@@ -1,5 +1,5 @@
-from loguru import logger
 import xarray
+from loguru import logger
 
 from config import Config, load_config
 
@@ -53,7 +53,8 @@ if __name__ == '__main__':
         '-m',
         '--mean',
         action='store_true',
-        help='Include only ensemble mean in combined result, dropping individual members.',
+        help='Include only ensemble mean in combined result, \
+            dropping individual members.'
     )
     args = parser.parse_args()
     config = load_config(args.config)

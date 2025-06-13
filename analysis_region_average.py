@@ -1,6 +1,6 @@
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
 
 from config import load_config
 from utils import open_var
@@ -22,9 +22,9 @@ if __name__ == '__main__':
     masks = xarray.open_dataset(config.regions.mask_file)
     pp = config.filesystem.analysis_history.parents[0]
     ds = open_var(pp, args.domain, args.var)
-    # If later years of the analysis were run as separate 
-    # experiments, open them too. 
-    if hasattr(config.filesystem, 'analysis_extensions'):    
+    # If later years of the analysis were run as separate
+    # experiments, open them too.
+    if hasattr(config.filesystem, 'analysis_extensions'):
         for ext_path in config.filesystem.analysis_extensions:
            logger.info(f'Extending with {ext_path}')
            ext_ds = open_var(ext_path.parents[0], args.domain, args.var)
@@ -73,17 +73,17 @@ if __name__ == '__main__':
         pv_lead['region'] = reg
         persist_vals.append(pv_lead)
 
-    averages = xarray.concat(averages, dim='region')
-    averages.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_regionmean.nc')
-    climos = xarray.concat(climos, dim='region')
-    climos.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_climo_regionmean.nc')
-    anoms = xarray.concat(anoms, dim='region')
-    anoms.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_anom_regionmean.nc')
-    persists = xarray.concat(persists, dim='region')
-    persists.to_netcdf(
+    all_averages = xarray.concat(averages, dim='region')
+    all_averages.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_regionmean.nc')
+    all_cli = xarray.concat(climos, dim='region')
+    all_cli.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_climo_regionmean.nc')
+    all_anom = xarray.concat(anoms, dim='region')
+    all_anom.to_netcdf(outdir / f'analysis_{args.domain}_{args.var}_anom_regionmean.nc')
+    all_persists = xarray.concat(persists, dim='region')
+    all_persists.to_netcdf(
         outdir / f'analysis_{args.domain}_{args.var}_persist_anom_regionmean.nc'
     )
-    persist_vals = xarray.concat(persist_vals, dim='region')
-    persist_vals.to_netcdf(
+    all_persist_vals = xarray.concat(persist_vals, dim='region')
+    all_persist_vals.to_netcdf(
         outdir / f'analysis_{args.domain}_{args.var}_persist_value_regionmean.nc'
     )

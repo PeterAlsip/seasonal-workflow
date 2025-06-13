@@ -1,14 +1,17 @@
-# Can also do something like:
-# sbatch --export=ALL --wrap="python postprocess_extract_fields.py -c config_nwa12_physics.yaml -d ocean_daily -y 2019 -m 3"
-import concurrent.futures as futures
+"""
+Can also do something like:
+sbatch --export=ALL --wrap="python postprocess_extract_fields.py
+    -c config_nwa12_physics.yaml -d ocean_daily -y 2019 -m 3
+"""
 import datetime as dt
 import subprocess
 from argparse import ArgumentParser, Namespace
+from concurrent import futures
 from pathlib import Path
 
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
 
 from config import load_config
 from forecast_lib import ForecastRun
@@ -28,24 +31,24 @@ def process_file(
     with xarray.open_dataset(infile, decode_timedelta=False) as ds:
         if variables is None:
             variables = list(ds.data_vars)
-        ds = ds[variables]
-        ds['member'] = int(forecast.ens)
-        ds['init'] = dt.datetime(int(forecast.ystart), int(forecast.mstart), 1)
-        ds['lead'] = (('time',), np.arange(len(ds['time'])))
-        if 'daily' in forecast.domain or len(ds['lead']) > 12:
-            ds['lead'].attrs['units'] = 'days'
+        dsv = ds[variables]
+        dsv['member'] = int(forecast.ens)
+        dsv['init'] = dt.datetime(int(forecast.ystart), int(forecast.mstart), 1)
+        dsv['lead'] = (('time',), np.arange(len(dsv['time'])))
+        if 'daily' in forecast.domain or len(dsv['lead']) > 12:
+            dsv['lead'].attrs['units'] = 'days'
         else:
-            ds['lead'].attrs['units'] = 'months'
-        ds = ds.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
-        ds = ds.expand_dims('init')
-        ds = ds.transpose('init', 'lead', ...)
-        ds = ds.drop_vars('time')
-        ds.attrs[f'cefi_archive_version_ens{forecast.ens:02d}'] = str(
+            dsv['lead'].attrs['units'] = 'months'
+        dsv = dsv.swap_dims({'time': 'lead'}).set_coordsv(['init', 'member'])
+        dsv = dsv.expand_dims('init')
+        dsv = dsv.transpose('init', 'lead', ...)
+        dsv = dsv.drop_vars('time')
+        dsv.attrs[f'cefi_archive_version_ens{forecast.ens:02d}'] = str(
             forecast.archive_dir.parent
         )
         # Compress output to significantly reduce space
-        encoding = {var: dict(zlib=True, complevel=3) for var in variables}
-        ds.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
+        encoding = {var: {'zlib': True, 'complevel': 3} for var in variables}
+        dsv.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
 
 
 def process_run(
@@ -68,7 +71,9 @@ def process_run(
             forecast.copy_from_ptmp()
             process_file(forecast, variables=variables)
         else:
-            logger.info(f'{forecast.archive_dir / forecast.tar_file} not found; skipping.')
+            logger.info(
+                f'{forecast.archive_dir / forecast.tar_file} not found; skipping.'
+            )
             return
         if clean:
             (forecast.vftmp_dir / forecast.file_name).unlink()
@@ -144,7 +149,8 @@ def main(args: Namespace) -> None:
             [f'dmget {" ".join(file_names)}'],
             shell=True,
             capture_output=True,
-            universal_newlines=True,
+            text=True,
+            check=True
         )
         # If a tape is bad, the single dmget will fail.
         # Try running dmget separately for each individual file.
@@ -158,15 +164,17 @@ def main(args: Namespace) -> None:
                         subprocess.run(
                             [f'dmget {run.archive_dir / run.tar_file}'],
                             shell=True,
-                            check=True,
+                            check=True
                         )
                     except subprocess.CalledProcessError:
                         logger.error(
-                            f'Could not dmget {run.archive_dir / run.tar_file}. Removing from list of files to extract.'
+                            f'Could not dmget {run.archive_dir / run.tar_file}. \
+                                Removing from list of files to extract.'
                         )
                         all_runs.remove(run)
             else:
-                # dmget failed, but not with the usual error associated with a bad file/tape.
+                # dmget failed, but not with the usual error
+                # associated with a bad file/tape.
                 raise subprocess.CalledProcessError(
                     dmget.returncode,
                     str(dmget.args),
@@ -205,7 +213,7 @@ if __name__ == '__main__':
         '-n',
         '--new',
         action='store_true',
-        help='Flag if this is a new near real time forecast instead of a retrospective.',
+        help='Flag if this is a new near-real-time forecast instead of a retrospective.'
     )
     parser.add_argument(
         '--tmp',
