@@ -90,22 +90,20 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
-    from yaml import safe_load
+    from config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config')
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
-    pathin = Path(config['filesystem']['open_boundary_files'])
+    config = load_config(args.config)
+    first_year = config.climatology.first_year
+    last_year = config.climatology.last_year
+    pathin = config.filesystem.open_boundary_files
     pathout = (
-        Path(config['filesystem']['forecast_input_data'])
+        config.filesystem.forecast_input_data
         / 'boundary'
         / f'climatology_{first_year}_{last_year}'
     )
     pathout.mkdir(exist_ok=True, parents=True)
-    n_seg = len(config['domain']['boundaries'])
+    n_seg = len(config.domain.boundaries)
     write_boundary(first_year, last_year, pathin, pathout, n_segments=n_seg)

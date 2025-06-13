@@ -132,7 +132,7 @@ def write_atmos_all_members(
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
+    from config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int)
@@ -153,19 +153,15 @@ if __name__ == '__main__':
         help='Write even if the files for this run already exist',
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     # Note conversion from [-180, 180] to [0, 360]
-    xslice = slice(
-        config['domain']['west_lon'] % 360, config['domain']['east_lon'] % 360
-    )
-    yslice = slice(config['domain']['south_lat'], config['domain']['north_lat'])
-    work_dir = Path(config['filesystem']['forecast_input_data']) / 'atmos'
+    xslice = slice(config.domain.west_lon % 360, config.domain.east_lon % 360)
+    yslice = slice(config.domain.south_lat, config.domain.north_lat)
+    work_dir = config.filesystem.forecast_input_data / 'atmos'
     work_dir.mkdir(exist_ok=True)
 
     if args.ensemble == -1:
-        forecast_name = 'new_forecasts' if args.new else 'retrospective_forecasts'
-        nens = config[forecast_name]['ensemble_size']
+        nens = config.new_forecasts.ensemble_size if args.new else config.retrospective_forecasts.ensemble_size
         write_atmos_all_members(
             args.year, args.month, nens, work_dir, yslice, xslice, rerun=args.rerun
         )

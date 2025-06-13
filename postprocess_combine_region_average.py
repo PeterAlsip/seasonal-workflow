@@ -4,26 +4,24 @@ from pathlib import Path
 from loguru import logger
 import xarray
 
+from config import load_config
 from utils import smooth_climatology
 
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     tmp = Path(os.environ['TMPDIR'])
 
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    model_output_data = config.filesystem.forecast_output_data
     model_output_data.mkdir(exist_ok=True)
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
-    nens = config['retrospective_forecasts']['ensemble_size']
+    first_year = config.climatology.first_year
+    last_year = config.climatology.last_year
+    nens = config.retrospective_forecasts.ensemble_size
 
     members = []
     # Regular files: concatenate initializations together

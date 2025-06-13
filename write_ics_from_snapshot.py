@@ -8,6 +8,8 @@ from loguru import logger
 import numpy as np
 import xarray
 
+from config import Config, load_config
+
 # Path to store temporary output to:
 TMP = Path(os.environ['TMPDIR'])
 
@@ -182,23 +184,23 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
     return tmp_output
 
 
-def main(config, cmdargs):
-    if cmdargs.now:
+def main(config: Config, year: int, month: int, now: bool):
+    if now:
         history = Path(
-            config['filesystem']['nowcast_history'].format(
-                year=cmdargs.year, month=cmdargs.month
+            config.filesystem.nowcast_history.format(
+                year=year, month=month
             )
         )
     else:
-        history = Path(config['filesystem']['analysis_history'])
-    outdir = Path(config['filesystem']['forecast_input_data']) / 'initial'
+        history = config.filesystem.analysis_history
+    outdir = config.filesystem.forecast_input_data / 'initial'
     outdir.mkdir(exist_ok=True)
     tmp_files = [
-        ics_from_snapshot(c, history, cmdargs.year, cmdargs.month)
-        for c in config['snapshots']
+        ics_from_snapshot(c, history, year, month)
+        for c in config.snapshots
     ]
     file_str = ' '.join(map(lambda x: x.name, tmp_files))
-    tarfile = f'{outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
+    tarfile = f'{outdir.as_posix()}/forecast_ics_{year}-{month:02d}.tar'
     cmd = f'tar cvf {tarfile} -C {TMP} {file_str}'
     run_cmd(cmd)
     for f in tmp_files:
@@ -208,9 +210,6 @@ def main(config, cmdargs):
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
-
-    from yaml import safe_load
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int)
@@ -234,6 +233,5 @@ if __name__ == '__main__':
         required=False,
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    main(config, args)
+    config = load_config(args.config)
+    main(config, args.year, args.month, args.now)

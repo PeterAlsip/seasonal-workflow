@@ -1,17 +1,16 @@
-from pathlib import Path
-
 from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
 from numba import jit, prange
 
+from config import Config, load_config
 from utils import match_obs_to_forecasts
 
 
 @jit(nogil=True)
 def logreg_mle(X, y, tol=1e-5, max_iter=50):
-    n_samples, n_features = X.shape
+    _n_samples, n_features = X.shape
     w = np.zeros(n_features)
     converged = False
     for _ in range(max_iter):
@@ -72,8 +71,8 @@ def apply_logreg_mle(xd, qd, yd):
     return a, b, c
 
 
-def main(config, var, quantiles):
-    forecast_output_data = Path(config['filesystem']['forecast_output_data'])
+def main(config: Config, var: str, quantiles: list[float]):
+    forecast_output_data = config.filesystem.forecast_output_data
     logger.info('Load forecasts')
     retro = xarray.open_dataset(
         forecast_output_data / f'forecasts_ocean_month_{var}.nc'
@@ -92,7 +91,7 @@ def main(config, var, quantiles):
     ensmean = retro[var].mean('member')
 
     glorys_rg = xarray.open_dataarray(
-        Path(config['filesystem']['glorys_interpolated']) / f'glorys_{var}.nc'
+        config.filesystem.glorys_interpolated / f'glorys_{var}.nc'
     )
     qs_file = (
         forecast_output_data
@@ -120,7 +119,7 @@ def main(config, var, quantiles):
         logger.trace(int(mon))
         all_leads = []
         for lead in np.unique(retro.lead):
-            logger.trace(int(lead), end=' ', flush=True)
+            logger.trace(int(lead))
             ysub = exceeded_match.sel(
                 lead=lead, init=exceeded_match['init.month'] == mon
             )
@@ -157,15 +156,12 @@ def main(config, var, quantiles):
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-v', '--var', required=True)
     args = parser.parse_args()
     var = args.var
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     # Currently hard coding quantiles.
     quantiles = [0.1, 0.33, 0.5, 0.67, 0.9]
     main(config, var, quantiles)

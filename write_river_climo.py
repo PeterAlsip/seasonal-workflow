@@ -38,21 +38,20 @@ def process_climatology(years, input_files, output_dir):
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
-    from yaml import safe_load
+
+    from config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
 
     years = np.arange(
-        config['climatology']['first_year'], config['climatology']['last_year'] + 1
+        config.climatology.first_year, config.climatology.last_year + 1
     )
     input_files = [
-        config['filesystem']['yearly_river_files'].format(year=y) for y in years
+        config.filesystem.yearly_river_files.format(year=y) for y in years
     ]
-    work_dir = Path(config['filesystem']['forecast_input_data']) / 'rivers'
+    work_dir = config.filesystem.forecast_input_data / 'rivers'
     work_dir.mkdir(exist_ok=True)
     process_climatology(years, input_files, work_dir)

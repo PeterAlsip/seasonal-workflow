@@ -126,7 +126,8 @@ def get_spear_paths(variables: list[str], *args, **kwargs) -> list[Path]:
 
 if __name__ == '__main__':
     import argparse
-    from yaml import safe_load
+
+    from config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--domain')
@@ -135,17 +136,16 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--ensemble')
     parser.add_argument('-c', '--config')
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
 
     fnames = []
     # If called from command line, this will return all files
     # for years and months in the following ranges
     for ystart in range(
-        config['retrospective_forecasts']['first_year'],
-        config['retrospective_forecasts']['last_year'] + 1,
+        config.retrospective_forecasts.first_year,
+        config.retrospective_forecasts.last_year + 1,
     ):
-        for mstart in config['retrospective_forecasts']['months']:
+        for mstart in config.retrospective_forecasts.months:
             fname = get_spear_path(
                 ystart, mstart, args.domain, args.freq, args.var, ens=args.ensemble
             ).as_posix()

@@ -73,7 +73,7 @@ def process_spear(root, domain, freq, var, ens=None, xslice=None, yslice=None):
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
+    from config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--root', default=os.environ['TMPDIR'])
@@ -85,10 +85,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.config is not None:
-        with open(args.config, 'r') as file:
-            config = safe_load(file)
-            xslice = (config['domain']['west_lon'], config['domain']['east_lon'])
-            yslice = (config['domain']['south_lat'], config['domain']['north_lat'])
+        config = load_config(args.config)
+        xslice = (config.domain.west_lon, config.domain.east_lon)
+        yslice = (config.domain.south_lat, config.domain.north_lat)
     else:
         xslice = yslice = None
 
