@@ -1,7 +1,6 @@
 import argparse
 
-from yaml import safe_load
-
+from config import load_config
 from forecast_lib import ForecastRun
 
 
@@ -18,16 +17,15 @@ def colorprint(msg, color):
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--config', type=str, required=True)
 args = parser.parse_args()
-with open(args.config, 'r') as file:
-    config = safe_load(file)
+config = load_config(args.config)
 
-first_year = config['retrospective_forecasts']['first_year']
-last_year = config['retrospective_forecasts']['last_year']
-nens = config['retrospective_forecasts']['ensemble_size']
-template = config['filesystem']['forecast_history']
+first_year = config.retrospective_forecasts.first_year
+last_year = config.retrospective_forecasts.last_year
+nens = config.retrospective_forecasts.ensemble_size
+template = config.filesystem.forecast_history
 
 for ystart in range(first_year, last_year + 1):
-    for mstart in config['retrospective_forecasts']['months']:
+    for mstart in config.retrospective_forecasts.months:
         for ens in range(1, nens + 1):
             run = ForecastRun(
                 ystart=ystart, mstart=mstart, ens=ens, template=template, outdir=None
@@ -35,10 +33,9 @@ for ystart in range(first_year, last_year + 1):
             tar = run.archive_dir / run.tar_file
             if tar.is_file():
                 colorprint(f'{run.tar_file} e{ens:02d}: found', 'ok')
+            elif tar.with_suffix(tar.suffix + '.gcp').is_file():
+                colorprint(
+                    f'{run.tar_file} e{ens:02d}: partial transfer', 'warning'
+                )
             else:
-                if tar.with_suffix(tar.suffix + '.gcp').is_file():
-                    colorprint(
-                        f'{run.tar_file} e{ens:02d}: partial transfer', 'warning'
-                    )
-                else:
-                    colorprint(f'{run.tar_file} e{ens:02d}: not found', 'fail')
+                colorprint(f'{run.tar_file} e{ens:02d}: not found', 'fail')
