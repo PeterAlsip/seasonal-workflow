@@ -13,7 +13,7 @@ from workflow_tools.utils import pad_ds
 hsmget = HSMGet(archive=SPEAR_ROOT)
 
 
-def get_files_to_extract(ystart, mstart, ens):
+def get_files_to_extract(ystart: int, mstart: int, ens: int) -> list[Path]:
     files = get_spear_paths(
         ['slp', 't_ref', 'q_ref', 'lwdn_sfc', 'swdn_sfc', 'precip'],
         ystart,
@@ -28,7 +28,15 @@ def get_files_to_extract(ystart, mstart, ens):
     return files
 
 
-def write_atmos(ystart, mstart, ens, work_dir, lat_slice, lon_slice, rerun=False):
+def write_atmos(
+    ystart: int,
+    mstart: int,
+    ens: int,
+    work_dir: Path,
+    lat_slice,
+    lon_slice,
+    rerun: bool = False
+) -> None:
     out_dir = work_dir / f'{ystart}-{mstart:02d}-e{ens:02d}'
     if rerun or not out_dir.is_dir():
         # Read mask for flooding
@@ -73,8 +81,14 @@ def write_atmos(ystart, mstart, ens, work_dir, lat_slice, lon_slice, rerun=False
 
 
 def write_atmos_all_members(
-    ystart, mstart, nens, work_dir, lat_slice, lon_slice, rerun=False
-):
+    ystart: int,
+    mstart: int,
+    nens: int,
+    work_dir: Path,
+    lat_slice,
+    lon_slice,
+    rerun: bool = False
+) -> None:
     # Read mask for flooding
     static = xarray.open_dataset('/work/acr/spear/atmos.static.nc')
     is_ocean = np.invert(static.land_mask.astype('bool'))
@@ -116,7 +130,8 @@ def write_atmos_all_members(
             # cdo doesn't like if the input is also the output here
             subprocess.run(
                 [
-                    f'cdo -O replace {fout} -setmisstodis,3 -selvar,{main_var} {fout} {fout}.new'  # noqa: E501
+                    f'cdo -O replace {fout} -setmisstodis,3 -selvar,{main_var} '
+                    f'{fout} {fout}.new'
                 ],
                 shell=True,
                 check=True,

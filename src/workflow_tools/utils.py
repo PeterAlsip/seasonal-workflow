@@ -5,6 +5,7 @@ import pandas as pd
 import xarray
 from loguru import logger
 
+type XarrayData = xarray.Dataset | xarray.DataArray
 
 def pad_ds(ds: xarray.Dataset) -> xarray.Dataset:
     if not isinstance(ds.time.values[0], np.datetime64):
@@ -69,7 +70,7 @@ def flatten(lst: list[Any]) -> list[Any]:
 
 
 def smooth_climatology(
-    da: xarray.DataArray | xarray.Dataset, window: int = 5, dim: str = 'dayofyear'
+    da: XarrayData, window: int = 5, dim: str = 'dayofyear'
 ) -> xarray.DataArray:
     smooth = da.copy()
     for _ in range(2):
@@ -90,11 +91,11 @@ def smooth_climatology(
 
 
 def match_obs_to_forecasts(
-    obs: xarray.DataArray | xarray.Dataset,
-    forecasts: xarray.DataArray | xarray.Dataset,
+    obs: XarrayData,
+    forecasts: XarrayData,
     init_dim: str = 'init',
     lead_dim: str = 'lead',
-) -> xarray.DataArray | xarray.Dataset:
+) -> XarrayData:
     matching_obs = []
     for lead in forecasts[lead_dim]:
         # TODO: this is hard-coded to assume monthly data

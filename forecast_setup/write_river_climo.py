@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import xarray
 from loguru import logger
@@ -5,7 +7,9 @@ from loguru import logger
 from workflow_tools.utils import modulo, smooth_climatology
 
 
-def process_climatology(years, input_files, output_dir):
+def process_climatology(
+    years: np.ndarray, input_files: list[Path], output_dir: Path
+) -> None:
     logger.info('Opening dataset')
     rivers = xarray.open_mfdataset(
         input_files,
@@ -50,7 +54,7 @@ if __name__ == '__main__':
         config.climatology.first_year, config.climatology.last_year + 1
     )
     input_files = [
-        config.filesystem.yearly_river_files.format(year=y) for y in years
+        Path(config.filesystem.yearly_river_files.format(year=y)) for y in years
     ]
     work_dir = config.filesystem.forecast_input_data / 'rivers'
     work_dir.mkdir(exist_ok=True)

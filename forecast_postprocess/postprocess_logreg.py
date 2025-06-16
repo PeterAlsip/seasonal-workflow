@@ -3,13 +3,19 @@ import pandas as pd
 import xarray
 from loguru import logger
 from numba import jit, prange
+from numpy.typing import NDArray
 
 from workflow_tools.config import Config, load_config
 from workflow_tools.utils import match_obs_to_forecasts
 
 
 @jit(nogil=True)
-def logreg_mle(X, y, tol=1e-5, max_iter=50):  # noqa: N803
+def logreg_mle(
+    X: NDArray[np.float64],  # noqa: N803
+    y: NDArray[np.float64],
+    tol: float = 1e-5,
+    max_iter: int = 50
+) -> NDArray[np.float64]:
     _n_samples, n_features = X.shape
     w = np.zeros(n_features)
     converged = False
@@ -42,7 +48,11 @@ def logreg_mle(X, y, tol=1e-5, max_iter=50):  # noqa: N803
 
 
 @jit(parallel=True, nogil=True)
-def apply_logreg_mle(xd, qd, yd):
+def apply_logreg_mle(
+    xd: NDArray[np.float64],
+    qd: NDArray[np.float64],
+    yd: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     # assuming dimensions are <init, lat, lon, quantile>
     ni, ny, nx, nq = qd.shape
     a = np.full((ny, nx), np.nan)
@@ -71,7 +81,7 @@ def apply_logreg_mle(xd, qd, yd):
     return a, b, c
 
 
-def main(config: Config, var: str, quantiles: list[float]):
+def main(config: Config, var: str, quantiles: list[float]) -> None:
     forecast_output_data = config.filesystem.forecast_output_data
     logger.info('Load forecasts')
     retro = xarray.open_dataset(

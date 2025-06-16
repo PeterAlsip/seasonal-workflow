@@ -5,7 +5,7 @@ import xarray
 import xesmf
 
 
-def center_to_outer(center, left=None, right=None):
+def center_to_outer(center: xarray.DataArray, left=None, right=None):
     """
     Given an array of center coordinates, find the edge coordinates,
     including extrapolation for far left and right edge.
