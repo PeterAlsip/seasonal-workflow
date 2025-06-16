@@ -57,44 +57,6 @@ def fill_missing(arr, xdim='locations', zdim='z', fill='b'):
     return filled
 
 
-def flood_missing(arr, **kwargs):
-    """Flood missing data (over land) using HCtFlood. 
-    Had some trouble installing HCtFlood on analysis, so it is 
-    imported by adding it to the path. 
-    Import is done inside this function so that 
-    everything else still works if HCtFlood is unavailable.
-
-    Args:
-        arr (xarray.DataArray): Array to be flooded.
-        **kwargs: Additional keyword arguments passed to flooding function.
-
-    Returns:
-        xarray.DataArray: Flooded array.
-    """
-    # https://github.com/raphaeldussin/HCtFlood
-    import sys
-    sys.path.append('/home/Andrew.C.Ross/git/HCtFlood')
-    from HCtFlood import kara as hct
-    flooded = hct.flood_kara(arr, **kwargs)
-
-    # Check for 2D or 3D case.
-    # Assume that 3D case is a function of time and space, not depth and space,
-    # unless zdim was included in keyword arguments.
-    # Harder to assume that if zdim was not passed but the flooded
-    # data has a z dimension longer than 1, so warn.
-    # If it is a function of time and space, drop the
-    # depth dimension added by flood_kara.
-    if arr.ndim <= 3 and 'zdim' not in kwargs:
-        if 'z' in arr.dims and len(arr.z) > 1:
-            warnings.warn('flood_kara used the default name for the z dimension. ' \
-            'Not dropping z dimension.')
-        else:
-            # flood_kara adds an undesired z=0, so drop it for 2D vars
-            flooded = flooded.isel(z=0).drop('z')
-
-    return flooded
-
-
 def find_datavar(ds):
     """
     Given an xarray Dataset containing one data variable of interest
@@ -110,7 +72,7 @@ def find_datavar(ds):
             (more than one variable not named lat or lon).
 
     Returns:
-        str: Name of variable of interest from Dataset. 
+        str: Name of variable of interest from Dataset.
     """
     names = [x for x in ds if x not in ['lon', 'lat']]
     if len(names) > 1:
@@ -492,17 +454,25 @@ class Segment:
     def add_coords(self, ds):
         """Add segment lat and lon coordinates to a dataset."""
         if self.border in ['south', 'north']:
-            ds[f'lon_{self.segstr}'] = ((f'nx_{self.segstr}', ), self.coords['lon'].data)
-            ds[f'lat_{self.segstr}'] = ((f'nx_{self.segstr}', ), self.coords['lat'].data)
+            ds[f'lon_{self.segstr}'] = (
+                (f'nx_{self.segstr}', ), self.coords['lon'].data
+            )
+            ds[f'lat_{self.segstr}'] = (
+                (f'nx_{self.segstr}', ), self.coords['lat'].data
+            )
         elif self.border in ['west', 'east']:
-            ds[f'lon_{self.segstr}'] = ((f'ny_{self.segstr}', ), self.coords['lon'].data)
-            ds[f'lat_{self.segstr}'] = ((f'ny_{self.segstr}', ), self.coords['lat'].data)
+            ds[f'lon_{self.segstr}'] = (
+                (f'ny_{self.segstr}', ), self.coords['lon'].data
+            )
+            ds[f'lat_{self.segstr}'] = (
+                (f'ny_{self.segstr}', ), self.coords['lat'].data
+            )
         return ds
 
     def regrid_velocity(
                 self, usource, vsource,
                 method='nearest_s2d', periodic=False, write=True,
-                flood=False, fill='b', xdim='lon', ydim='lat', zdim='z', rotate=True,
+                fill='b', rotate=True,
                 uvar=None, vvar=None, **kwargs):
         """Interpolate velocity onto segment and (optionally) write to file.
 
@@ -515,16 +485,8 @@ class Segment:
                 (passed to xesmf). Defaults to False.
             write (bool, optional): After regridding, write the results to file.
                 Defaults to True.
-            flood (bool, optional): As the first step of regridding,
-                horizontally flood the source data. Defaults to False.
             fill (str, optional): Method to use for filling data horizontally
                 (b for bfill or f for ffill).
-            xdim (str, optional): Name of the horizontal x dimension,
-                needed if flooding. Defaults to 'lon'.
-            ydim (str, optional): Name of the horizontal y dimension,
-                needed if flooding. Defaults to 'lat'.
-            zdim (str, optional): Name of the vertical dimension, needed if flooding.
-                Defaults to 'z'.
             rotate(bool, optional): Rotate to the model grid, assuming input is
                 on earth grid.
             uvar (str, optional): If provided, use this var from usource, and assume
@@ -534,10 +496,6 @@ class Segment:
         Returns:
             xarray.Dataset: Dataset of regridded boundary data.
         """
-        if flood:
-            usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim)
-            vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim)
-
         if not isinstance(usource, xarray.Dataset):
             usource = usource.to_dataset()
 
@@ -629,7 +587,7 @@ class Segment:
     def regrid_tracer(
             self, tsource,
             method='nearest_s2d', periodic=False, write=True,
-            flood=False, fill='b', xdim='lon', ydim='lat', zdim='z',
+            fill='b', xdim='lon', ydim='lat',
             regrid_suffix='t', source_var=None, **kwargs):
         """Regrid a tracer onto segment and (optionally) write to file.
 
@@ -641,16 +599,10 @@ class Segment:
                 (passed to xesmf). Defaults to False.
             write (bool, optional): After regridding, write the results to file.
                 Defaults to True.
-            flood (bool, optional): As the first step of regridding,
-                horizontally flood the source data. Defaults to False.
             fill (str, optional): Method to use for filling data horizontally
                 (b for bfill or f for ffill).
-            xdim (str, optional): Name of the horizontal x dimension,
-                needed if flooding. Defaults to 'lon'.
-            ydim (str, optional): Name of the horizontal y dimension,
-                needed if flooding. Defaults to 'lat'.
-            zdim (str, optional): Name of the vertical dimension, needed if flooding.
-                Defaults to 'z'.
+            xdim (str, optional): Name of the horizontal x dimension, defaults to 'lon'.
+            ydim (str, optional): Name of the horizontal y dimension, defaults to 'lat'.
             regrid_suffix (str, optional): Suffix to add to xesmf weight file name.
                 Useful when regridding multiple tracers from different datasets.
                 Defaults to 't'.
@@ -668,14 +620,6 @@ class Segment:
                 name = find_datavar(tsource)
         else:
             name =  source_var
-        if flood:
-            if isinstance(tsource, xarray.DataArray):
-                tsource = flood_missing(tsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
-            elif isinstance(tsource, xarray.Dataset):
-                tsource[name] = flood_missing(tsource[name], xdim=xdim, ydim=ydim,
-                                              zdim=zdim).load()
-            else:
-                raise Exception()
 
         if not isinstance(tsource, xarray.Dataset):
             tsource.name = name
@@ -732,7 +676,7 @@ class Segment:
     def regrid_tidal_elevation(
                 self, resource, imsource, time,
                 method='nearest_s2d', periodic=False, write=True,
-                flood=False, xdim='nx', ydim='ny', **kwargs):
+                **kwargs):
         """Regrid tidal elevation onto segment and (optionally) write to file.
         It is assumed that real (resource) and imaginary (imsource) components of the
         constituents have the same coordinates.
@@ -750,34 +694,13 @@ class Segment:
                 (passed to xesmf). Defaults to False.
             write (bool, optional): After regridding, write the results to file.
                 Defaults to True.
-            flood (bool, optional): As the first step of regridding,
-                horizontally flood the source data. Defaults to False.
             fill (str, optional): Method to use for filling data horizontally
                 (b for bfill or f for ffill).
-            xdim (str, optional): Name of the horizontal x dimension,
-                needed if flooding. Defaults to 'nx'.
-            ydim (str, optional): Name of the horizontal y dimension,
-                needed if flooding. Defaults to 'ny'.
             **kwargs: additional keyword arguments passed to Segment.to_netcdf().
 
         Returns:
             xarray.Dataset: Dataset of regridded boundary data.
         """
-        if flood:
-            rename = find_datavar(resource)
-            imname = find_datavar(imsource)
-            # Don't want to do this lazily, but there is a weird dimension
-            # mismatch error when using .compute() or .load(), so use .values.
-            # Also, use "constituent" as the time dimension.
-            reflood = flood_missing(
-                resource[rename], xdim=xdim, ydim=ydim, tdim='constituent'
-            )
-            imflood = flood_missing(
-                imsource[imname], xdim=xdim, ydim=ydim, tdim='constituent'
-            )
-            resource[rename] = (resource[rename].dims, reflood.values)
-            imsource[imname] = (imsource[imname].dims, imflood.values)
-
         # Horizontally interpolate elevation components
         regrid = reuse_regrid(
             resource,
@@ -830,15 +753,14 @@ class Segment:
 
         return ds_ap
 
-    def regrid_tidal_velocity(  # noqa: PLR0915
+    def regrid_tidal_velocity(
             self, uresource, uimsource, vresource, vimsource, time,
             method='nearest_s2d', periodic=False, write=True,
-            flood=False, xdim='nx', ydim='ny', **kwargs):
+            **kwargs):
         """Regrid tidal velocity onto segment and (optionally) write to file.
         It is assumed that real and imaginary components of the
         individual u or v velocities have the same coordinates,
-        but the u and v components may have separate coordinates
-        [although currently they must have the same names if flooding].
+        but the u and v components may have separate coordinates.
 
         Args:
             uresource (xarray.DataArray): Real component of tidal u velocity on
@@ -857,14 +779,8 @@ class Segment:
                 (passed to xesmf). Defaults to False.
             write (bool, optional): After regridding, write the results to file.
                 Defaults to True.
-            flood (bool, optional): As the first step of regridding,
-                horizontally flood the source data. Defaults to False.
             fill (str, optional): Method to use for filling data horizontally
                 (b for bfill or f for ffill).
-            xdim (str, optional): Name of the horizontal x dimension,
-                needed if flooding. Defaults to 'nx'.
-            ydim (str, optional): Name of the horizontal y dimension,
-                needed if flooding. Defaults to 'ny'.
             **kwargs: additional keyword arguments passed to Segment.to_netcdf().
 
         Returns:
@@ -874,16 +790,6 @@ class Segment:
         uimname = find_datavar(uimsource)
         vrename = find_datavar(vresource)
         vimname = find_datavar(vimsource)
-
-        if flood:
-            logger.info('Flooding')
-            # Don't want to do this lazily, but there is a weird dimension mismatch
-            #  error when using .compute() or .load(), so use .values.
-            # Use "constituent" as the time dimension.
-            uresource[urename] = (uresource[urename].dims, flood_missing(uresource[urename], xdim=xdim, ydim=ydim, tdim='constituent').values)
-            uimsource[uimname] = (uimsource[uimname].dims, flood_missing(uimsource[uimname], xdim=xdim, ydim=ydim, tdim='constituent').values)
-            vresource[vrename] = (vresource[vrename].dims, flood_missing(vresource[vrename], xdim=xdim, ydim=ydim, tdim='constituent').values)
-            vimsource[vimname] = (vimsource[vimname].dims, flood_missing(vimsource[vimname], xdim=xdim, ydim=ydim, tdim='constituent').values)
 
         logger.info('Setting up regridders')
         regrid_u = reuse_regrid(
