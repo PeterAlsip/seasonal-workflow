@@ -11,6 +11,9 @@ from loguru import logger
 
 from workflow_tools.utils import HSMGet, round_coords
 
+hsmget = HSMGet(archive=Path('/archive/uda'))
+TMP = hsmget.tmp
+
 
 def run_cmd(cmd):
     # Some file names contain (1) or similar, which
@@ -18,14 +21,17 @@ def run_cmd(cmd):
     # Put a backslash in front of these.
     esc = re.sub(r'([\(\)])', r'\\\1', cmd)
     # esc = cmd.replace('(', '\(').replace(')', '\)')
+    logger.debug(cmd)
     run([esc], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
 
 
-hsmget = HSMGet(archive=Path('/archive/uda'))
-TMP = hsmget.tmp
-
-
-def find_best_files(year, mon, var, reanalysis_path, analysis_path):
+def find_best_files(
+    year: int,
+    mon: int,
+    var: str,
+    reanalysis_path: Path,
+    analysis_path: Path
+) -> list[Path]:
     if var == 'uv':
         # For velocity, find the individual components separately.
         # Since u and v are in the same file for the analysis,
@@ -107,29 +113,33 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
     return files
 
 
-def thread_worker(in_file, out_dir, lon_lat_box):
+def thread_worker(
+    in_file: Path,
+    out_dir: Path,
+    lon_lat_box: tuple[float, float, float, float]
+) -> Path:
     out_file = out_dir / in_file.name
     lonmin, lonmax, latmin, latmax = lon_lat_box
     run_cmd(
-        f'cdo setmisstonn -sellevidx,1/49 \
-        -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} \
-        {in_file.as_posix()} {out_file.as_posix()}'
+        f'cdo setmisstonn -sellevidx,1/49 '
+        f'-sellonlatbox,{lonmin},{lonmax},{latmin},{latmax} '
+        f'{in_file.as_posix()} {out_file.as_posix()}'
     )
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
 
 
 def main(
-    year,
-    mon,
-    var,
-    threads,
-    analysis_path,
-    reanalysis_path,
-    lon_lat_box,
-    segments,
-    update=False,
-    dry=False,
+    year: int,
+    mon: int,
+    var: str,
+    threads: int,
+    analysis_path: Path,
+    reanalysis_path: Path,
+    lon_lat_box: tuple[float, float, float, float],
+    segments: list[Segment],
+    update: bool = False,
+    dry: bool = False,
 ):
     if mon == 'all' or update:
         last_month = 12 if mon == 'all' else int(mon)
@@ -229,7 +239,7 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
@@ -250,16 +260,13 @@ if __name__ == '__main__':
         help='Dry run: print out the files that would be worked on.',
     )
     args = parser.parse_args()
-    with open(args.config) as file:
-        config = safe_load(file)
-    d = config['domain']
-    hgrid = xarray.open_dataset(d['hgrid_file'])
-    output_dir = (
-        Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
-    )
+    config = load_config(args.config)
+    dom = config.domain
+    hgrid = xarray.open_dataset(dom.hgrid_file)
+    output_dir = config.filesystem.nowcast_input_data/ 'boundary' / 'monthly'
     segments = [
         Segment(num, edge, hgrid, output_dir=output_dir)
-        for edge, num in d['boundaries'].items()
+        for num, edge in dom.boundaries.items()
     ]
     main(
         args.year,
@@ -267,9 +274,9 @@ if __name__ == '__main__':
         args.var,
         args.threads,
         segments=segments,
-        lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
-        reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
-        analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']),
+        lon_lat_box=(dom.west_lon, dom.east_lon, dom.south_lat, dom.north_lat),
+        reanalysis_path=config.filesystem.interim_data.GLORYS_reanalysis, # TODO?
+        analysis_path=config.filesystem.interim_data.GLORYS_reanalysis,
         update=args.update,
         dry=args.dry,
     )

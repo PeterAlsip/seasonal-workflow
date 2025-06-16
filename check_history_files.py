@@ -28,7 +28,7 @@ for ystart in range(first_year, last_year + 1):
     for mstart in config.retrospective_forecasts.months:
         for ens in range(1, nens + 1):
             run = ForecastRun(
-                ystart=ystart, mstart=mstart, ens=ens, template=template, outdir=None
+                ystart=ystart, mstart=mstart, ens=ens, template=template
             )
             tar = run.archive_dir / run.tar_file
             if tar.is_file():

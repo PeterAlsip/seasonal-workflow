@@ -1,11 +1,10 @@
-import sys
+from pathlib import Path
 
 import pandas as pd
 import xarray
 from xesmf import Regridder
 
-sys.path.append('../..')
-from utils import round_coords
+from workflow_tools.utils import round_coords
 
 VARIABLES = ['thetao', 'so']
 
@@ -35,7 +34,12 @@ def add_bounds(ds):
     return bounded
 
 
-def main(year, target_grid, input_dir, output_dir):
+def main(
+    year: int,
+    target_grid: xarray.Dataset,
+    input_dir: Path,
+    output_dir: Path
+) -> None:
     files = list(input_dir.glob(f'glorys_*_{year}-??.nc'))
     glorys = (
         xarray.open_mfdataset(

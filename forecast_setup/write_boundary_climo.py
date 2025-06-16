@@ -96,7 +96,7 @@ def write_boundary(ystart, yend, pathin, pathout, n_segments):
 if __name__ == '__main__':
     import argparse
 
-    from config import load_config
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config')

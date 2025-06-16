@@ -28,11 +28,20 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.pyrefly]
+# check all files in "."
+project-includes = ["."]
+# exclude dotfiles
+project-excludes = ["**/.[!/.]*", "**/*venv/**", "examples/*"]
+# import project files from "."
+search-path = ["."]
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"
 exclude = [
-    "*.ipynb"
+    "*.ipynb",
+    "examples/*"
 ]
 
 [tool.ruff.lint]
@@ -56,5 +65,13 @@ quote-style = "single"
 indent-style = "space"
 line-ending = "auto"
 
+[tool.ty.src]
+exclude = [
+    "*.ipynb",
+    "examples/*",
+    "analysis_setup/boundary/esper_matlabengine.py"
+]
+
 [tool.uv.sources]
 esmpy = { git = "https://github.com/esmf-org/esmf", subdirectory = "src/addon/esmpy", tag = "v8.7.0" }
+

@@ -2,6 +2,7 @@
 import subprocess
 from dataclasses import dataclass
 from getpass import getuser
+from os import devnull
 from pathlib import Path
 
 from loguru import logger
@@ -13,11 +14,11 @@ class ForecastRun:
     mstart: int
     ens: int
     template: str
-    outdir: Path
     name: str = ''
     domain: str = 'ocean_month'
     vftmp: Path = Path('/vftmp') / getuser()
     ptmp: Path = Path('/ptmp') / getuser()
+    outdir: Path = Path(devnull)
 
     @property
     def archive_dir(self) -> Path:

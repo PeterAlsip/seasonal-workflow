@@ -1,14 +1,19 @@
 from pathlib import Path
 from subprocess import run
 
+from loguru import logger
 
-def run_cmd(cmd):
+
+def run_cmd(cmd: str) -> None:
+    logger.debug(cmd)
     run([cmd], shell=True, check=True)
 
 
-def main(year, input_dir, output_dir, n_segments):
+def main(year: int, input_dir: Path, output_dir: Path, n_segments: int) -> None:
     for var in ['thetao', 'so', 'uv', 'zos']:
+        logger.info('Working on {var}', var=var)
         for seg in range(1, n_segments + 1):
+            logger.trace('Segment {seg:03d}', seg=seg)
             available_months = []
             # Search for December of the previous year to use
             # to pad the beginning of the yearly file.
@@ -18,7 +23,7 @@ def main(year, input_dir, output_dir, n_segments):
                 tail_file = prev_month.with_suffix('.tail.nc')
                 run_cmd(f'ncks {prev_month} -d time,-1,-1 -O {tail_file}')
             else:
-                print('Padding with first time')
+                logger.info('Padding with first time')
                 first_file = input_dir / f'{var}_{seg:03d}_{year}-01.nc'
                 tail_file = first_file.with_suffix('.tail.nc')
                 # Pick out the first time from the first month.
@@ -44,7 +49,7 @@ def main(year, input_dir, output_dir, n_segments):
                 head_file = next_month.with_suffix('.head.nc')
                 run_cmd(f'ncks {next_month} -d time,0,0 -O {head_file}')
             else:
-                print('Padding with last time')
+                logger.info('Padding with last time')
                 last_file = available_months[-1]
                 head_file = last_file.with_suffix('.head.nc')
                 # Pick out the first time from the first month.
@@ -54,7 +59,6 @@ def main(year, input_dir, output_dir, n_segments):
             available_months.append(head_file)
             output_file = output_dir / f'{var}_{seg:03d}_{year}.nc'
             cmd = f'ncrcat {" ".join(map(str, available_months))} -O {output_file}'
-            print(cmd)
             run_cmd(cmd)
             # TODO: proleptic_gregorian attribute carries over because of setting
             # the time units when extracting.
@@ -63,22 +67,19 @@ def main(year, input_dir, output_dir, n_segments):
             run_cmd(f'ncatted -a calendar,time,o,c,gregorian -O {output_file}')
             tail_file.unlink()
             head_file.unlink()
-            print(' ')
 
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
 
-    from yaml import safe_load
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    with open(args.config) as file:
-        config = safe_load(file)
-    in_dir = Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
+    config = load_config(args.config)
+    in_dir = config.filesystem.nowcast_input_data / 'boundary' / 'monthly'
     out_dir = in_dir.parents[0]
-    n_seg = len(config['domain']['boundaries'])
+    n_seg = len(config.domain.boundaries)
     main(args.year, in_dir, out_dir, n_seg)

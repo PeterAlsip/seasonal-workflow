@@ -17,11 +17,6 @@ class Climatology(BaseModel):
     first_year: int
     last_year: int
 
-class Boundaries(BaseModel):
-    south: int
-    north: int
-    east: int
-
 class Domain(BaseModel):
     south_lat: float
     north_lat: float
@@ -30,7 +25,7 @@ class Domain(BaseModel):
     hgrid_file: Path
     ocean_mask_file: Path
     ocean_static_file: Path
-    boundaries: Boundaries
+    boundaries: dict[int, str]
 
 class Regions(BaseModel):
     mask_file: Path

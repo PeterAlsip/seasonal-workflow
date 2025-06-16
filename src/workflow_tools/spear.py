@@ -81,7 +81,7 @@ def get_spear_path(
 
     subdir = f'i{ystart}{mstart:02d}01_OTA_IceAtmRes_L33'
     fname = get_spear_file(ystart, mstart, domain, freq, var)
-    subpath = PurePath(ens) / domain / 'ts' / freq / '1yr' / fname
+    subpath = PurePath(str(ens)) / domain / 'ts' / freq / '1yr' / fname
 
     """
     For year 1991-2014
@@ -128,7 +128,7 @@ def get_spear_paths(variables: list[str], *args, **kwargs) -> list[Path]:
 if __name__ == '__main__':
     import argparse
 
-    from config import load_config
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--domain')

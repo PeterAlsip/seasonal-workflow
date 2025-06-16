@@ -5,14 +5,23 @@ import pandas as pd
 import xarray
 from loguru import logger
 
+from workflow_tools.config import Config, load_config
 
-def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
-    members = (model_output_data / 'extracted' / cmdargs.domain).glob(
-        f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'
+
+def process_all_vars(
+    y: int,
+    m: int,
+    all_vars: list[str],
+    output_dir: Path,
+    config: Config,
+    domain:str
+) -> None:
+    model_output_data = config.filesystem.forecast_output_data
+    members = (model_output_data / 'extracted' / domain).glob(
+        f'{y}-{m:02d}-e??.{domain}.nc'
     )
     model_ds = xarray.open_mfdataset(
-        members,
+        list(members),
         combine='nested',
         concat_dim='member',
         combine_attrs='drop_conflicts',
@@ -23,8 +32,8 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         .squeeze()
         .load()
     )
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
+    first_year = config.climatology.first_year
+    last_year = config.climatology.last_year
     if isinstance(model_ds.lead.values[0], np.timedelta64):
         valid_time = (model_ds.init + model_ds.lead).data
         freq = 'daily' if len(valid_time) > 12 else 'monthly'
@@ -45,7 +54,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         logger.info(var)
         climo_file = (
             model_output_data
-            / f'climatology_{cmdargs.domain}_{var}_{first_year}_{last_year}.nc'
+            / f'climatology_{domain}_{var}_{first_year}_{last_year}.nc'
         )
         climo_exists = False
         if climo_file.exists():
@@ -73,7 +82,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         encoding.update(
             {v: {'zlib': True, 'complevel': 3} for v in [var, f'{var}_anom']}
         )
-        fname = config['filesystem']['combined_name'].format(
+        fname = config.filesystem.combined_name.format(
             freq=freq, var=var, year=y, month=m
         )
         res.to_netcdf(output_dir / fname, encoding=encoding)
@@ -81,8 +90,6 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
 
 if __name__ == '__main__':
     import argparse
-
-    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
@@ -111,4 +118,4 @@ if __name__ == '__main__':
         all_vars = config.variables[args.domain]
     else:
         all_vars = [args.var]
-    process_all_vars(args.year, args.month, all_vars, output_dir, config, args)
+    process_all_vars(args.year, args.month, all_vars, output_dir, config, args.domain)

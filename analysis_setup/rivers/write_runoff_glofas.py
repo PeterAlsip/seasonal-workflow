@@ -1,6 +1,7 @@
 import os
 from functools import partial
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -246,15 +247,20 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):  # noqa:
     return ds
 
 
-def get_glofas_file(main_template, interim_template, monthly_template, year):
+def get_glofas_file(
+    main_template: str,
+    interim_template: str,
+    monthly_template: str,
+    year: int
+) -> Path | list[Path] | None:
     main_file = main_template.format(y=year)
     interim_file = interim_template.format(y=year)
     # Check for a full year of data from the main dataset
     if Path(main_file).is_file():
-        return main_file
+        return Path(main_file)
     # Check for a full year of data from the interim dataset.
     elif Path(interim_file).is_file():
-        return interim_file
+        return Path(interim_file)
     # Check for files for individual months from the interim dataset.
     # Stop as soon as a month isn't found.
     else:
@@ -271,7 +277,7 @@ def get_glofas_file(main_template, interim_template, monthly_template, year):
             return None
 
 
-def flatten(lst):
+def flatten(lst: list[Any]) -> list[Any]:
     flat_list = []
     for item in lst:
         if isinstance(item, list):
@@ -282,18 +288,18 @@ def flatten(lst):
 
 
 def main(  # noqa: PLR0915
-    year,
-    mask_file,
-    hgrid_file,
-    ldd_file,
-    glofas_template,
-    glofas_interim,
-    glofas_interim_monthly,
-    glofas_subset,
-    extension_climo,
-    outdir,
-    modify=True,
-):
+    year: int,
+    mask_file: Path,
+    hgrid_file: Path,
+    ldd_file: Path,
+    glofas_template: str,
+    glofas_interim: str,
+    glofas_interim_monthly: str,
+    glofas_subset: dict[str, slice],
+    extension_climo: Path,
+    outdir: Path,
+    modify: bool = True,
+) -> None:
     ocean_mask = xarray.open_dataarray(mask_file)
     mom_coast_mask = get_coast_mask(ocean_mask)
     hgrid = xarray.open_dataset(hgrid_file)
@@ -418,8 +424,7 @@ if __name__ == '__main__':
     import argparse
     from pathlib import Path
 
-    from yaml import safe_load
-
+    from workflow_tools.config import load_config
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
@@ -430,27 +435,22 @@ if __name__ == '__main__':
         help='Apply corrections for location and bias',
     )
     args = parser.parse_args()
-    with open(args.config) as file:
-        config = safe_load(file)
-    d = config['domain']
+    config = load_config(args.config)
+    dom = config.domain
     subset = {
-        'lat': slice(d['north_lat'], d['south_lat']),
-        'lon': slice(d['west_lon'], d['east_lon']),
+        'lat': slice(dom.north_lat, dom.south_lat),
+        'lon': slice(dom.west_lon, dom.east_lon),
     }
     main(
         args.year,
-        mask_file=d['ocean_mask_file'],
-        hgrid_file=d['hgrid_file'],
-        ldd_file=config['filesystem']['interim_data']['GloFAS_ldd'],
-        glofas_template=config['filesystem']['interim_data']['GloFAS_v4'],
-        glofas_interim=config['filesystem']['interim_data']['GloFAS_interim'],
-        glofas_interim_monthly=config['filesystem']['interim_data'][
-            'GloFAS_interim_monthly'
-        ],
+        mask_file=dom.ocean_mask_file,
+        hgrid_file=dom.hgrid_file,
+        ldd_file=config.filesystem.interim_data.GloFAS_ldd,
+        glofas_template=config.filesystem.interim_data.GloFAS_v4,
+        glofas_interim=config.filesystem.interim_data.GloFAS_interim,
+        glofas_interim_monthly=config.filesystem.interim_data.GloFAS_interim_monthly,
         glofas_subset=subset,
-        extension_climo=config['filesystem']['interim_data'][
-            'GloFAS_extension_climatology'
-        ],
-        outdir=Path(config['filesystem']['nowcast_input_data']) / 'rivers',
-        modify=args.modify,
+        extension_climo=config.filesystem.interim_data.GloFAS_extension_climatology,
+        outdir=config.filesystem.nowcast_input_data / 'rivers',
+        modify=args.modify
     )
