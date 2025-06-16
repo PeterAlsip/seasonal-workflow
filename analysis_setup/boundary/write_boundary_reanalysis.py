@@ -1,14 +1,13 @@
-import concurrent.futures as futures
 import re
 from calendar import monthrange
+from concurrent import futures
 from functools import partial
 from pathlib import Path
 from subprocess import DEVNULL, run
 
-from loguru import logger
 import xarray
-
 from boundary import Segment
+from loguru import logger
 
 from workflow_tools.utils import HSMGet, round_coords
 
@@ -51,11 +50,16 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                 files.append(reanalysis_file[-1])
             else:
                 # The variable naming for the analysis is complicated.
-                # Assuming that the 202406 in cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406 will never change.
-                # The ???? before _R* could be hcst or nwct or fcst. Currently there is no checking if both are matched;
+                # Assuming that the 202406 in
+                # cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406 will never change.
+                # The ???? before _R* could be hcst or nwct or fcst.
+                # Currently there is no checking if both are matched;
                 # the last one by sorted order will be returned.
                 if var == 'zos':
-                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc
+                    # Path like:
+                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/
+                    # cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/
+                    # glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc
                     analysis_file = sorted(
                         (
                             analysis_path
@@ -78,7 +82,10 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                         )
                     )
                 elif var in ['uo', 'vo']:
-                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_3D-uovo_hcst_R20241002.nc
+                    # Path like:
+                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/
+                    # cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/2024/09/
+                    # glo12_rg_1d-m_20240920-20240920_3D-uovo_hcst_R20241002.nc
                     analysis_file = sorted(
                         (
                             analysis_path
@@ -94,16 +101,19 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                 if len(analysis_file) > 0:
                     files.append(analysis_file[-1])
                 else:
-                    logger.error(f'Did not a find a file for {year}-{mon:02d}-{day:02d} {var}')
+                    logger.error(
+                        f'Did not a find a file for {year}-{mon:02d}-{day:02d} {var}'
+                    )
     return files
 
 
 def thread_worker(in_file, out_dir, lon_lat_box):
     out_file = out_dir / in_file.name
     lonmin, lonmax, latmin, latmax = lon_lat_box
-    # run_cmd(f'ncks -d latitude,{float(latmin)},{float(latmax)} -d longitude,{float(lonmin)},{float(lonmax)} {in_file.as_posix()} -O {out_file.as_posix()}')
     run_cmd(
-        f'cdo setmisstonn -sellevidx,1/49 -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} {in_file.as_posix()} {out_file.as_posix()}'
+        f'cdo setmisstonn -sellevidx,1/49 \
+        -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} \
+        {in_file.as_posix()} {out_file.as_posix()}'
     )
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
@@ -238,7 +248,7 @@ if __name__ == '__main__':
         help='Dry run: print out the files that would be worked on.',
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
+    with open(args.config) as file:
         config = safe_load(file)
     d = config['domain']
     hgrid = xarray.open_dataset(d['hgrid_file'])

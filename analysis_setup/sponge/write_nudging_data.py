@@ -84,7 +84,7 @@ def main(year, target_grid, input_dir, output_dir):
 
 if __name__ == '__main__':
     import argparse
-    
+
     from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()

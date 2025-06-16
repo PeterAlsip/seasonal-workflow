@@ -76,7 +76,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
+    with open(args.config) as file:
         config = safe_load(file)
     in_dir = Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
     out_dir = in_dir.parents[0]

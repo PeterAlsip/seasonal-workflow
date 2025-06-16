@@ -2,32 +2,34 @@ import os
 from pathlib import Path
 from subprocess import run
 
+from loguru import logger
 
-def run_cmd(cmd, print_cmd=True):
-    if print_cmd:
-        print(cmd)
+
+def run_cmd(cmd: str):
+    logger.debug(cmd)
     run(cmd, shell=True, check=True)
 
 
-def main(d2m_file, sp_file, tmpdir, outdir):
-    d2m_str = d2m_file.as_posix()
-    sp_str = sp_file.as_posix()
-    tmp_str = tmpdir.as_posix()
+def main(d2m_file: Path, sp_file: Path, tmpdir: Path, outdir: Path | str | None = None
+         ) -> None:
     if outdir is None:
         outdir = d2m_file.parent
-    svp_str = (tmpdir / 'svp_tmp.nc').as_posix()
-    sphum_str = (
-        tmpdir / d2m_file.name.replace('d2m', 'sphum')
-    ).as_posix()  # assuming d2m in name
-    run_cmd(f'gcp {d2m_str} {tmp_str}')
-    run_cmd(f'gcp {sp_str} {tmp_str}')
+    # Not critical but ensures str can be represented as a path
+    elif isinstance(outdir, str):
+        outdir = Path(outdir)
+    svp_file = tmpdir / 'svp_tmp.nc'
+    sphum_file = d2m_file.name.replace('d2m', 'sphum') # assuming d2m in name
+    run_cmd(f'gcp {d2m_file} {tmpdir}')
+    run_cmd(f'gcp {sp_file} {tmpdir}')
     run_cmd(
-        f'cdo expr,"svp=611.2*exp(17.67*(d2m-273.15)/(d2m-29.65))" {(tmpdir / d2m_file.name).as_posix()} {svp_str}'
+        f'cdo expr,"svp=611.2*exp(17.67*(d2m-273.15)/(d2m-29.65))" \
+            {tmpdir / d2m_file.name} {svp_file}'
     )
     run_cmd(
-        f'cdo -expr,"_mr=0.622*svp/(sp-svp);sphum=_mr/(1+_mr);" -merge {svp_str} {(tmpdir / sp_file.name).as_posix()} {sphum_str}'
+        f'cdo -expr,"_mr=0.622*svp/(sp-svp);sphum=_mr/(1+_mr);" -merge \
+              {svp_file} {tmpdir / sp_file.name} {sphum_file}'
     )
-    run_cmd(f'gcp {sphum_str} {outdir}')
+    run_cmd(f'gcp {sphum_file} {outdir}')
 
 
 if __name__ == '__main__':

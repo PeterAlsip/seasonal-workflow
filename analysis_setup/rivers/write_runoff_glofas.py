@@ -2,11 +2,11 @@ import os
 from functools import partial
 from pathlib import Path
 
-from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
 import xesmf
+from loguru import logger
 from numpy.lib.stride_tricks import sliding_window_view
 
 
@@ -104,7 +104,7 @@ def center_to_outer(center, left=None, right=None):
     return outer
 
 
-def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
+def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):  # noqa: PLR0915
     # Assuming grid spacing of 0.05 deg here and below;
     # eventually should detect from file (there are attributes for this)
     dlon = dlat = 0.05  # GloFAS grid spacing
@@ -121,7 +121,8 @@ def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):
     )
 
     # Convert m3/s to kg/m2/s
-    # Borrowed from https://xgcm.readthedocs.io/en/latest/xgcm-examples/05_autogenerate.html
+    # Borrowed from
+    # https://xgcm.readthedocs.io/en/latest/xgcm-examples/05_autogenerate.html
     distance_1deg_equator = 111000.0
     dx = dlon * np.cos(np.deg2rad(glofas.lat)) * distance_1deg_equator
     dy = xarray.ones_like(glofas.lon) * dlat * distance_1deg_equator
@@ -280,7 +281,7 @@ def flatten(lst):
     return flat_list
 
 
-def main(
+def main(  # noqa: PLR0915
     year,
     mask_file,
     hgrid_file,
@@ -429,13 +430,13 @@ if __name__ == '__main__':
         help='Apply corrections for location and bias',
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
+    with open(args.config) as file:
         config = safe_load(file)
     d = config['domain']
-    subset = dict(
-        lat=slice(d['north_lat'], d['south_lat']),
-        lon=slice(d['west_lon'], d['east_lon']),
-    )
+    subset = {
+        'lat': slice(d['north_lat'], d['south_lat']),
+        'lon': slice(d['west_lon'], d['east_lon']),
+    }
     main(
         args.year,
         mask_file=d['ocean_mask_file'],
