@@ -9,7 +9,6 @@ from yaml import safe_load
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
-class StrictModelWithPaths(StrictModel):
     def model_post_init(self, _: Any) -> None:
         for k, v in vars(self).items():
             # Note this does not check lists of paths
@@ -32,7 +31,7 @@ class Climatology(StrictModel):
     first_year: int
     last_year: int
 
-class Domain(StrictModelWithPaths):
+class Domain(StrictModel):
     south_lat: Annotated[float, Field(ge=-90.0)]
     north_lat: Annotated[float, Field(le=90.0)]
     west_lon: Annotated[float, Field(ge=-180.0)]
@@ -42,11 +41,11 @@ class Domain(StrictModelWithPaths):
     ocean_static_file: Path
     boundaries: dict[int, str]
 
-class Regions(StrictModelWithPaths):
+class Regions(StrictModel):
     mask_file: Path
     names: list[str]
 
-class InterimData(StrictModelWithPaths):
+class InterimData(StrictModel):
     ERA5: Path
     GLORYS_reanalysis: Path
     GLORYS_analysis: Path
@@ -56,7 +55,7 @@ class InterimData(StrictModelWithPaths):
     GloFAS_interim_monthly: str
     GloFAS_extension_climatology: Path
 
-class Filesystem(StrictModelWithPaths):
+class Filesystem(StrictModel):
     forecast_input_data: Path
     nowcast_input_data: Path
     forecast_output_data: Path
