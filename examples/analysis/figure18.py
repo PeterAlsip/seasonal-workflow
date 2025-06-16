@@ -1,16 +1,15 @@
-import cartopy.crs as ccrs
 import datetime as dt
 from filecmp import cmp as compare_file
 from glob import glob
-from matplotlib import colormaps
-import matplotlib.gridspec as gridspec
-from matplotlib.lines import Line2D
-import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
 from shutil import copyfile
-import xarray
 
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+import numpy as np
+import xarray
+from matplotlib import colormaps, gridspec
+from matplotlib.lines import Line2D
 
 # Save data that is being used in the plots here
 # for uploading to Zenodo
@@ -27,7 +26,7 @@ def log_open_dataset(src_name, make_copy=True, copy_to=data_out_dir, **kwargs):
     if isinstance(src_name, str):
         src_name = Path(src_name)
     # https://stackoverflow.com/a/52858040
-    modtime = dt.datetime.fromtimestamp(src_name.stat().st_mtime, tz=dt.timezone.utc)
+    modtime = dt.datetime.fromtimestamp(src_name.stat().st_mtime, tz=dt.UTC)
     print(f'Loading {src_name.as_posix()}')
     print(f'  Modified {modtime.strftime("%Y-%m-%d %H:%M")}')
     if make_copy:
@@ -50,7 +49,7 @@ def log_open_mfdataset(wildcard_or_filenames, **kwargs):
         files = list(glob(wildcard_or_filenames))
         for f in files:
             filename = Path(f)
-            modtime = dt.datetime.fromtimestamp(filename.stat().st_mtime, tz=dt.timezone.utc)
+            modtime = dt.datetime.fromtimestamp(filename.stat().st_mtime, tz=dt.UTC)
             print(f'Loading {filename.as_posix()}')
             print(f'  Modified {modtime.strftime("%Y-%m-%d %H:%M")}')
     return xarray.open_mfdataset(wildcard_or_filenames, **kwargs)
@@ -61,7 +60,7 @@ def log_open_mfdataset(wildcard_or_filenames, **kwargs):
 xs = [-66.4, -59]
 ys = [42.4, 43.5]
 
-# layer z levels to plot on T/S plots 
+# layer z levels to plot on T/S plots
 zlevels = [2.5, 32.5,  75, 105]
 
 # Colormap to use for lines in T/S plots
@@ -104,7 +103,7 @@ fs.to_netcdf(data_out_dir / '20200901.ensmean.so_points.nc')
 
 print('Loading forecast climatology')
 forecast_climo = log_open_dataset('/work/acr/mom6/nwa12/processed_forecasts/climo_monthlymean_i9.nc', make_copy=False).squeeze()
-# Use time as dimension instead of lead. 
+# Use time as dimension instead of lead.
 # Borrow time from the SST forecasts above.
 forecast_climo['time'] = (('lead', ), tosmean.time.data)
 forecast_climo = forecast_climo.swap_dims({'lead': 'time'})
@@ -119,10 +118,10 @@ axs = [fig.add_subplot(gs[i, j], projection=PC) for i in range(2) for j in range
 ax = axs[0]
 ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-9').squeeze(), **temp_common)
 ax.set_title('Sep 2020')
-for i, (x, y) in enumerate(zip(xs, ys)):
+for i, (x, y) in enumerate(zip(xs, ys, strict=False)):
     ax.scatter(x, y, c='k', s=8, marker='x')
     ax.text(x, y, f' {i+1}',  fontsize=8)
-    
+
 ax = axs[1]
 ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-10').squeeze(), **temp_common)
 ax.set_title('Oct 2020')
@@ -171,8 +170,8 @@ axs = [
     fig.add_subplot(gs[2:4, 0:2]),
     fig.add_subplot(gs[2:4, 2:4])
 ]
-for i, (xh, yh, ax) in enumerate(zip(ft.xh, ft.yh, axs)):
-    for c, z in zip(cols, zlevels):
+for i, (xh, yh, ax) in enumerate(zip(ft.xh, ft.yh, axs, strict=False)):
+    for c, z in zip(cols, zlevels, strict=False):
         x = fs.sel(time=timeslice, xh=xh, yh=yh, z_l=z)
         y = ft.sel(time=timeslice, xh=xh, yh=yh, z_l=z)
         ax.plot(x, y, c=c, label=z)
@@ -187,12 +186,12 @@ for i, (xh, yh, ax) in enumerate(zip(ft.xh, ft.yh, axs)):
             ax.set_ylim(6, 20)
             ax.text(36, 16, 'GS', horizontalalignment='center')
         ax.set_xlabel('Salinity')
-        for ind, marker in zip([0, 1, 3], markers):
+        for ind, marker in zip([0, 1, 3], markers, strict=False):
             ax.plot(x[ind], y[ind], color=c, marker=marker)
 
 fig.subplots_adjust(right=0.8)
 
-# Make a custom legend for depth            
+# Make a custom legend for depth
 handles = []
 for c in cols:
     handles.append(Line2D([0], [0], color=c))

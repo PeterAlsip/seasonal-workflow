@@ -77,7 +77,7 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
 
 if __name__ == '__main__':
     import argparse
-    
+
     from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()

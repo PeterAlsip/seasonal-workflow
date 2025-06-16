@@ -100,7 +100,7 @@ def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]
     return members
 
 
-def combine(  # noqa: PLR0913
+def combine(
     file_list: list[Path],
     var: str,
     first_year: int,

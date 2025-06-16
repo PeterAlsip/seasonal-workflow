@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 from yaml import safe_load
@@ -57,7 +56,7 @@ class Filesystem(BaseModel):
     glorys_interpolated: Path
     interim_data: InterimData
     analysis_history: Path
-    analysis_extensions: Optional[list[Path]] = []
+    analysis_extensions: list[Path] | None = []
     nowcast_history: str
     forecast_history: str
     combined_name: str

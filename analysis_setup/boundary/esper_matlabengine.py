@@ -73,7 +73,7 @@ for segment in [1, 2, 3]:
             if ave_temp.sizes[h_dims[0]] > ave_temp.sizes[h_dims[1]]
             else h_dims[1]
         )
-        short_dim = next((d for d in h_dims if d != long_dim))
+        short_dim = next(d for d in h_dims if d != long_dim)
         z_dim = 'nz' + segstr
 
         ds = xarray.Dataset(

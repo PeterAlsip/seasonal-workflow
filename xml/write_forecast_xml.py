@@ -5,7 +5,7 @@ from textwrap import dedent
 def write_xml(common, ystart, mstart):
     ystart = int(ystart)
     mstart = int(mstart)
-    # Figure out what the date span 
+    # Figure out what the date span
     # used in the atmosphere filenames will be
     if isleap(ystart) and mstart == 3:
         # March 1 on leap year starts is named Feb 29
