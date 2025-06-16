@@ -1,14 +1,26 @@
 from pathlib import Path
+from typing import Annotated, Any
 
-from pydantic import BaseModel
+from loguru import logger
+from pydantic import BaseModel, ConfigDict, Field
 from yaml import safe_load
 
+
+class BaseModelWithPaths(BaseModel):
+    def model_post_init(self, _: Any) -> None:
+        for k, v in vars(self).items():
+            # Note this does not check lists of paths
+            if isinstance(v, Path):
+                # Warn if path doesn't exist, as long as it's
+                # also not expected to be on Gaea:
+                if not v.exists() and not v.is_relative_to('/gpfs'):
+                    logger.warning('path {v} for setting {k} does not exist', k=k, v=v)
 
 class RetrospectiveForecasts(BaseModel):
     first_year: int
     last_year: int
     months: list[int]
-    ensemble_size: int
+    ensemble_size: Annotated[int, Field(ge=1)]
 
 class NewForecasts(BaseModel):
     ensemble_size: int
@@ -17,21 +29,21 @@ class Climatology(BaseModel):
     first_year: int
     last_year: int
 
-class Domain(BaseModel):
-    south_lat: float
-    north_lat: float
-    west_lon: float
-    east_lon: float
+class Domain(BaseModelWithPaths):
+    south_lat: Annotated[float, Field(ge=-90.0)]
+    north_lat: Annotated[float, Field(le=90.0)]
+    west_lon: Annotated[float, Field(ge=-180.0)]
+    east_lon: Annotated[float, Field(le=180.0)]
     hgrid_file: Path
     ocean_mask_file: Path
     ocean_static_file: Path
     boundaries: dict[int, str]
 
-class Regions(BaseModel):
+class Regions(BaseModelWithPaths):
     mask_file: Path
     names: list[str]
 
-class InterimData(BaseModel):
+class InterimData(BaseModelWithPaths):
     ERA5: Path
     GLORYS_reanalysis: Path
     GLORYS_analysis: Path
@@ -41,7 +53,7 @@ class InterimData(BaseModel):
     GloFAS_interim_monthly: str
     GloFAS_extension_climatology: Path
 
-class Filesystem(BaseModel):
+class Filesystem(BaseModelWithPaths):
     forecast_input_data: Path
     nowcast_input_data: Path
     forecast_output_data: Path
@@ -66,6 +78,7 @@ class Config(BaseModel):
     regions: Regions
     variables: dict[str, list[str]]
     filesystem: Filesystem
+    model_config = ConfigDict(extra='forbid')
 
 def load_config(config_path: str | Path) -> Config:
     """Load and parse the YAML configuration file."""
