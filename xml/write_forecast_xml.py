@@ -33,7 +33,7 @@ def write_xml(common, ystart, mstart):
       <property name="atmos_end" value="{yend}{mlast:02d}{dlast:02d}"/>
 
       <xi:include href="{common}" xpointer="xpointer(//freInclude[@name='common']/node())"/>
-    </experimentSuite>''')
+    </experimentSuite>''')  # noqa: E501
     # Write to file. The name will be based on the name of the common XML,
     # minus the "common"
     fname = common.replace('_common.xml', '')

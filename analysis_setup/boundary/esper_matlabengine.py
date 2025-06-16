@@ -61,7 +61,7 @@ for segment in [1, 2, 3]:
         est_dates = np.array([[yr + 0.5]], dtype='float64')
         eng.workspace['est_dates'] = est_dates
         esper_result = eng.eval(
-            "ESPER_LIR(desired_vars, output_coords, pred_vars, predictor_types, 'Equations', equations, 'EstDates', est_dates)"
+            "ESPER_LIR(desired_vars, output_coords, pred_vars, predictor_types, 'Equations', equations, 'EstDates', est_dates)"  # noqa: E501
         )
 
         alk = np.array(esper_result['TA']).reshape([-1, nz], order='F') * 1e-6

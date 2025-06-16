@@ -20,7 +20,7 @@ def log_open_dataset(src_name, make_copy=True, copy_to=data_out_dir, **kwargs):
     Wrap xarray.open_dataset with the addition of printing
     information about the last modified time of the file being opened.
     If make_copy=True, the file being opened is also copied
-    to data_out_dir if it doesn't exist there or 
+    to data_out_dir if it doesn't exist there or
     the file is there but different.
     """
     if isinstance(src_name, str):
@@ -42,8 +42,8 @@ def log_open_dataset(src_name, make_copy=True, copy_to=data_out_dir, **kwargs):
 
 def log_open_mfdataset(wildcard_or_filenames, **kwargs):
     """
-    Similar to log_open_dataset, wraps xarray.open_mfdataset but only prints the last modified times
-    as long as the argument being passed is a string.
+    Similar to log_open_dataset, wraps xarray.open_mfdataset but only prints the
+    last modified times as long as the argument being passed is a string.
     """
     if isinstance(wildcard_or_filenames, str):
         files = list(glob(wildcard_or_filenames))
@@ -78,19 +78,33 @@ timeslice = slice('2020-09-01', '2021-02-01')
 PC = ccrs.PlateCarree()
 
 # Common options for SST maps
-temp_common = dict(vmin=-4, vmax=4, cmap='coolwarm')
+temp_common = {'vmin': -4, 'vmax': 4, 'cmap': 'coolwarm'}
 
 # Common options for SSH maps
-ssh_common = dict(vmin=-0.8, vmax=0.8, cmap='seismic')
+ssh_common = {'vmin': -0.8, 'vmax': 0.8, 'cmap': 'seismic'}
 static = xarray.open_dataset('/archive/acr/mom6_input/nwa12/ocean_static.nc')
 
 print('Loading 2D and 3D forecast data')
-members = log_open_mfdataset('/work/acr/mom6/nwa12/raw_forecasts/20200901.e??.ocean_month_z.nc', combine='nested', concat_dim='member')
+members = log_open_mfdataset(
+    '/work/acr/mom6/nwa12/raw_forecasts/20200901.e??.ocean_month_z.nc',
+    combine='nested',
+    concat_dim='member'
+)
 # Temperature and salinity forecast values at points
-forecast = members[['so', 'thetao']].sel(xh=xs, yh=ys, method='nearest').sel(time=timeslice, z_l=zlevels).load()
+forecast = (
+    members
+    [['so', 'thetao']]
+    .sel(xh=xs, yh=ys, method='nearest')
+    .sel(time=timeslice, z_l=zlevels)
+    .load()
+)
 # Ensemble mean of forecast values at points
 ensmean = forecast.mean('member')
-members_2d = log_open_mfdataset('/work/acr/mom6/nwa12/raw_forecasts/20200901.e??.ocean_month.nc', combine='nested', concat_dim='member')
+members_2d = log_open_mfdataset(
+    '/work/acr/mom6/nwa12/raw_forecasts/20200901.e??.ocean_month.nc',
+    combine='nested',
+    concat_dim='member'
+)
 zosmean = members_2d['zos'].mean('member').load()
 tosmean = members_2d['tos'].mean('member').load()
 zosmean.to_netcdf(data_out_dir / '20200901.ensmean.zos.nc')
@@ -102,7 +116,10 @@ ft.to_netcdf(data_out_dir / '20200901.ensmean.thetao_points.nc')
 fs.to_netcdf(data_out_dir / '20200901.ensmean.so_points.nc')
 
 print('Loading forecast climatology')
-forecast_climo = log_open_dataset('/work/acr/mom6/nwa12/processed_forecasts/climo_monthlymean_i9.nc', make_copy=False).squeeze()
+forecast_climo = log_open_dataset(
+    '/work/acr/mom6/nwa12/processed_forecasts/climo_monthlymean_i9.nc',
+    make_copy=False
+).squeeze()
 # Use time as dimension instead of lead.
 # Borrow time from the SST forecasts above.
 forecast_climo['time'] = (('lead', ), tosmean.time.data)
@@ -116,22 +133,26 @@ gs = gridspec.GridSpec(4, 5, hspace=.25, wspace=0.25, width_ratios=[1, 1, 1, 1, 
 axs = [fig.add_subplot(gs[i, j], projection=PC) for i in range(2) for j in range(4)]
 
 ax = axs[0]
-ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-9').squeeze(), **temp_common)
+ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-9').squeeze(),
+              **temp_common)
 ax.set_title('Sep 2020')
 for i, (x, y) in enumerate(zip(xs, ys, strict=False)):
     ax.scatter(x, y, c='k', s=8, marker='x')
     ax.text(x, y, f' {i+1}',  fontsize=8)
 
 ax = axs[1]
-ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-10').squeeze(), **temp_common)
+ax.pcolormesh(static.geolon_c, static.geolat_c,
+              tosanom.sel(time='2020-10').squeeze(), **temp_common)
 ax.set_title('Oct 2020')
 
 ax = axs[2]
-ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-11').squeeze(), **temp_common)
+ax.pcolormesh(static.geolon_c, static.geolat_c,
+              tosanom.sel(time='2020-11').squeeze(), **temp_common)
 ax.set_title('Nov 2020')
 
 ax = axs[3]
-p = ax.pcolormesh(static.geolon_c, static.geolat_c, tosanom.sel(time='2020-12').squeeze(), **temp_common)
+p = ax.pcolormesh(static.geolon_c, static.geolat_c,
+                  tosanom.sel(time='2020-12').squeeze(), **temp_common)
 ax.set_title('Dec 2020')
 
 cbax = fig.add_subplot(gs[0, 4])
@@ -139,23 +160,31 @@ cb = plt.colorbar(p, cax=cbax, extend='both')
 cb.set_label('T anom. (°C)', rotation=270, labelpad=10.7)
 
 ax = axs[4]
-ax.pcolormesh(static.geolon_c, static.geolat_c, zosmean.sel(time='2020-9').squeeze(), **ssh_common)
-ax.contour(static.geolon, static.geolat, forecast_climo.zos.sel(time='2020-9').squeeze(), colors='k', levels=[0])
+ax.pcolormesh(static.geolon_c, static.geolat_c,
+              zosmean.sel(time='2020-9').squeeze(), **ssh_common)
+ax.contour(static.geolon, static.geolat,
+           forecast_climo.zos.sel(time='2020-9').squeeze(), colors='k', levels=[0])
 ax.set_title('Sep 2020')
 
 ax = axs[5]
-ax.pcolormesh(static.geolon_c, static.geolat_c, zosmean.sel(time='2020-10').squeeze(), **ssh_common)
-ax.contour(static.geolon, static.geolat, forecast_climo.zos.sel(time='2020-10').squeeze(), colors='k', levels=[0])
+ax.pcolormesh(static.geolon_c, static.geolat_c,
+              zosmean.sel(time='2020-10').squeeze(), **ssh_common)
+ax.contour(static.geolon, static.geolat,
+           forecast_climo.zos.sel(time='2020-10').squeeze(), colors='k', levels=[0])
 ax.set_title('Oct 2020')
 
 ax = axs[6]
-ax.pcolormesh(static.geolon_c, static.geolat_c, zosmean.sel(time='2020-11').squeeze(), **ssh_common)
-ax.contour(static.geolon, static.geolat, forecast_climo.zos.sel(time='2020-11').squeeze(), colors='k', levels=[0])
+ax.pcolormesh(static.geolon_c, static.geolat_c,
+              zosmean.sel(time='2020-11').squeeze(), **ssh_common)
+ax.contour(static.geolon, static.geolat,
+           forecast_climo.zos.sel(time='2020-11').squeeze(), colors='k', levels=[0])
 ax.set_title('Nov 2020')
 
 ax = axs[7]
-p = ax.pcolormesh(static.geolon_c, static.geolat_c, zosmean.sel(time='2020-12').squeeze(), **ssh_common)
-ax.contour(static.geolon, static.geolat, forecast_climo.zos.sel(time='2020-12').squeeze(), colors='k', levels=[0])
+p = ax.pcolormesh(static.geolon_c, static.geolat_c,
+                  zosmean.sel(time='2020-12').squeeze(), **ssh_common)
+ax.contour(static.geolon, static.geolat,
+           forecast_climo.zos.sel(time='2020-12').squeeze(), colors='k', levels=[0])
 ax.set_title('Dec 2020')
 
 cbax = fig.add_subplot(gs[1, 4])
@@ -195,14 +224,16 @@ fig.subplots_adjust(right=0.8)
 handles = []
 for c in cols:
     handles.append(Line2D([0], [0], color=c))
-l1 = plt.legend(handles, zlevels, frameon=False, title='Depth:', bbox_to_anchor=(0.4, 0.1, 1, 1), loc='upper right')
+l1 = plt.legend(handles, zlevels, frameon=False, title='Depth:',
+                bbox_to_anchor=(0.4, 0.1, 1, 1), loc='upper right')
 
 # Make a custom legend for month
 handles = []
 for shp in markers:
     handles.append(Line2D([0], [0], color='#999999', marker=shp))
 labels = ['Sep', 'Oct', 'Dec']
-plt.legend(handles, labels, frameon=False, title='Time:', bbox_to_anchor=(0.4, -0.4, 1, 1), loc='upper right')
+plt.legend(handles, labels, frameon=False, title='Time:',
+           bbox_to_anchor=(0.4, -0.4, 1, 1), loc='upper right')
 ax.add_artist(l1)
 
 fig.suptitle('Downscaled forecasts for late 2020', fontweight='bold', y=0.96)

@@ -31,11 +31,17 @@ if __name__ == '__main__':
                 logger.info(f)
                 averages = []
                 with xarray.open_dataset(f, decode_timedelta=False) as ds:
-                    if 'xh_sub01' in ds and 'yh_sub01' in ds:
-                        ds = ds.rename({'xh_sub01': 'xh', 'yh_sub01': 'yh'})
+                    xcoord = next(d for d in ds.coords if 'xh' in d) # type: ignore
+                    ycoord = next(d for d in ds.coords if 'yh' in d) # type: ignore
                     for reg in config.regions.names:
                         weights = masks['areacello'].where(masks[reg]).fillna(0)
-                        ave = ds.weighted(weights).mean(['yh', 'xh']).load()
+                        ave = (
+                            ds
+                            .rename({xcoord: 'xh', ycoord: 'yh'})
+                            .weighted(weights)
+                            .mean(['yh', 'xh'])
+                            .load()
+                        )
                         ave['region'] = reg
                         ave = ave.set_coords('region')
                         averages.append(ave)

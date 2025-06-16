@@ -192,8 +192,10 @@ def main(
 
                     # Save data for use with sponge. TODO: config output path
                     if var in ['so', 'thetao']:
+                        file_strs = " ".join(x.as_posix() for x in processed_files)
                         run_cmd(
-                            f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc'
+                            f'cdo timavg -cat {file_strs} '
+                            f'/work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc'
                         )
                     ds = xarray.open_mfdataset(
                         processed_files, preprocess=partial(round_coords, to=12)

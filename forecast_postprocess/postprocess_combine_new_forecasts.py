@@ -32,12 +32,12 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
         'units' in model_ds['lead'].attrs and model_ds['lead'].attrs['units'] == 'days'
     ):
         valid_time = [
-            model_ds.init.values + pd.Timedelta(days=int(l)) for l in model_ds.lead
+            model_ds.init.values + pd.Timedelta(days=int(ld)) for ld in model_ds.lead
         ]
         freq = 'daily'
     else:
         valid_time = [
-            model_ds.init.values + pd.DateOffset(months=int(l)) for l in model_ds.lead
+            model_ds.init.values + pd.DateOffset(months=int(ld)) for ld in model_ds.lead
         ]
         freq = 'monthly'
     model_ds['valid_time'] = (('lead',), valid_time)
@@ -56,7 +56,9 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
                 anom.name = f'{var}_anom'
                 res = xarray.merge((model_ds[[var, 'valid_time']], anom))
         if not climo_exists:
-            logger.warning(f'Climatology not found for month {m}. Setting anomalies to nan')
+            logger.warning(
+                f'Climatology not found for month {m}. Setting anomalies to nan'
+            )
             res = model_ds[[var, 'valid_time']].copy()
             res[f'{var}_anom'] = res[var] * np.nan
         res = res.transpose('lead', 'member', ...)
@@ -68,7 +70,9 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
             if v in res
         }
         # Compress main variable to reduce space
-        encoding.update({v: dict(zlib=True, complevel=3) for v in [var, f'{var}_anom']})
+        encoding.update(
+            {v: {'zlib': True, 'complevel': 3} for v in [var, f'{var}_anom']}
+        )
         fname = config['filesystem']['combined_name'].format(
             freq=freq, var=var, year=y, month=m
         )
