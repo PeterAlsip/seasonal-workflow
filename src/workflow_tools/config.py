@@ -6,7 +6,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from yaml import safe_load
 
 
-class BaseModelWithPaths(BaseModel):
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+class StrictModelWithPaths(StrictModel):
     def model_post_init(self, _: Any) -> None:
         for k, v in vars(self).items():
             # Note this does not check lists of paths
@@ -16,20 +19,20 @@ class BaseModelWithPaths(BaseModel):
                 if not v.exists() and not v.is_relative_to('/gpfs'):
                     logger.warning('path {v} for setting {k} does not exist', k=k, v=v)
 
-class RetrospectiveForecasts(BaseModel):
+class RetrospectiveForecasts(StrictModel):
     first_year: int
     last_year: int
     months: list[int]
     ensemble_size: Annotated[int, Field(ge=1)]
 
-class NewForecasts(BaseModel):
+class NewForecasts(StrictModel):
     ensemble_size: int
 
-class Climatology(BaseModel):
+class Climatology(StrictModel):
     first_year: int
     last_year: int
 
-class Domain(BaseModelWithPaths):
+class Domain(StrictModelWithPaths):
     south_lat: Annotated[float, Field(ge=-90.0)]
     north_lat: Annotated[float, Field(le=90.0)]
     west_lon: Annotated[float, Field(ge=-180.0)]
@@ -39,11 +42,11 @@ class Domain(BaseModelWithPaths):
     ocean_static_file: Path
     boundaries: dict[int, str]
 
-class Regions(BaseModelWithPaths):
+class Regions(StrictModelWithPaths):
     mask_file: Path
     names: list[str]
 
-class InterimData(BaseModelWithPaths):
+class InterimData(StrictModelWithPaths):
     ERA5: Path
     GLORYS_reanalysis: Path
     GLORYS_analysis: Path
@@ -53,7 +56,7 @@ class InterimData(BaseModelWithPaths):
     GloFAS_interim_monthly: str
     GloFAS_extension_climatology: Path
 
-class Filesystem(BaseModelWithPaths):
+class Filesystem(StrictModelWithPaths):
     forecast_input_data: Path
     nowcast_input_data: Path
     forecast_output_data: Path
@@ -68,7 +71,7 @@ class Filesystem(BaseModelWithPaths):
     forecast_history: str
     combined_name: str
 
-class Config(BaseModel):
+class Config(StrictModel):
     name: str
     retrospective_forecasts: RetrospectiveForecasts
     new_forecasts: NewForecasts
