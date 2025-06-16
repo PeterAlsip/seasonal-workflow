@@ -1,5 +1,33 @@
 # seasonal-workflow
 
+## Environment setup
+
+### First time setup (on GFDL analysis)
+
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) and add it to your path.
+
+Then,
+```sh
+module load python/3.13 
+module load esmf/8.7.0 
+uv sync
+source .venv/bin/activate.csh # or without the .csh depending on shell
+```
+
+### Loading python and required modules (on GFDL analysis)
+
+```sh
+module load nco/5.2.4
+module load cdo/2.4.4
+module load gcp hsm/1.3.0
+module load python/3.13 
+module load esmf/8.7.0 
+source .venv/bin/activate.csh # or without the .csh depending on shell
+```
+
+
+## Forecast steps (without rocoto workflow)
+
 Steps:
 
 0. Create a configuration yaml file.

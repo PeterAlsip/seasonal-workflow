@@ -1,15 +1,13 @@
-import concurrent.futures as futures
 import subprocess
-import sys
+from concurrent import futures
 from functools import partial
 from pathlib import Path
 
-from loguru import logger
 import pandas as pd
 import xarray
+from loguru import logger
 
-sys.path.append('../..')
-from utils import HSMGet
+from workflow_tools.utils import HSMGet
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 
@@ -103,22 +101,21 @@ if __name__ == '__main__':
     import argparse
     from pathlib import Path
 
-    from yaml import safe_load
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    interim_path = Path(config['filesystem']['interim_data']['ERA5'])
-    output_dir = Path(config['filesystem']['nowcast_input_data']) / 'atmos'
+    config = load_config(args.config)
+    interim_path = config.filesystem.interim_data.ERA5
+    output_dir = config.filesystem.nowcast_input_data / 'atmos'
     output_dir.mkdir(exist_ok=True)
-    d = config['domain']
+    d = config.domain
     box = [
-        float(d['west_lon']) % 360,
-        float(d['east_lon']) % 360,
-        float(d['south_lat']),
-        float(d['north_lat']),
+        float(d.west_lon) % 360,
+        float(d.east_lon) % 360,
+        float(d.south_lat),
+        float(d.north_lat)
     ]
     main(args.year, interim_path, output_dir, box)

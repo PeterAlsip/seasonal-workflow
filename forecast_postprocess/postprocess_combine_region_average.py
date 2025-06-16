@@ -4,8 +4,8 @@ from pathlib import Path
 import xarray
 from loguru import logger
 
-from config import load_config
-from utils import smooth_climatology
+from workflow_tools.config import load_config
+from workflow_tools.utils import smooth_climatology
 
 if __name__ == '__main__':
     import argparse

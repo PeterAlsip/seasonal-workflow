@@ -4,8 +4,8 @@ import xarray
 from loguru import logger
 from numba import jit, prange
 
-from config import Config, load_config
-from utils import match_obs_to_forecasts
+from workflow_tools.config import Config, load_config
+from workflow_tools.utils import match_obs_to_forecasts
 
 
 @jit(nogil=True)

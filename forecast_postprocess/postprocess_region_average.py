@@ -1,7 +1,7 @@
 import xarray
 from loguru import logger
 
-from config import Config, load_config
+from workflow_tools.config import Config, load_config
 
 
 def process_var(

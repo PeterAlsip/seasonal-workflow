@@ -1,7 +1,7 @@
 import argparse
 
-from config import load_config
-from forecast_lib import ForecastRun
+from workflow_tools.config import load_config
+from workflow_tools.forecast import ForecastRun
 
 
 def colorprint(msg, color):

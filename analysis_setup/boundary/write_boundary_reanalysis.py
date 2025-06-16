@@ -1,6 +1,5 @@
 import concurrent.futures as futures
 import re
-import sys
 from calendar import monthrange
 from functools import partial
 from pathlib import Path
@@ -9,10 +8,9 @@ from subprocess import DEVNULL, run
 from loguru import logger
 import xarray
 
-sys.path.append('../..')
 from boundary import Segment
 
-from utils import HSMGet, round_coords
+from workflow_tools.utils import HSMGet, round_coords
 
 
 def run_cmd(cmd):

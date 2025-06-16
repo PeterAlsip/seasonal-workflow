@@ -1,6 +1,33 @@
+[project]
+name = "workflow_tools"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dask>=2025.5.1",
+    "esmpy",
+    "loguru>=0.7.3",
+    "netcdf4>=1.7.2",
+    "numba>=0.61.2",
+    "numpy>=2.2",
+    "pandas>=2.3.0",
+    "pydantic>=2.11.7",
+    "pyyaml>=6.0.2",
+    "xarray>=2025.6.1",
+    "xesmf>=0.8.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py313"
+exclude = [
+    "*.ipynb"
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "B", "C4", "UP", "PL", "RUF"]
@@ -13,7 +40,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["analysis_setup"]
+known-first-party = ["analysis_setup", "src"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["E501", "F401", "F403", "F405"]
@@ -22,3 +49,6 @@ known-first-party = ["analysis_setup"]
 quote-style = "single"
 indent-style = "space"
 line-ending = "auto"
+
+[tool.uv.sources]
+esmpy = { git = "https://github.com/esmf-org/esmf", subdirectory = "src/addon/esmpy", tag = "v8.7.0" }

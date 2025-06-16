@@ -2,11 +2,10 @@
 import xarray
 from loguru import logger
 
-from config import load_config
+from workflow_tools.config import load_config
 
 if __name__ == '__main__':
     import argparse
-
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)

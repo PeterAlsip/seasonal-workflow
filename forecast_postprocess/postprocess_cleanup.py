@@ -3,7 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from config import load_config
+from workflow_tools.config import load_config
 
 if __name__ == '__main__':
     import argparse

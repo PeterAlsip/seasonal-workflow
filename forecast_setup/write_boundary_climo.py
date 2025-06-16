@@ -1,7 +1,7 @@
 import xarray
 from loguru import logger
 
-from utils import modulo, smooth_climatology
+from workflow_tools.utils import modulo, smooth_climatology
 
 
 def write_boundary(ystart, yend, pathin, pathout, n_segments):

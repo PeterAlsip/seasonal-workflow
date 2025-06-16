@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
+from loguru import logger
 
 
 def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
@@ -77,7 +77,8 @@ def process_all_vars(y, m, all_vars, output_dir, config, cmdargs):
 
 if __name__ == '__main__':
     import argparse
-    from yaml import safe_load
+    
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
@@ -94,17 +95,16 @@ if __name__ == '__main__':
         '-o', '--output', type=str, help='Where to place output files', required=False
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     if args.output is None:
-        output_dir = Path(config['filesystem']['forecast_output_data']) / 'individual'
+        output_dir = config.filesystem.forecast_output_data / 'individual'
     else:
         output_dir = Path(args.output)
     output_dir.mkdir(exist_ok=True)
     if ',' in args.var:
         all_vars = args.var.split(',')
     elif args.var == 'all':
-        all_vars = config['variables'][args.domain]
+        all_vars = config.variables[args.domain]
     else:
         all_vars = [args.var]
     process_all_vars(args.year, args.month, all_vars, output_dir, config, args)

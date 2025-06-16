@@ -13,8 +13,8 @@ import numpy as np
 import xarray
 from loguru import logger
 
-from config import load_config
-from forecast_lib import ForecastRun
+from workflow_tools.config import load_config
+from workflow_tools.forecast import ForecastRun
 
 
 def process_file(

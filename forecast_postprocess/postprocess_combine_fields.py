@@ -10,8 +10,8 @@ import numpy as np
 import xarray
 from loguru import logger
 
-from config import Config, load_config
-from utils import smooth_climatology
+from workflow_tools.config import Config, load_config
+from workflow_tools.utils import smooth_climatology
 
 
 def run_nco(nco_tool: str, var: str, in_files: str, out_file: Path) -> CompletedProcess:

@@ -6,8 +6,8 @@ import numpy as np
 import xarray
 from loguru import logger
 
-from spear_path import SPEAR_ROOT, get_spear_paths
-from utils import HSMGet, pad_ds, write_ds
+from workflow_tools.spear import SPEAR_ROOT, get_spear_paths
+from workflow_tools.utils import HSMGet, pad_ds, write_ds
 
 hsmget = HSMGet(archive=SPEAR_ROOT)
 
@@ -132,7 +132,7 @@ def write_atmos_all_members(
 if __name__ == '__main__':
     import argparse
 
-    from config import load_config
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int)

@@ -8,7 +8,7 @@ import numpy as np
 import xarray
 from loguru import logger
 
-from config import Config, load_config
+from workflow_tools.config import Config, load_config
 
 # Path to store temporary output to:
 TMP = Path(os.environ['TMPDIR'])

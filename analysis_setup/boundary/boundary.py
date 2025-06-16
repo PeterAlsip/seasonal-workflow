@@ -1,9 +1,10 @@
-import numpy as np
-from os import path
 import warnings
-from loguru import logger
-import xarray as xarray
+from os import path
+
+import numpy as np
+import xarray
 import xesmf
+from loguru import logger
 
 # ignore pandas FutureWarnings raised multiple times by xarray
 warnings.simplefilter(action='ignore', category=FutureWarning)
