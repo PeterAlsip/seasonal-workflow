@@ -1,14 +1,15 @@
 import os
 from functools import partial
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
 import xarray
-import xesmf
 from loguru import logger
 from numpy.lib.stride_tricks import sliding_window_view
+
+from workflow_tools.grid import center_to_outer, reuse_regrid, round_coords
+from workflow_tools.utils import flatten
 
 
 def get_coast_mask(mask):
@@ -28,24 +29,6 @@ def get_coast_mask(mask):
     cst_mask[:, -1] = 0
 
     return cst_mask
-
-
-def reuse_regrid(*args, **kwargs):
-    filename = kwargs.pop('filename', None)
-    reuse_weights = kwargs.pop('reuse_weights', False)
-
-    if reuse_weights:
-        if os.path.isfile(filename):
-            return xesmf.Regridder(
-                *args, reuse_weights=True, filename=filename, **kwargs
-            )
-        else:
-            regrid = xesmf.Regridder(*args, **kwargs)
-            regrid.to_netcdf(filename)
-            return regrid
-    else:
-        regrid = xesmf.Regridder(*args, **kwargs)
-        return regrid
 
 
 def expand_mask_true(mask, window):
@@ -81,28 +64,8 @@ def get_encodings(ds):
     return encodings
 
 
-def round_coords(ds, to=25):
-    ds['latitude'] = np.round(ds['latitude'] * to) / to
-    ds['longitude'] = np.round(ds['longitude'] * to) / to
-    return ds
-
-
 def drop_dup_time(ds):
     return ds.drop_duplicates('time', keep='first')
-
-
-def center_to_outer(center, left=None, right=None):
-    """
-    Given an array of center coordinates, find the edge coordinates,
-    including extrapolation for far left and right edge.
-    """
-    edges = 0.5 * (center.values[0:-1] + center.values[1:])
-    if left is None:
-        left = edges[0] - (edges[1] - edges[0])
-    if right is None:
-        right = edges[-1] + (edges[-1] - edges[-2])
-    outer = np.hstack([left, edges, right])
-    return outer
 
 
 def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):  # noqa: PLR0915
@@ -277,16 +240,6 @@ def get_glofas_file(
             return None
 
 
-def flatten(lst: list[Any]) -> list[Any]:
-    flat_list = []
-    for item in lst:
-        if isinstance(item, list):
-            flat_list.extend(flatten(item))
-        else:
-            flat_list.append(item)
-    return flat_list
-
-
 def main(  # noqa: PLR0915
     year: int,
     mask_file: Path,
@@ -361,7 +314,7 @@ def main(  # noqa: PLR0915
 
     glofas = (
         xarray.open_mfdataset(
-            files, preprocess=lambda x: drop_dup_time(round_coords(x))
+            files, preprocess=lambda x: drop_dup_time(round_coords(x, to=25))
         )
         .rename({'latitude': 'lat', 'longitude': 'lon'})
         .sel(

@@ -9,7 +9,8 @@ import xarray
 from boundary import Segment
 from loguru import logger
 
-from workflow_tools.utils import HSMGet, round_coords
+from workflow_tools.grid import round_coords
+from workflow_tools.io import HSMGet
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 TMP = hsmget.tmp

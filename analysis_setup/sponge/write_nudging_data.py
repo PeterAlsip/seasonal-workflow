@@ -4,7 +4,7 @@ import pandas as pd
 import xarray
 from xesmf import Regridder
 
-from workflow_tools.utils import round_coords
+from workflow_tools.grid import round_coords
 
 VARIABLES = ['thetao', 'so']
 

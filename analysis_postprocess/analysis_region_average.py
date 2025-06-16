@@ -3,7 +3,7 @@ import xarray
 from loguru import logger
 
 from workflow_tools.config import load_config
-from workflow_tools.utils import open_var
+from workflow_tools.io import open_var
 
 if __name__ == '__main__':
     import argparse

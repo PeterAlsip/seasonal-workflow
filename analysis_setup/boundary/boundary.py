@@ -3,8 +3,9 @@ from os import path
 
 import numpy as np
 import xarray
-import xesmf
 from loguru import logger
+
+from workflow_tools.grid import reuse_regrid
 
 # ignore pandas FutureWarnings raised multiple times by xarray
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -229,23 +230,6 @@ def z_to_dz(ds, max_depth=6500.):
     for v in ['time', 'z', 'locations']:
         da_dz[v].attrs = ds[v].attrs
     return da_dz
-
-
-def reuse_regrid(*args, **kwargs):
-    filename = kwargs.pop('filename', None)
-    reuse_weights = kwargs.pop('reuse_weights', False)
-
-    if reuse_weights:
-        if path.isfile(filename):
-            return xesmf.Regridder(*args, reuse_weights=True, filename=filename,
-                                   **kwargs)
-        else:
-            regrid = xesmf.Regridder(*args, **kwargs)
-            regrid.to_netcdf(filename)
-            return regrid
-    else:
-        regrid = xesmf.Regridder(*args, **kwargs)
-        return regrid
 
 
 class Segment:

@@ -6,8 +6,9 @@ import numpy as np
 import xarray
 from loguru import logger
 
+from workflow_tools.io import HSMGet, write_ds
 from workflow_tools.spear import SPEAR_ROOT, get_spear_paths
-from workflow_tools.utils import HSMGet, pad_ds, write_ds
+from workflow_tools.utils import pad_ds
 
 hsmget = HSMGet(archive=SPEAR_ROOT)
 

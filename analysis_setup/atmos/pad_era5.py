@@ -7,7 +7,7 @@ import pandas as pd
 import xarray
 from loguru import logger
 
-from workflow_tools.utils import HSMGet
+from workflow_tools.io import HSMGet
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 
