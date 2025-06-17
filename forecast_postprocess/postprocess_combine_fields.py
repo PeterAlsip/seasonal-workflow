@@ -42,6 +42,7 @@ def process_ensmean(config: Config, cmdargs: Namespace, var: str) -> list[Path]:
                 config.retrospective_forecasts.last_year + 1,
             ):
                 month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
+                logger.trace('Will write to {f}', f=month_file)
                 files = list(
                     (model_output_data / 'extracted' / cmdargs.domain).glob(
                         f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'
@@ -53,11 +54,16 @@ def process_ensmean(config: Config, cmdargs: Namespace, var: str) -> list[Path]:
                     )
                     members.append(month_file)
                 elif len(files) > 1:
+                    logger.trace(
+                        'Found {l} files for {y}-{m:02d}', l=len(files), y=y, m=m
+                    )
                     file_str = ' '.join(x.as_posix() for x in files)
                     futures.append(
                         executor.submit(run_nco, 'ncea', var, file_str, month_file)
                     )
                     members.append(month_file)
+                else:
+                    logger.info('No files found for {y}-{m:02d}', y=y, m=m)
     check_futures(futures)
     return members
 

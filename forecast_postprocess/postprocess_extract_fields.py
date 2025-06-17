@@ -6,7 +6,6 @@ sbatch --export=ALL --wrap="python postprocess_extract_fields.py
 import datetime as dt
 import subprocess
 from argparse import ArgumentParser, Namespace
-from concurrent import futures
 from pathlib import Path
 
 import numpy as np
@@ -29,9 +28,11 @@ def process_file(
         outfile = forecast.outdir / forecast.out_name
     logger.info(f'process_file({infile})')
     with xarray.open_dataset(infile, decode_timedelta=False) as ds:
+        logger.trace('Opened {f}', f=infile)
         if variables is None:
             variables = list(ds.data_vars)
         dsv = ds[variables]
+        logger.trace('Adding coordinates')
         dsv['member'] = int(forecast.ens)
         dsv['init'] = dt.datetime(int(forecast.ystart), int(forecast.mstart), 1)
         dsv['lead'] = (('time',), np.arange(len(dsv['time'])))
@@ -39,8 +40,10 @@ def process_file(
             dsv['lead'].attrs['units'] = 'days'
         else:
             dsv['lead'].attrs['units'] = 'months'
-        dsv = dsv.swap_dims({'time': 'lead'}).set_coordsv(['init', 'member'])
+        logger.trace('Setting dims')
+        dsv = dsv.swap_dims({'time': 'lead'}).set_coords(['init', 'member'])
         dsv = dsv.expand_dims('init')
+        logger.trace('Transpose')
         dsv = dsv.transpose('init', 'lead', ...)
         dsv = dsv.drop_vars('time')
         dsv.attrs[f'cefi_archive_version_ens{forecast.ens:02d}'] = str(
@@ -48,8 +51,9 @@ def process_file(
         )
         # Compress output to significantly reduce space
         encoding = {var: {'zlib': True, 'complevel': 3} for var in variables}
+        logger.trace('Starting writing to {f}', f=outfile)
         dsv.to_netcdf(outfile, unlimited_dims='init', encoding=encoding)
-
+        logger.trace('Finished writing to {f}', f=outfile)
 
 def process_run(
     forecast: ForecastRun,
@@ -59,14 +63,18 @@ def process_run(
 ) -> None:
     # Check if a processed file exists
     if not (forecast.outdir / forecast.out_name).is_file() or rerun:
+        vftmp_file = forecast.vftmp_dir / forecast.file_name
         # Check if an extracted data file exists
-        if (forecast.vftmp_dir / forecast.file_name).is_file():
+        if vftmp_file.is_file():
+            logger.trace('File {f} already exists on vftmp', f=vftmp_file)
             process_file(forecast, variables=variables)
         # Check if a cached tar file exists
         elif (forecast.ptmp_dir / forecast.file_name).is_file():
+            logger.trace('File is not on vftmp but is on ptmp')
             forecast.copy_from_ptmp()
             process_file(forecast, variables=variables)
         elif forecast.exists:
+            logger.trace('File is on archive but not on vftmp or ptmp')
             forecast.copy_from_archive()
             forecast.copy_from_ptmp()
             process_file(forecast, variables=variables)
@@ -76,7 +84,8 @@ def process_run(
             )
             return
         if clean:
-            (forecast.vftmp_dir / forecast.file_name).unlink()
+            logger.info('Cleaning file')
+            vftmp_file.unlink()
 
 
 def main(args: Namespace) -> None:
@@ -184,18 +193,13 @@ def main(args: Namespace) -> None:
     else:
         logger.info('No files to dmget')
 
-    with futures.ThreadPoolExecutor(max_workers=args.threads) as executor:
-        executor.map(
-            lambda x: process_run(x, variables, rerun=args.rerun, clean=args.tmp),
-            all_runs,
-        )
-
+    for run in all_runs:
+        process_run(run, variables, rerun=args.rerun, clean=args.tmp)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
-    parser.add_argument('-t', '--threads', type=int, default=2)
     parser.add_argument(
         '-y',
         '--year',
