@@ -9,10 +9,10 @@ from loguru import logger
 from numpy.lib.stride_tricks import sliding_window_view
 
 from workflow_tools.grid import center_to_outer, reuse_regrid, round_coords
-from workflow_tools.utils import flatten
+from workflow_tools.utils import XarrayData, flatten
 
 
-def get_coast_mask(mask):
+def get_coast_mask(mask: xarray.DataArray) -> np.ndarray:
     # Alistair's method of finding coastal cells
     ocn_mask = mask.values
     cst_mask = 0 * ocn_mask  # All land should be 0
@@ -31,7 +31,7 @@ def get_coast_mask(mask):
     return cst_mask
 
 
-def expand_mask_true(mask, window):
+def expand_mask_true(mask: xarray.DataArray, window: int) -> np.ndarray:
     """Given a 2D bool mask, expand the true values of the
     mask so that at a given point, the mask becomes true
     if any point within a window x window box is true.
@@ -51,7 +51,7 @@ def expand_mask_true(mask, window):
     return final_mask.astype('bool')
 
 
-def get_encodings(ds):
+def get_encodings(ds: xarray.Dataset) -> xarray.Dataset:
     # Drop '_FillValue' from all variables when writing out
     all_vars = list(ds.data_vars.keys()) + list(ds.coords.keys())
     encodings = {v: {'_FillValue': None} for v in all_vars}
@@ -64,11 +64,17 @@ def get_encodings(ds):
     return encodings
 
 
-def drop_dup_time(ds):
+def drop_dup_time(ds: XarrayData) -> XarrayData:
     return ds.drop_duplicates('time', keep='first')
 
 
-def regrid_runoff(glofas, glofas_mask, hgrid, coast_mask, modify=True):  # noqa: PLR0915
+def regrid_runoff(  # noqa: PLR0915
+    glofas: xarray.DataArray,
+    glofas_mask: np.ndarray,
+    hgrid: xarray.Dataset,
+    coast_mask: np.ndarray,
+    modify: bool = True
+) -> xarray.Dataset:
     # Assuming grid spacing of 0.05 deg here and below;
     # eventually should detect from file (there are attributes for this)
     dlon = dlat = 0.05  # GloFAS grid spacing

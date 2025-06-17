@@ -1,11 +1,12 @@
 import os
+from typing import Any
 
 import numpy as np
 import xarray
 import xesmf
 
 
-def center_to_outer(center: xarray.DataArray, left=None, right=None):
+def center_to_outer(center: xarray.DataArray, left=None, right=None) -> np.ndarray:
     """
     Given an array of center coordinates, find the edge coordinates,
     including extrapolation for far left and right edge.
@@ -19,7 +20,7 @@ def center_to_outer(center: xarray.DataArray, left=None, right=None):
     return outer
 
 
-def reuse_regrid(*args, **kwargs):
+def reuse_regrid(*args: Any, **kwargs: Any) -> xesmf.Regridder:
     filename = kwargs.pop('filename', None)
     reuse_weights = kwargs.pop('reuse_weights', False)
 
