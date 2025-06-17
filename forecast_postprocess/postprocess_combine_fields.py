@@ -6,11 +6,12 @@ from pathlib import Path
 from subprocess import CompletedProcess, run
 from typing import Any
 
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
 
-from utils import smooth_climatology
+from workflow_tools.config import Config, load_config
+from workflow_tools.utils import smooth_climatology
 
 
 def run_nco(nco_tool: str, var: str, in_files: str, out_file: Path) -> CompletedProcess:
@@ -27,20 +28,21 @@ def check_futures(futures: list[concurrent.futures.Future]) -> None:
             logger.error(f'Task generated an exception: {e}')
 
 
-def process_ensmean(config: Any, cmdargs: Namespace, var: str) -> list[Path]:
+def process_ensmean(config: Config, cmdargs: Namespace, var: str) -> list[Path]:
     # Large files: ensemble average, then concatenate averages
     tmp = Path(os.environ['TMPDIR'])
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    model_output_data = config.filesystem.forecast_output_data
     threads = cmdargs.threads
     members = []
     futures = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
-        for m in config['retrospective_forecasts']['months']:
+        for m in config.retrospective_forecasts.months:
             for y in range(
-                config['retrospective_forecasts']['first_year'],
-                config['retrospective_forecasts']['last_year'] + 1,
+                config.retrospective_forecasts.first_year,
+                config.retrospective_forecasts.last_year + 1,
             ):
                 month_file = tmp / f'{cmdargs.domain}_{var}_{y}_{m:02d}_ensmean.nc'
+                logger.trace('Will write to {f}', f=month_file)
                 files = list(
                     (model_output_data / 'extracted' / cmdargs.domain).glob(
                         f'{y}-{m:02d}-e??.{cmdargs.domain}.nc'
@@ -52,19 +54,24 @@ def process_ensmean(config: Any, cmdargs: Namespace, var: str) -> list[Path]:
                     )
                     members.append(month_file)
                 elif len(files) > 1:
-                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                    logger.trace(
+                        'Found {l} files for {y}-{m:02d}', l=len(files), y=y, m=m
+                    )
+                    file_str = ' '.join(x.as_posix() for x in files)
                     futures.append(
                         executor.submit(run_nco, 'ncea', var, file_str, month_file)
                     )
                     members.append(month_file)
+                else:
+                    logger.info('No files found for {y}-{m:02d}', y=y, m=m)
     check_futures(futures)
     return members
 
 
 def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]:
-    nens = config['retrospective_forecasts']['ensemble_size']
+    nens = config.retrospective_forecasts.ensemble_size
     tmp = Path(os.environ['TMPDIR'])
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    model_output_data = config.filesystem.forecast_output_data
     threads = cmdargs.threads
     members = []
     futures = []
@@ -75,10 +82,10 @@ def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]
             if not out_file.exists() or cmdargs.rerun:
                 files = []
                 for y in range(
-                    config['retrospective_forecasts']['first_year'],
-                    config['retrospective_forecasts']['last_year'] + 1,
+                    config.retrospective_forecasts.first_year,
+                    config.retrospective_forecasts.last_year + 1,
                 ):
-                    for m in config['retrospective_forecasts']['months']:
+                    for m in config.retrospective_forecasts.months:
                         tentative = (
                             model_output_data
                             / 'extracted'
@@ -88,7 +95,7 @@ def process_all_members(config: Any, cmdargs: Namespace, var: str) -> list[Path]
                         if tentative.is_file():
                             files.append(tentative)
                 if len(files) > 0:
-                    file_str = ' '.join(map(lambda x: x.as_posix(), files))
+                    file_str = ' '.join(x.as_posix() for x in files)
                     futures.append(
                         executor.submit(
                             run_nco, 'ncrcat', f'{var},member', file_str, out_file
@@ -145,7 +152,7 @@ def combine(
     )
     # Do the same for the full set of forecasts
     encoding = {v: {'dtype': 'int32'} for v in ['member', 'month'] if v in model_ds}
-    encoding.update({var: dict(zlib=True, complevel=3) for var in model_ds.data_vars})
+    encoding.update({var: {'zlib': True, 'complevel': 3} for var in model_ds.data_vars})
     logger.info('Writing forecasts')
     fname = (
         f'forecasts_{domain}_{var}_ensmean.nc'
@@ -156,8 +163,6 @@ def combine(
 
 
 if __name__ == '__main__':
-    from yaml import safe_load
-
     parser = ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
@@ -167,18 +172,20 @@ if __name__ == '__main__':
         '-m',
         '--mean',
         action='store_true',
-        help='Include only ensemble mean in combined result, dropping individual members.',
+        help='Include only ensemble mean in combined result, \
+            dropping individual members.',
     )
     parser.add_argument('-t', '--threads', type=int, default=1)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
+    config = load_config(args.config)
+    model_output_data = config.filesystem.forecast_output_data
+    first_year = config.climatology.first_year
+    last_year = config.climatology.last_year
     if args.mean:
+        logger.info('Calculating ensemble mean and using for output.')
         processor = partial(process_ensmean, config, args)
     else:
+        logger.info('Including all ensemble members in output.')
         processor = partial(process_all_members, config, args)
     if ',' in args.var:
         cmdvar = args.var.split(',')

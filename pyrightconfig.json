@@ -1,5 +1,5 @@
 {
-    "exclude": ["docs"],
-    "pythonVersion": "3.11",
+    "exclude": ["docs", "examples"],
+    "pythonVersion": "3.13",
     "typeCheckingMde": "basic"
 }

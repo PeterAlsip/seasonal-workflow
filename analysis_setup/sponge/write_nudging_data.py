@@ -1,11 +1,10 @@
-import sys
+from pathlib import Path
 
 import pandas as pd
 import xarray
 from xesmf import Regridder
 
-sys.path.append('../..')
-from utils import round_coords
+from workflow_tools.grid import round_coords
 
 VARIABLES = ['thetao', 'so']
 
@@ -35,7 +34,12 @@ def add_bounds(ds):
     return bounded
 
 
-def main(year, target_grid, input_dir, output_dir):
+def main(
+    year: int,
+    target_grid: xarray.Dataset,
+    input_dir: Path,
+    output_dir: Path
+) -> None:
     files = list(input_dir.glob(f'glorys_*_{year}-??.nc'))
     glorys = (
         xarray.open_mfdataset(
@@ -84,22 +88,20 @@ def main(year, target_grid, input_dir, output_dir):
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
 
-    from yaml import safe_load
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int, required=True)
     parser.add_argument('-c', '--config', required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    static = xarray.open_dataset(config['domain']['ocean_static_file'])
+    config = load_config(args.config)
+    static = xarray.open_dataset(config.domain.ocean_static_file)
     target_grid = static[['geolat', 'geolon']].rename(
         {'geolat': 'lat', 'geolon': 'lon'}
     )
     input_dir = (
-        Path(config['filesystem']['nowcast_input_data']) / 'sponge' / 'monthly_filled'
+        config.filesystem.nowcast_input_data / 'sponge' / 'monthly_filled'
     )
     output_dir = input_dir.parents[0]
     main(args.year, target_grid, input_dir, output_dir)

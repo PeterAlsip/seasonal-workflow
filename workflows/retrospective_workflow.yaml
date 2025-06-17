@@ -11,18 +11,18 @@ workflow:
   cycledef:
     - attrs:
         group: default
-      spec: "0 0 1 1 2022-2023 *"
+      spec: "0 0 1 8 1994 *"
   log: 
     cyclestr:
-      value: /home/acr/git/seasonal-workflow/flow/log_@Y-@m.log
+      value: /home/acr/git/seasonal-workflow/workflows/log_@Y-@m.log
   entities:
     ANALYSIS_INPUT: /work/acr/mom6/nwa12/analysis_input_data
     FORECAST_INPUT: /work/acr/mom6/nwa12/forecast_input_data
     GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
     CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
-    ENV_SETUP: "source /home/acr/git/seasonal-workflow/flow/env_setup.sh;"
+    ENV_SETUP: "source /home/acr/git/seasonal-workflow/workflows/env_setup.sh;"
     QC_SETUP: "source /home/acr/git/ncqc/.venv/bin/activate;"
-    LOGS: /home/acr/git/seasonal-workflow/flow/logs
+    LOGS: /home/acr/git/seasonal-workflow/workflows/logs
   tasks:
     task_write_spear_atmos:
       attrs:
@@ -33,7 +33,7 @@ workflow:
       partition: batch
       nodes: 1:ppn=1
       walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/spear_atmos_%j.out
+      native: -D /home/acr/git/seasonal-workflow/forecast_setup/ --output=&LOGS;/spear_atmos_%j.out
     metatask_qc_spear_atmos_daily:
       var:
         variable: lwdn_sfc precip q_ref slp swdn_sfc t_ref
@@ -105,7 +105,7 @@ workflow:
       partition: analysis
       nodes: 1:ppn=1
       walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/ics_%j.out
+      native: -D /home/acr/git/seasonal-workflow/forecast_setup --output=&LOGS;/ics_%j.out
     task_ics_gaea:
       attrs:
         cycledefs: default

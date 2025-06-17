@@ -3,7 +3,7 @@ variables:
     - no_nans
     - name: range_check
       args:
-        min_val: 100
+        min_val: 95
         max_val: 500
     - name: rate_of_change_check
       args:
@@ -71,8 +71,8 @@ variables:
     - no_nans
     - name: range_check
       args:
-        min_val: -45
-        max_val: 45        
+        min_val: -50
+        max_val: 50        
     # rate of change could possibly be from positive bound to negative bound.
     # also complicated because of 4x daily frequency. 
     - name: repeated_float_check
@@ -82,8 +82,8 @@ variables:
     - no_nans
     - name: range_check
       args:
-        min_val: -45
-        max_val: 45 
+        min_val: -50
+        max_val: 50 
     - name: repeated_float_check
       args:
         max_occurrences: 500

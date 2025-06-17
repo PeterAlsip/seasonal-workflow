@@ -1,26 +1,32 @@
-from pathlib import Path
-
-from loguru import logger
 import xarray
+from loguru import logger
+
+from workflow_tools.config import Config, load_config
 
 
-def process_var(var, config, cmdargs):
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
+def process_var(
+    var: str,
+    config: Config,
+    domain: str,
+    ensemble_mean: bool
+) -> None:
+    model_output_data = config.filesystem.forecast_output_data
 
     fname = (
-        f'forecasts_{cmdargs.domain}_{var}_ensmean.nc'
-        if cmdargs.mean
-        else f'forecasts_{cmdargs.domain}_{var}.nc'
+        f'forecasts_{domain}_{var}_ensmean.nc'
+        if ensemble_mean
+        else f'forecasts_{domain}_{var}.nc'
     )
     ds = xarray.open_dataset(model_output_data / fname)
 
-    masks = xarray.open_dataset(config['regions']['mask_file'])
+    masks = xarray.open_dataset(config.regions.mask_file)
     if 'yh_sub01' in ds and 'xh_sub01' in ds:
+        logger.debug('Renaming xh and yh coordinates')
         ds = ds.rename({f'{v}_sub01': v for v in ['yh', 'xh']})
 
     averages = []
-    for reg in config['regions']['names']:
-        logger.info(reg)
+    for reg in config.regions.names:
+        logger.info('Mean for region {reg}', reg=reg)
         weights = masks['areacello'].where(masks[reg]).fillna(0)
         ave = ds.weighted(weights).mean(['yh', 'xh']).load()
         ave['region'] = reg
@@ -29,16 +35,15 @@ def process_var(var, config, cmdargs):
 
     averages = xarray.concat(averages, dim='region')
     outname = (
-        f'forecasts_{cmdargs.domain}_{var}_ensmean_regionmean.nc'
-        if cmdargs.mean
-        else f'forecasts_{cmdargs.domain}_{var}_regionmean.nc'
+        f'forecasts_{domain}_{var}_ensmean_regionmean.nc'
+        if ensemble_mean
+        else f'forecasts_{domain}_{var}_regionmean.nc'
     )
     averages.to_netcdf(model_output_data / outname)
 
 
 if __name__ == '__main__':
     import argparse
-    from yaml import safe_load
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
@@ -48,14 +53,14 @@ if __name__ == '__main__':
         '-m',
         '--mean',
         action='store_true',
-        help='Include only ensemble mean in combined result, dropping individual members.',
+        help='Include only ensemble mean in combined result, \
+            dropping individual members.'
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     if ',' in args.var:
         cmdvar = args.var.split(',')
         for v in cmdvar:
-            process_var(v, config, args)
+            process_var(v, config, args.domain, args.mean)
     else:
-        process_var(args.var, config, args)
+        process_var(args.var, config, args.domain, args.mean)

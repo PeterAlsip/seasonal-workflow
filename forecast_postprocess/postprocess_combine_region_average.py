@@ -1,29 +1,27 @@
 import os
 from pathlib import Path
 
-from loguru import logger
 import xarray
+from loguru import logger
 
-from utils import smooth_climatology
+from workflow_tools.config import load_config
+from workflow_tools.utils import smooth_climatology
 
 if __name__ == '__main__':
     import argparse
-
-    from yaml import safe_load
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-d', '--domain', type=str, default='ocean_month')
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     tmp = Path(os.environ['TMPDIR'])
 
-    model_output_data = Path(config['filesystem']['forecast_output_data'])
+    model_output_data = config.filesystem.forecast_output_data
     model_output_data.mkdir(exist_ok=True)
-    first_year = config['climatology']['first_year']
-    last_year = config['climatology']['last_year']
-    nens = config['retrospective_forecasts']['ensemble_size']
+    first_year = config.climatology.first_year
+    last_year = config.climatology.last_year
+    nens = config.retrospective_forecasts.ensemble_size
 
     members = []
     # Regular files: concatenate initializations together
@@ -32,10 +30,8 @@ if __name__ == '__main__':
         logger.info(f'Member {e}')
         logger.info(model_output_data / 'extracted_region_average' / args.domain)
         files = sorted(
-            list(
-                (model_output_data / 'extracted_region_average' / args.domain).glob(
-                    f'????-??-e{e:02d}.{args.domain}.nc'
-                )
+            (model_output_data / 'extracted_region_average' / args.domain).glob(
+                f'????-??-e{e:02d}.{args.domain}.nc'
             )
         )
         if len(files) > 0:
@@ -69,7 +65,8 @@ if __name__ == '__main__':
     # encoding = {v: {'dtype': 'int32'} for v in ['lead', 'month']}
     # climo.encoding = {}
     # logger.info('Writing climatology')
-    # climo.to_netcdf(model_output_data / f'climatology_{args.domain}_{args.var}_{first_year}_{last_year}.nc',
+    # climo.to_netcdf(model_output_data /
+    # f'climatology_{args.domain}_{args.var}_{first_year}_{last_year}.nc',
     #     encoding=encoding)
     # Do the same for the full set of forecasts
     encoding = {

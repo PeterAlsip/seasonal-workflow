@@ -1,17 +1,22 @@
-from pathlib import Path
-
-from loguru import logger
 import numpy as np
 import pandas as pd
 import xarray
+from loguru import logger
 from numba import jit, prange
+from numpy.typing import NDArray
 
-from utils import match_obs_to_forecasts
+from workflow_tools.config import Config, load_config
+from workflow_tools.utils import match_obs_to_forecasts
 
 
 @jit(nogil=True)
-def logreg_mle(X, y, tol=1e-5, max_iter=50):
-    n_samples, n_features = X.shape
+def logreg_mle(
+    X: NDArray[np.float64],  # noqa: N803
+    y: NDArray[np.float64],
+    tol: float = 1e-5,
+    max_iter: int = 50
+) -> NDArray[np.float64]:
+    _n_samples, n_features = X.shape
     w = np.zeros(n_features)
     converged = False
     for _ in range(max_iter):
@@ -22,7 +27,7 @@ def logreg_mle(X, y, tol=1e-5, max_iter=50):
         # Gradient of log-likelihood
         gradient = X.T @ (y - sigmoid)
         # Hessian matrix
-        V = np.diag(sigmoid * (1 - sigmoid))
+        V = np.diag(sigmoid * (1 - sigmoid))  # noqa: N806
         hessian = -X.T @ V @ X
         # Make sure the matrix isn't singular
         # in a way that is friendly to numba.
@@ -43,7 +48,11 @@ def logreg_mle(X, y, tol=1e-5, max_iter=50):
 
 
 @jit(parallel=True, nogil=True)
-def apply_logreg_mle(xd, qd, yd):
+def apply_logreg_mle(
+    xd: NDArray[np.float64],
+    qd: NDArray[np.float64],
+    yd: NDArray[np.float64]
+) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     # assuming dimensions are <init, lat, lon, quantile>
     ni, ny, nx, nq = qd.shape
     a = np.full((ny, nx), np.nan)
@@ -60,7 +69,7 @@ def apply_logreg_mle(xd, qd, yd):
                 # Flatten quantile predictors
                 x2 = qd[:, y, x, :].flatten()
                 # Combine to predictor matrix
-                X = np.vstack((x0, x1, x2)).T
+                X = np.vstack((x0, x1, x2)).T  # noqa: N806
                 # Flatten outcomes to match
                 z = yd[:, y, x, :].flatten()
                 # Make sure there are both possibilities in the data.
@@ -72,8 +81,8 @@ def apply_logreg_mle(xd, qd, yd):
     return a, b, c
 
 
-def main(config, var, quantiles):
-    forecast_output_data = Path(config['filesystem']['forecast_output_data'])
+def main(config: Config, var: str, quantiles: list[float]) -> None:
+    forecast_output_data = config.filesystem.forecast_output_data
     logger.info('Load forecasts')
     retro = xarray.open_dataset(
         forecast_output_data / f'forecasts_ocean_month_{var}.nc'
@@ -84,15 +93,15 @@ def main(config, var, quantiles):
     retro['valid_time'] = (
         ('lead', 'init'),
         [
-            retro.indexes['init'] + pd.DateOffset(months=l)
-            for l in retro['lead'].astype('int')
+            retro.indexes['init'] + pd.DateOffset(months=lead)
+            for lead in retro['lead'].astype('int')
         ],
     )
     retro['valid_time'] = retro['valid_time'].transpose('init', 'lead')
     ensmean = retro[var].mean('member')
 
     glorys_rg = xarray.open_dataarray(
-        Path(config['filesystem']['glorys_interpolated']) / f'glorys_{var}.nc'
+        config.filesystem.glorys_interpolated / f'glorys_{var}.nc'
     )
     qs_file = (
         forecast_output_data
@@ -120,7 +129,7 @@ def main(config, var, quantiles):
         logger.trace(int(mon))
         all_leads = []
         for lead in np.unique(retro.lead):
-            logger.trace(int(lead), end=' ', flush=True)
+            logger.trace(int(lead))
             ysub = exceeded_match.sel(
                 lead=lead, init=exceeded_match['init.month'] == mon
             )
@@ -157,15 +166,12 @@ def main(config, var, quantiles):
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
-
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-v', '--var', required=True)
     args = parser.parse_args()
     var = args.var
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
     # Currently hard coding quantiles.
     quantiles = [0.1, 0.33, 0.5, 0.67, 0.9]
     main(config, var, quantiles)

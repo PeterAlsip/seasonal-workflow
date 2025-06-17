@@ -1,11 +1,15 @@
-from loguru import logger
+from pathlib import Path
+
 import numpy as np
 import xarray
+from loguru import logger
 
-from utils import modulo, smooth_climatology
+from workflow_tools.utils import modulo, smooth_climatology
 
 
-def process_climatology(years, input_files, output_dir):
+def process_climatology(
+    years: np.ndarray, input_files: list[Path], output_dir: Path
+) -> None:
     logger.info('Opening dataset')
     rivers = xarray.open_mfdataset(
         input_files,
@@ -38,21 +42,20 @@ def process_climatology(years, input_files, output_dir):
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
-    from yaml import safe_load
+
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
 
     years = np.arange(
-        config['climatology']['first_year'], config['climatology']['last_year'] + 1
+        config.climatology.first_year, config.climatology.last_year + 1
     )
     input_files = [
-        config['filesystem']['yearly_river_files'].format(year=y) for y in years
+        Path(config.filesystem.yearly_river_files.format(year=y)) for y in years
     ]
-    work_dir = Path(config['filesystem']['forecast_input_data']) / 'rivers'
+    work_dir = config.filesystem.forecast_input_data / 'rivers'
     work_dir.mkdir(exist_ok=True)
     process_climatology(years, input_files, work_dir)

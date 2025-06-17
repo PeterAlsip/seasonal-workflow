@@ -1,12 +1,14 @@
 import datetime as dt
 import os
-import subprocess
 import tarfile
 from pathlib import Path
 
-from loguru import logger
 import numpy as np
 import xarray
+from loguru import logger
+
+from workflow_tools.config import Config, load_config
+from workflow_tools.utils import run_cmd
 
 # Path to store temporary output to:
 TMP = Path(os.environ['TMPDIR'])
@@ -89,12 +91,7 @@ _EXPECTED_BGC_VARS = [
 ]
 
 
-def run_cmd(cmd):
-    logger.debug(cmd)
-    subprocess.run([cmd], shell=True, check=True)
-
-
-def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
+def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):  # noqa: PLR0915
     target_time = f'{ystart}-{mstart:02d}-01'
     if mstart == 1:
         yfile = ystart - 1
@@ -182,84 +179,37 @@ def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):
     return tmp_output
 
 
-def main_single(config, cmdargs):
-    if cmdargs.now:
+def main(config: Config, year: int, month: int, now: bool):
+    if now:
         history = Path(
-            config['filesystem']['nowcast_history'].format(
-                year=cmdargs.year, month=cmdargs.month
+            config.filesystem.nowcast_history.format(
+                year=year, month=month
             )
         )
     else:
-        history = Path(config['filesystem']['analysis_history'])
-    outdir = Path(config['filesystem']['forecast_input_data']) / 'initial'
+        history = config.filesystem.analysis_history
+    outdir = config.filesystem.forecast_input_data / 'initial'
     outdir.mkdir(exist_ok=True)
     tmp_files = [
-        ics_from_snapshot(c, history, cmdargs.year, cmdargs.month)
-        for c in config['snapshots']
+        ics_from_snapshot(c, history, year, month)
+        for c in config.snapshots
     ]
-    file_str = ' '.join(map(lambda x: x.name, tmp_files))
-    tarfile = f'{outdir.as_posix()}/forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
+    file_str = ' '.join(x.name for x in tmp_files)
+    tarfile = f'{outdir.as_posix()}/forecast_ics_{year}-{month:02d}.tar'
     cmd = f'tar cvf {tarfile} -C {TMP} {file_str}'
     run_cmd(cmd)
     for f in tmp_files:
         f.unlink()
-    if cmdargs.gaea:
-        logger.info('transferring to Gaea')
-        from subprocess import run
-        cmd = (
-            f'gcp -cd {tarfile} gaea:{config["filesystem"]["gaea_input_data"]}/initial/'
-        )
-        run([cmd], shell=True, check=True)
-    logger.success(tarfile)
-
-
-def main_ensemble(config, cmdargs):
-    ens = cmdargs.ensemble
-    if cmdargs.now:
-        history = Path(
-            config['filesystem']['nowcast_history'].format(
-                year=cmdargs.year, month=cmdargs.month, ens=ens
-            )
-        )
-    else:
-        history = Path(config['filesystem']['analysis_history'].format(ens=ens))
-    outdir = (
-        Path(config['filesystem']['forecast_input_data']) / f'e{ens:02d}' / 'initial'
-    )
-    tarfile = outdir / f'forecast_ics_{cmdargs.year}-{cmdargs.month:02d}.tar'
-    if cmdargs.rerun or not tarfile.exists():
-        outdir.mkdir(parents=True, exist_ok=True)
-        tmp_files = [
-            ics_from_snapshot(
-                c, history, cmdargs.year, cmdargs.month, force_extract=True
-            )
-            for c in config['snapshots']
-        ]
-        file_str = ' '.join(map(lambda x: x.name, tmp_files))
-        cmd = f'tar cvf {tarfile.as_posix()} -C {TMP} {file_str}'
-        run_cmd(cmd)
-        for f in tmp_files:
-            f.unlink()
-        if cmdargs.gaea:
-            logger.info('transferring to Gaea')
-            from subprocess import run
-
-            cmd = f'gcp -cd {tarfile.as_posix()} gaea:{config["filesystem"]["gaea_input_data"]}/e{ens:02d}/initial/'
-            run([cmd], shell=True, check=True)
     logger.success(tarfile)
 
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
-
-    from yaml import safe_load
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-y', '--year', type=int)
     parser.add_argument('-m', '--month', type=int)
     parser.add_argument('-c', '--config', type=str, required=True)
-    parser.add_argument('-g', '--gaea', help='gcp result to Gaea', action='store_true')
     parser.add_argument(
         '-n',
         '--now',
@@ -278,9 +228,5 @@ if __name__ == '__main__':
         required=False,
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    if args.ensemble is not None:
-        main_ensemble(config, args)
-    else:
-        main_single(config, args)
+    config = load_config(args.config)
+    main(config, args.year, args.month, args.now)

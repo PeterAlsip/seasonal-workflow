@@ -13,17 +13,16 @@ def create_damping(ocean_static, rate):
 
 if __name__ == '__main__':
     import argparse
-    from pathlib import Path
-    from yaml import safe_load
+
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config')
     parser.add_argument('-r', '--rate', type=int)  # Note: int days only
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    static = xarray.open_dataset(config['domain']['ocean_static_file'])
-    model_input = Path(config['filesystem']['forecast_input_data']) / 'nudging'
+    config = load_config(args.config)
+    static = xarray.open_dataset(config.domain.ocean_static_file)
+    model_input = config.filesystem.forecast_input_data / 'nudging'
     model_input.mkdir(exist_ok=True)
     damping = create_damping(static, 1 / (args.rate * 24 * 3600))
     encoding = {'Idamp': {'_FillValue': None}}

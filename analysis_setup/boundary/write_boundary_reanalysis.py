@@ -1,34 +1,27 @@
-import concurrent.futures as futures
-import re
-import sys
 from calendar import monthrange
+from concurrent import futures
 from functools import partial
 from pathlib import Path
-from subprocess import DEVNULL, run
 
-from loguru import logger
 import xarray
-
-sys.path.append('../..')
 from boundary import Segment
+from loguru import logger
 
-from utils import HSMGet, round_coords
-
-
-def run_cmd(cmd):
-    # Some file names contain (1) or similar, which
-    # will cause problems if sent directly to dmget.
-    # Put a backslash in front of these.
-    esc = re.sub(r'([\(\)])', r'\\\1', cmd)
-    # esc = cmd.replace('(', '\(').replace(')', '\)')
-    run([esc], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
-
+from workflow_tools.grid import round_coords
+from workflow_tools.io import HSMGet
+from workflow_tools.utils import run_cmd
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 TMP = hsmget.tmp
 
 
-def find_best_files(year, mon, var, reanalysis_path, analysis_path):
+def find_best_files(
+    year: int,
+    mon: int,
+    var: str,
+    reanalysis_path: Path,
+    analysis_path: Path
+) -> list[Path]:
     if var == 'uv':
         # For velocity, find the individual components separately.
         # Since u and v are in the same file for the analysis,
@@ -53,11 +46,16 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                 files.append(reanalysis_file[-1])
             else:
                 # The variable naming for the analysis is complicated.
-                # Assuming that the 202406 in cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406 will never change.
-                # The ???? before _R* could be hcst or nwct or fcst. Currently there is no checking if both are matched;
+                # Assuming that the 202406 in
+                # cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406 will never change.
+                # The ???? before _R* could be hcst or nwct or fcst.
+                # Currently there is no checking if both are matched;
                 # the last one by sorted order will be returned.
                 if var == 'zos':
-                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc
+                    # Path like:
+                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/
+                    # cmems_mod_glo_phy_anfc_0.083deg_P1D-m_202406/2024/09/
+                    # glo12_rg_1d-m_20240920-20240920_2D_hcst_R20241002.nc
                     analysis_file = sorted(
                         (
                             analysis_path
@@ -80,7 +78,10 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                         )
                     )
                 elif var in ['uo', 'vo']:
-                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/2024/09/glo12_rg_1d-m_20240920-20240920_3D-uovo_hcst_R20241002.nc
+                    # Path like:
+                    # /archive/uda/CEFI/GLOBAL_ANALYSISFORECAST_PHY_001_024/
+                    # cmems_mod_glo_phy-cur_anfc_0.083deg_P1D-m_202406/2024/09/
+                    # glo12_rg_1d-m_20240920-20240920_3D-uovo_hcst_R20241002.nc
                     analysis_file = sorted(
                         (
                             analysis_path
@@ -96,32 +97,40 @@ def find_best_files(year, mon, var, reanalysis_path, analysis_path):
                 if len(analysis_file) > 0:
                     files.append(analysis_file[-1])
                 else:
-                    logger.error(f'Did not a find a file for {year}-{mon:02d}-{day:02d} {var}')
+                    logger.error(
+                        f'Did not a find a file for {year}-{mon:02d}-{day:02d} {var}'
+                    )
     return files
 
 
-def thread_worker(in_file, out_dir, lon_lat_box):
+def thread_worker(
+    in_file: Path,
+    out_dir: Path,
+    lon_lat_box: tuple[float, float, float, float]
+) -> Path:
     out_file = out_dir / in_file.name
     lonmin, lonmax, latmin, latmax = lon_lat_box
-    # run_cmd(f'ncks -d latitude,{float(latmin)},{float(latmax)} -d longitude,{float(lonmin)},{float(lonmax)} {in_file.as_posix()} -O {out_file.as_posix()}')
     run_cmd(
-        f'cdo setmisstonn -sellevidx,1/49 -sellonlatbox,{float(lonmin)},{float(lonmax)},{float(latmin)},{float(latmax)} {in_file.as_posix()} {out_file.as_posix()}'
+        f'cdo setmisstonn -sellevidx,1/49 '
+        f'-sellonlatbox,{lonmin},{lonmax},{latmin},{latmax} '
+        f'{in_file.as_posix()} {out_file.as_posix()}',
+        escape=True
     )
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
 
 
 def main(
-    year,
-    mon,
-    var,
-    threads,
-    analysis_path,
-    reanalysis_path,
-    lon_lat_box,
-    segments,
-    update=False,
-    dry=False,
+    year: int,
+    mon: int,
+    var: str,
+    threads: int,
+    analysis_path: Path,
+    reanalysis_path: Path,
+    lon_lat_box: tuple[float, float, float, float],
+    segments: list[Segment],
+    update: bool = False,
+    dry: bool = False,
 ):
     if mon == 'all' or update:
         last_month = 12 if mon == 'all' else int(mon)
@@ -184,8 +193,11 @@ def main(
 
                     # Save data for use with sponge. TODO: config output path
                     if var in ['so', 'thetao']:
+                        file_strs = " ".join(x.as_posix() for x in processed_files)
                         run_cmd(
-                            f'cdo timavg  -cat {" ".join(map(lambda x: x.as_posix(), processed_files))} /work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc'
+                            f'cdo timavg -cat {file_strs} '
+                            f'/work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc',
+                            escape=True
                         )
                     ds = xarray.open_mfdataset(
                         processed_files, preprocess=partial(round_coords, to=12)
@@ -219,7 +231,7 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    from yaml import safe_load
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
@@ -240,16 +252,13 @@ if __name__ == '__main__':
         help='Dry run: print out the files that would be worked on.',
     )
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    d = config['domain']
-    hgrid = xarray.open_dataset(d['hgrid_file'])
-    output_dir = (
-        Path(config['filesystem']['nowcast_input_data']) / 'boundary' / 'monthly'
-    )
+    config = load_config(args.config)
+    dom = config.domain
+    hgrid = xarray.open_dataset(dom.hgrid_file)
+    output_dir = config.filesystem.nowcast_input_data/ 'boundary' / 'monthly'
     segments = [
         Segment(num, edge, hgrid, output_dir=output_dir)
-        for edge, num in d['boundaries'].items()
+        for num, edge in dom.boundaries.items()
     ]
     main(
         args.year,
@@ -257,9 +266,9 @@ if __name__ == '__main__':
         args.var,
         args.threads,
         segments=segments,
-        lon_lat_box=(d['west_lon'], d['east_lon'], d['south_lat'], d['north_lat']),
-        reanalysis_path=Path(config['filesystem']['interim_data']['GLORYS_reanalysis']),
-        analysis_path=Path(config['filesystem']['interim_data']['GLORYS_analysis']),
+        lon_lat_box=(dom.west_lon, dom.east_lon, dom.south_lat, dom.north_lat),
+        reanalysis_path=config.filesystem.interim_data.GLORYS_reanalysis, # TODO?
+        analysis_path=config.filesystem.interim_data.GLORYS_reanalysis,
         update=args.update,
         dry=args.dry,
     )

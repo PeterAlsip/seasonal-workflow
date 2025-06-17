@@ -1,21 +1,15 @@
-import concurrent.futures as futures
-import subprocess
-import sys
+from concurrent import futures
 from functools import partial
 from pathlib import Path
 
-from loguru import logger
 import pandas as pd
 import xarray
+from loguru import logger
 
-sys.path.append('../..')
-from utils import HSMGet
+from workflow_tools.io import HSMGet
+from workflow_tools.utils import run_cmd
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
-
-
-def run_cmd(cmd):
-    subprocess.run([cmd], shell=True, check=True)
 
 
 # Location to save temporary data to.
@@ -40,11 +34,11 @@ def thread_worker(month_file, region_slice):
     out_file = TMP / month_file.name
     # Slice to subregion and make time unlimited
     run_cmd(
-        f'ncks {region_slice} --mk_rec_dmn time {month_file.as_posix()} -O {out_file.as_posix()}'
+        f'ncks {region_slice} --mk_rec_dmn time {month_file} -O {out_file}'
     )
     # Flip latitude so it is south to north.
     run_cmd(
-        f'ncpdq -a "time,-latitude,longitude" {out_file.as_posix()} -O {out_file.as_posix()}'
+        f'ncpdq -a "time,-latitude,longitude" {out_file} -O {out_file}'
     )
     return out_file
 
@@ -57,19 +51,19 @@ def main(year, interim_path, output_dir, lon_lat_box):
             uda_file = interim_path / long_name / f'ERA5_{long_name}_{mon:02d}{year}.nc'
             if uda_file.is_file():
                 found_files.append(uda_file)
+            elif mon == 1:
+                raise Exception('Did not find any files for this year')
             else:
-                if mon == 1:
-                    raise Exception('Did not find any files for this year')
-                else:
-                    logger.info(f'Found files for month 1 to {mon - 1}')
-                    break
+                logger.info(f'Found files for month 1 to {mon - 1}')
+                break
 
         logger.info('hsmget')
         tmp_files = hsmget(found_files)
         logger.info('add record dim')
         # These should be formatted ok if they are floats
         # (nco requires decimal point)
-        region_slice = f'-d longitude,{lon_lat_box[0]},{lon_lat_box[1]} -d latitude,{lon_lat_box[2]},{lon_lat_box[3]}'
+        region_slice = f'-d longitude,{lon_lat_box[0]},{lon_lat_box[1]} \
+            -d latitude,{lon_lat_box[2]},{lon_lat_box[3]}'
         with futures.ThreadPoolExecutor(max_workers=4) as executor:
             processed_files = sorted(
                 executor.map(
@@ -103,22 +97,21 @@ if __name__ == '__main__':
     import argparse
     from pathlib import Path
 
-    from yaml import safe_load
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, required=True)
     parser.add_argument('-y', '--year', type=int, required=True)
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
-    interim_path = Path(config['filesystem']['interim_data']['ERA5'])
-    output_dir = Path(config['filesystem']['nowcast_input_data']) / 'atmos'
+    config = load_config(args.config)
+    interim_path = config.filesystem.interim_data.ERA5
+    output_dir = config.filesystem.nowcast_input_data / 'atmos'
     output_dir.mkdir(exist_ok=True)
-    d = config['domain']
+    d = config.domain
     box = [
-        float(d['west_lon']) % 360,
-        float(d['east_lon']) % 360,
-        float(d['south_lat']),
-        float(d['north_lat']),
+        float(d.west_lon) % 360,
+        float(d.east_lon) % 360,
+        float(d.south_lat),
+        float(d.north_lat)
     ]
     main(args.year, interim_path, output_dir, box)

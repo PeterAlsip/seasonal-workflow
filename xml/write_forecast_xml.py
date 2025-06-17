@@ -5,7 +5,7 @@ from textwrap import dedent
 def write_xml(common, ystart, mstart):
     ystart = int(ystart)
     mstart = int(mstart)
-    # Figure out what the date span 
+    # Figure out what the date span
     # used in the atmosphere filenames will be
     if isleap(ystart) and mstart == 3:
         # March 1 on leap year starts is named Feb 29
@@ -33,7 +33,7 @@ def write_xml(common, ystart, mstart):
       <property name="atmos_end" value="{yend}{mlast:02d}{dlast:02d}"/>
 
       <xi:include href="{common}" xpointer="xpointer(//freInclude[@name='common']/node())"/>
-    </experimentSuite>''')
+    </experimentSuite>''')  # noqa: E501
     # Write to file. The name will be based on the name of the common XML,
     # minus the "common"
     fname = common.replace('_common.xml', '')

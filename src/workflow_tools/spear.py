@@ -48,9 +48,9 @@ def get_spear_file(
     if freq == 'monthly':
         fname = f'{domain}.{ystart}{mstart_f:02d}-{yend}{mend:02d}.{var}.nc'
     elif freq == 'daily':
-        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}-{yend}{mend:02d}{dend_f:02d}.{var}.nc'
+        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}-{yend}{mend:02d}{dend_f:02d}.{var}.nc'  # noqa: E501
     elif freq == '6hr':
-        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}00-{yend}{mend:02d}{dend_f:02d}23.{var}.nc'
+        fname = f'{domain}.{ystart}{mstart_f:02d}{dstart_f:02d}00-{yend}{mend:02d}{dend_f:02d}23.{var}.nc'  # noqa: E501
     else:
         raise Exception(f'Unknown frequency: {freq}')
     return PurePath(fname)
@@ -73,14 +73,15 @@ def get_spear_path(
     domain: diagnostic domain (e.g., ocean, ocean_z)
     freq: output frequency (typically monthly or daily)
     variable: post-processed diagnostic variable
-    ens: ensemble member; either an integer, to get a single member, or "pp_ensemble" to get the post-processed ensemble mean.
+    ens: ensemble member; either an integer, to get a single member,
+      or "pp_ensemble" to get the post-processed ensemble mean.
     """
     if ens != 'pp_ensemble':
         ens = f'pp_ens_{int(ens):02d}'
 
     subdir = f'i{ystart}{mstart:02d}01_OTA_IceAtmRes_L33'
     fname = get_spear_file(ystart, mstart, domain, freq, var)
-    subpath = PurePath(ens) / domain / 'ts' / freq / '1yr' / fname
+    subpath = PurePath(str(ens)) / domain / 'ts' / freq / '1yr' / fname
 
     """
     For year 1991-2014
@@ -126,7 +127,8 @@ def get_spear_paths(variables: list[str], *args, **kwargs) -> list[Path]:
 
 if __name__ == '__main__':
     import argparse
-    from yaml import safe_load
+
+    from workflow_tools.config import load_config
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--domain')
@@ -135,17 +137,16 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--ensemble')
     parser.add_argument('-c', '--config')
     args = parser.parse_args()
-    with open(args.config, 'r') as file:
-        config = safe_load(file)
+    config = load_config(args.config)
 
     fnames = []
     # If called from command line, this will return all files
     # for years and months in the following ranges
     for ystart in range(
-        config['retrospective_forecasts']['first_year'],
-        config['retrospective_forecasts']['last_year'] + 1,
+        config.retrospective_forecasts.first_year,
+        config.retrospective_forecasts.last_year + 1,
     ):
-        for mstart in config['retrospective_forecasts']['months']:
+        for mstart in config.retrospective_forecasts.months:
             fname = get_spear_path(
                 ystart, mstart, args.domain, args.freq, args.var, ens=args.ensemble
             ).as_posix()
