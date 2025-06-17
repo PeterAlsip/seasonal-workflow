@@ -1,4 +1,3 @@
-import subprocess
 from concurrent import futures
 from functools import partial
 from pathlib import Path
@@ -8,13 +7,9 @@ import xarray
 from loguru import logger
 
 from workflow_tools.io import HSMGet
+from workflow_tools.utils import run_cmd
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
-
-
-def run_cmd(cmd):
-    logger.debug(cmd)
-    subprocess.run([cmd], shell=True, check=True)
 
 
 # Location to save temporary data to.

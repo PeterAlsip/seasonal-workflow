@@ -1,3 +1,5 @@
+import re
+from subprocess import run
 from typing import Any
 
 import numpy as np
@@ -6,6 +8,18 @@ import xarray
 from loguru import logger
 
 type XarrayData = xarray.Dataset | xarray.DataArray
+
+
+def run_cmd(cmd: str, escape: bool = False) -> None:
+    logger.debug(cmd)
+    # Some file names contain (1) or similar, which
+    # will cause problems if sent directly to dmget.
+    # Put a backslash in front of these.
+    if escape:
+        run(re.sub(r'([\(\)])', r'\\\1', cmd), shell=True, check=True)
+    else:
+        run(cmd, shell=True, check=True)
+
 
 def pad_ds(ds: xarray.Dataset) -> xarray.Dataset:
     if not isinstance(ds.time.values[0], np.datetime64):

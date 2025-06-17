@@ -1,12 +1,8 @@
 from pathlib import Path
-from subprocess import run
 
 from loguru import logger
 
-
-def run_cmd(cmd: str) -> None:
-    logger.debug(cmd)
-    run([cmd], shell=True, check=True)
+from workflow_tools.utils import run_cmd
 
 
 def main(year: int, input_dir: Path, output_dir: Path, n_segments: int) -> None:

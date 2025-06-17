@@ -1,9 +1,7 @@
-import re
 from calendar import monthrange
 from concurrent import futures
 from functools import partial
 from pathlib import Path
-from subprocess import DEVNULL, run
 
 import xarray
 from boundary import Segment
@@ -11,19 +9,10 @@ from loguru import logger
 
 from workflow_tools.grid import round_coords
 from workflow_tools.io import HSMGet
+from workflow_tools.utils import run_cmd
 
 hsmget = HSMGet(archive=Path('/archive/uda'))
 TMP = hsmget.tmp
-
-
-def run_cmd(cmd):
-    # Some file names contain (1) or similar, which
-    # will cause problems if sent directly to dmget.
-    # Put a backslash in front of these.
-    esc = re.sub(r'([\(\)])', r'\\\1', cmd)
-    # esc = cmd.replace('(', '\(').replace(')', '\)')
-    logger.debug(cmd)
-    run([esc], shell=True, check=True, stdout=DEVNULL, stderr=DEVNULL)
 
 
 def find_best_files(
@@ -124,7 +113,8 @@ def thread_worker(
     run_cmd(
         f'cdo setmisstonn -sellevidx,1/49 '
         f'-sellonlatbox,{lonmin},{lonmax},{latmin},{latmax} '
-        f'{in_file.as_posix()} {out_file.as_posix()}'
+        f'{in_file.as_posix()} {out_file.as_posix()}',
+        escape=True
     )
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
@@ -206,7 +196,8 @@ def main(
                         file_strs = " ".join(x.as_posix() for x in processed_files)
                         run_cmd(
                             f'cdo timavg -cat {file_strs} '
-                            f'/work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc'
+                            f'/work/acr/mom6/nwa12/analysis_input_data/sponge/monthly_filled/glorys_{var}_{year}-{mon:02d}.nc',
+                            escape=True
                         )
                     ds = xarray.open_mfdataset(
                         processed_files, preprocess=partial(round_coords, to=12)

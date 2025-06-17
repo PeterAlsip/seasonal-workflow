@@ -1,6 +1,5 @@
 import datetime as dt
 import os
-import subprocess
 import tarfile
 from pathlib import Path
 
@@ -9,6 +8,7 @@ import xarray
 from loguru import logger
 
 from workflow_tools.config import Config, load_config
+from workflow_tools.utils import run_cmd
 
 # Path to store temporary output to:
 TMP = Path(os.environ['TMPDIR'])
@@ -89,11 +89,6 @@ _EXPECTED_BGC_VARS = [
     'irr_aclm_z',
     'mu_mem_nmd',
 ]
-
-
-def run_cmd(cmd):
-    logger.debug(cmd)
-    subprocess.run([cmd], shell=True, check=True)
 
 
 def ics_from_snapshot(component, history, ystart, mstart, force_extract=False):  # noqa: PLR0915

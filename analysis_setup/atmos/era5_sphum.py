@@ -1,13 +1,7 @@
 import os
 from pathlib import Path
-from subprocess import run
 
-from loguru import logger
-
-
-def run_cmd(cmd: str):
-    logger.debug(cmd)
-    run(cmd, shell=True, check=True)
+from workflow_tools.utils import run_cmd
 
 
 def main(d2m_file: Path, sp_file: Path, tmpdir: Path, outdir: Path | str | None = None
