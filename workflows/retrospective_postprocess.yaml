@@ -1,0 +1,122 @@
+# conda activate uwtools
+# uw rocoto realize --config-file retrospective_workflow.yaml --output-file retrospective_workflow.xml
+# /home/acr/git/rocoto/bin/rocotorun -d retrospective_workflow.db -w retrospective_workflow.xml
+# /home/acr/git/rocoto/bin/rocotostat -d retrospective_workflow.db -w retrospective_workflow.xml
+# or /home/acr/git/rocoto/bin/rocotoboot -d retrospective_workflow.db -w retrospective_workflow.xml -c all -t <TASK_TO_RUN>
+workflow:
+  attrs:
+    realtime: false
+    scheduler: slurm
+    cyclethrottle: 3
+  cycledef:
+    - attrs:
+        group: default
+      spec: "0 0 1 6 2025 *"
+  log:
+    cyclestr:
+      value: /home/acr/git/seasonal-workflow/workflows/retrospective_postprocess_@Y-@m.log
+  entities:
+    CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
+    ENV_SETUP: "source /home/acr/git/seasonal-workflow/workflows/env_setup.sh;"
+    LOGS: /home/acr/git/seasonal-workflow/workflows/logs
+    VARIABLES: >
+      tos
+      tob
+      sos
+      sob
+      MLD_003
+      btm_o2
+      btm_co3_sol_arag
+      btm_co3_ion
+      btm_htotal
+      no3os
+      phos
+      po4os
+      sios
+      talkos
+      dissicos
+      pco2surf
+      sfc_co3_ion
+      sfc_co3_sol_arag
+    DOMAINS: >
+      ocean_month
+      ocean_month
+      ocean_month
+      ocean_month
+      ocean_month
+      ocean_cobalt_btm
+      ocean_cobalt_btm
+      ocean_cobalt_btm
+      ocean_cobalt_btm
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_sfc
+      ocean_cobalt_sfc
+      ocean_cobalt_sfc
+  tasks:
+    metatask_postprocess_extract:
+      var:
+        domain: ocean_month ocean_cobalt_btm ocean_cobalt_omip_sfc ocean_cobalt_sfc
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_extract_#domain#:
+        attrs:
+          cycledefs: default
+          maxtries: 2 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&ENV_SETUP; python forecast_postprocess/postprocess_extract_fields.py -c config_nwa12_cobalt.yaml -d #domain#"
+        partition: analysis
+        nodes: 1:ppn=1
+        walltime: 1:00:00
+        # This uses /vftmp/$USER as a cache so it should run on the same node every time
+        native: -D /home/acr/git/seasonal-workflow --nodelist=an204 --output=&LOGS;/pp_extract_%j.out
+    metatask_postprocess_combine:
+      var:
+        variable: "&VARIABLES;"
+        domain: "&DOMAINS;"
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_combine_#domain#_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 4 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&ENV_SETUP; python forecast_postprocess/postprocess_combine_fields.py -c config_nwa12_cobalt.yaml -d #domain# -v #variable# --mean --threads 1"
+        partition: analysis
+        nodes: 1:ppn=1
+        walltime: 0:30:00
+        native: -D /home/acr/git/seasonal-workflow --exclude=an[001-002,007-012,014] --output=&LOGS;/pp_combine_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: pp_extract_#domain#
+    metatask_postprocess_region_average:
+      var:
+        variable: "&VARIABLES;"
+        domain: "&DOMAINS;"
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_region_average_#domain#_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 2 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&ENV_SETUP; python forecast_postprocess/postprocess_region_average.py -c config_nwa12_cobalt.yaml -d #domain# -v #variable# --mean "
+        partition: analysis
+        nodes: 1:ppn=1
+        walltime: 0:10:00
+        native: -D /home/acr/git/seasonal-workflow --exclude=an[001-002,007-012,014] --output=&LOGS;/pp_region_average_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: pp_combine_#domain#_#variable#
