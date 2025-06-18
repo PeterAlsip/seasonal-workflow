@@ -1,5 +1,5 @@
 import re
-from subprocess import run
+from subprocess import CompletedProcess, run
 from typing import Any
 
 import numpy as np
@@ -10,16 +10,16 @@ from loguru import logger
 type XarrayData = xarray.Dataset | xarray.DataArray
 
 
-def run_cmd(cmd: str, escape: bool = False) -> None:
+def run_cmd(cmd: str, escape: bool = False, **kwargs: Any) -> CompletedProcess:
     logger.debug(cmd)
     # Some file names contain (1) or similar, which
     # will cause problems if sent directly to dmget.
     # Put a backslash in front of these.
     if escape:
-        run(re.sub(r'([\(\)])', r'\\\1', cmd), shell=True, check=True)
+        esc_cmd = re.sub(r'([\(\)])', r'\\\1', cmd)
     else:
-        run(cmd, shell=True, check=True)
-
+        esc_cmd = cmd
+    return run(esc_cmd, shell=True, check=True, **kwargs)
 
 def pad_ds(ds: xarray.Dataset) -> xarray.Dataset:
     if not isinstance(ds.time.values[0], np.datetime64):
