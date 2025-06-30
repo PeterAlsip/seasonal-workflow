@@ -6,6 +6,8 @@ sbatch --export=ALL --wrap="python postprocess_extract_fields.py
 import datetime as dt
 import subprocess
 from argparse import ArgumentParser, Namespace
+from getpass import getuser
+from os import environ
 from pathlib import Path
 
 import numpy as np
@@ -121,12 +123,8 @@ def main(args: Namespace) -> None:
     outdir.mkdir(exist_ok=True, parents=True)
     variables = config.variables[args.domain]
     if args.tmp:
-        from os import environ
-
         vftmp = Path(environ['TMPDIR'])
     else:
-        from getpass import getuser
-
         vftmp = Path('/vftmp') / getuser()
     all_runs = [
         ForecastRun(

@@ -1,3 +1,4 @@
+import errno
 from calendar import isleap, monthrange
 from functools import partial
 from pathlib import Path, PurePath
@@ -106,7 +107,6 @@ def get_spear_path(
         subdir += '_update'
     final_path = root / subdir / subpath
     if not final_path.is_file():
-        import errno
         raise FileNotFoundError(
             errno.ENOENT,
             'Could not find right plain directory, _update, or _rerun.',
