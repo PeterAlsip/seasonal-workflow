@@ -352,6 +352,34 @@ workflow:
         taskdep:
           attrs:
             task: pad_era5
+    metatask_qc_era5:
+      var:
+        variable: lp msl sf sphum ssrd strd t2m u10 v10
+      attrs:
+        mode: parallel
+        throttle: 6
+      task_qc_era5_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 2 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&QC_SETUP; /nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py &ANALYSIS_INPUT;/atmos/ERA5_#variable#_@Y_padded.nc -c flow/qc_atmos.yaml flow/qc_hourly.yaml --fail-on-error"
+        partition: batch
+        nodes: 1:ppn=1
+        walltime: 0:05:00
+        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/era5_qc_%j.out
+        dependency:
+          and:
+            taskdep_pad:
+              attrs:
+                task: pad_era5
+            taskdep_sphum:
+              attrs:
+                task: era5_sphum
+            taskdep_lp:
+              attrs:
+                task: era5_lp
     task_era5_gaea:
       attrs:
         cycledefs: default

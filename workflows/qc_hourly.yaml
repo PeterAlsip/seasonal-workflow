@@ -1,0 +1,25 @@
+variables:
+  time:
+    - name: frequency_check
+      args:
+        expected_freq: H
+
+  t2m:
+    - name: rate_of_change_check
+      args:
+        threshold: 400 # Hourly change converted to daily can be very large
+  ssrd:
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 4320000
+  lp:
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 0.04
+  sf:
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 0.04
