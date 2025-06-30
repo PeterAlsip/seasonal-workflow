@@ -11,7 +11,7 @@ workflow:
     - attrs:
         group: default
       spec: "0 0 1 */3 2025 *"
-  log: 
+  log:
     cyclestr:
       value: /home/acr/git/seasonal-workflow/workflows/log_@Y-@m.log
   entities:
@@ -20,12 +20,13 @@ workflow:
     GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
     CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
     ENV_SETUP: "source /home/acr/git/seasonal-workflow/workflows/env_setup.sh;"
+    QC_SETUP: "source /home/acr/git/ncqc/.venv/bin/activate;"
     LOGS: /home/acr/git/seasonal-workflow/workflows/logs
   tasks:
     task_write_spear_atmos:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           value: "&ENV_SETUP; python write_spear_atmos.py -c &CONFIG; -y @Y -m @m"
       partition: batch
@@ -34,15 +35,58 @@ workflow:
       native: -D /home/acr/git/seasonal-workflow/forecast_setup/ --output=&LOGS;/spear_atmos_%j.out
       dependency:
         sh:
-          command: 
+          command:
             cyclestr:
               value: "test -d /archive/l1j/spear_med/rf_hist/fcst/s_j11_OTA_IceAtmRes_L33/i@Y@m01_OTA_IceAtmRes_L33/pp_ens_05"
           attrs: # attrs is supposed to be optional but uw tools will fail if it isn't there.
             shell: "/bin/csh"
+    metatask_qc_spear_atmos_daily:
+      var:
+        variable: lwdn_sfc precip q_ref slp swdn_sfc t_ref
+      attrs:
+        mode: parallel
+        throttle: 6
+      task_qc_spear_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 2 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c flow/qc_atmos.yaml flow/qc_daily.yaml --fail-on-error || exit 255' _"
+            # This will wrongly succeed if find doesn't return any files.
+        partition: batch
+        nodes: 1:ppn=1
+        walltime: 0:05:00
+        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: write_spear_atmos
+    metatask_qc_spear_atmos_4xdaily:
+      var:
+        variable: u_ref v_ref
+      attrs:
+        mode: parallel
+        throttle: 2
+      task_qc_spear_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 1
+        command:
+          cyclestr:
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c flow/qc_atmos.yaml --fail-on-error || exit 255' _"
+        partition: batch
+        nodes: 1:ppn=1
+        walltime: 0:05:00
+        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: write_spear_atmos
     task_spear_gaea:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           value: "&ENV_SETUP; gcp -cd -r -v &FORECAST_INPUT;/atmos/@Y-@m-e?? &GAEA_INPUT;/forecast_input_data/atmos"
       partition: batch
@@ -50,13 +94,17 @@ workflow:
       walltime: 0:30:00
       native: --output=&LOGS;/spear_gaea_%j.out
       dependency:
-        taskdep:
-          attrs:
-            task: write_spear_atmos
+        and:
+          metataskdep_daily:
+            attrs:
+              metatask: qc_spear_atmos_daily
+          metataskdep_4xdaily:
+            attrs:
+              metatask: qc_spear_atmos_4xdaily
     task_write_boundary:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -68,7 +116,7 @@ workflow:
       dependency:
         and:
           sh_so:
-            command: 
+            command:
               cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
@@ -76,7 +124,7 @@ workflow:
             attrs:
               shell: "/bin/csh"
           sh_thetao:
-            command: 
+            command:
               cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
@@ -84,7 +132,7 @@ workflow:
             attrs:
               shell: "/bin/csh"
           sh_zos:
-            command: 
+            command:
               cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
@@ -92,7 +140,7 @@ workflow:
             attrs:
               shell: "/bin/csh"
           sh_currents:
-            command: 
+            command:
               cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
@@ -102,7 +150,7 @@ workflow:
     task_concat_boundary:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -118,7 +166,7 @@ workflow:
     task_boundary_gaea:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -134,7 +182,7 @@ workflow:
     task_write_nudging_data:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -150,7 +198,7 @@ workflow:
     task_nudging_gaea:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -166,7 +214,7 @@ workflow:
     task_write_runoff_glofas:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -178,14 +226,14 @@ workflow:
       dependency:
         datadep:
           value:
-            cyclestr: 
+            cyclestr:
               attrs:
                 offset: "-01:00:00:00"
               value: /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@Y_v4.0.nc
     task_runoff_gaea:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -201,7 +249,7 @@ workflow:
     task_pad_era5:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -214,68 +262,68 @@ workflow:
         and:
           datadep_d2m:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/2m_dewpoint_temperature/ERA5_2m_dewpoint_temperature_@m@Y.nc
           datadep_msl:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/mean_sea_level_pressure/ERA5_mean_sea_level_pressure_@m@Y.nc
           datadep_sf:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/snowfall/ERA5_snowfall_@m@Y.nc
           datadep_sp:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/surface_pressure/ERA5_surface_pressure_@m@Y.nc
           datadep_ssrd:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/surface_solar_radiation_downwards/ERA5_surface_solar_radiation_downwards_@m@Y.nc
           datadep_strd:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/surface_thermal_radiation_downwards/ERA5_surface_thermal_radiation_downwards_@m@Y.nc
           datadep_t2m:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/2m_temperature/ERA5_2m_temperature_@m@Y.nc
           datadep_tp:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/total_precipitation/ERA5_total_precipitation_@m@Y.nc
           datadep_u10:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/10m_u_component_of_wind/ERA5_10m_u_component_of_wind_@m@Y.nc
           datadep_v10:
             value:
-              cyclestr: 
+              cyclestr:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/10m_v_component_of_wind/ERA5_10m_v_component_of_wind_@m@Y.nc
     task_era5_lp:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -291,7 +339,7 @@ workflow:
     task_era5_sphum:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -307,7 +355,7 @@ workflow:
     task_era5_gaea:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
@@ -331,7 +379,7 @@ workflow:
     task_write_ics:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           value: "&ENV_SETUP; python write_ics_from_snapshot.py -c &CONFIG; -y @Y -m @m --now --rerun"
       partition: analysis
@@ -346,7 +394,7 @@ workflow:
     task_ics_gaea:
       attrs:
         cycledefs: default
-      command: 
+      command:
         cyclestr:
           value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
       partition: batch
