@@ -18,6 +18,7 @@ workflow:
     ANALYSIS_INPUT: /work/acr/mom6/nwa12/analysis_input_data
     FORECAST_INPUT: /work/acr/mom6/nwa12/forecast_input_data
     GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
+    ARCHIVE_INPUT: /archive/acr/mom6_input/forecasts
     CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
     ENV_SETUP: "source /home/acr/git/seasonal-workflow/workflows/env_setup.sh;"
     QC_SETUP: "source /home/acr/git/ncqc/.venv/bin/activate;"
@@ -88,11 +89,29 @@ workflow:
         cycledefs: default
       command:
         cyclestr:
-          value: "&ENV_SETUP; gcp -cd -r -v &FORECAST_INPUT;/atmos/@Y-@m-e?? &GAEA_INPUT;/forecast_input_data/atmos"
+          value: "&ENV_SETUP; gcp -cd -r -v &FORECAST_INPUT;/atmos/@Y-@m-e?? &GAEA_INPUT;/forecast_input_data/atmos/"
       partition: batch
       nodes: 1:ppn=1
       walltime: 0:30:00
       native: --output=&LOGS;/spear_gaea_%j.out
+      dependency:
+        and:
+          metataskdep_daily:
+            attrs:
+              metatask: qc_spear_atmos_daily
+          metataskdep_4xdaily:
+            attrs:
+              metatask: qc_spear_atmos_4xdaily
+    task_spear_archive:
+      attrs:
+        cycledefs: default
+      command:
+        cyclestr:
+          value: "&ENV_SETUP; gcp -cd -r -v &FORECAST_INPUT;/atmos/@Y-@m-e?? &ARCHIVE_INPUT;/@Y/@m/atmos/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 0:10:00
+      native: --output=&LOGS;/spear_archive_%j.out
       dependency:
         and:
           metataskdep_daily:
@@ -179,6 +198,22 @@ workflow:
         taskdep:
           attrs:
             task: concat_boundary
+    task_boundary_archive:
+      attrs:
+        cycledefs: default
+      command:
+        cyclestr:
+          attrs:
+            offset: "-01:00:00:00"
+          value: "&ENV_SETUP; gcp -cd -v &ANALYSIS_INPUT;/boundary/*_???_@Y.nc &ARCHIVE_INPUT;/@Y/@m/boundary/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 0:10:00
+      native: --output=&LOGS;/boundary_archive_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: concat_boundary
     task_write_nudging_data:
       attrs:
         cycledefs: default
@@ -207,6 +242,22 @@ workflow:
       nodes: 1:ppn=1
       walltime: 01:00:00
       native: --output=&LOGS;/nudging_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_nudging_data
+    task_nudging_archive:
+      attrs:
+        cycledefs: default
+      command:
+        cyclestr:
+          attrs:
+            offset: "-01:00:00:00"
+          value: "&ENV_SETUP; gcp -cd -v &ANALYSIS_INPUT;/sponge/glorys_sponge_monthly_bnd_@Y.nc &ARCHIVE_INPUT;/@Y/@m/sponge/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 01:00:00
+      native: --output=&LOGS;/nudging_archive_%j.out
       dependency:
         taskdep:
           attrs:
@@ -242,6 +293,22 @@ workflow:
       nodes: 1:ppn=1
       walltime: 0:30:00
       native: --output=&LOGS;/runoff_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_runoff_glofas
+    task_runoff_archive:
+      attrs:
+        cycledefs: default
+      command:
+        cyclestr:
+          attrs:
+            offset: "-01:00:00:00"
+          value: "&ENV_SETUP; gcp -cd -v &ANALYSIS_INPUT;/rivers/glofasv4_runoff_@Y.nc &ARCHIVE_INPUT;/@Y/@m/rivers/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 0:10:00
+      native: --output=&LOGS;/runoff_archive_%j.out
       dependency:
         taskdep:
           attrs:
@@ -403,6 +470,35 @@ workflow:
           taskdep_lp:
             attrs:
               task: era5_lp
+          metataskdep_qc:
+            attrs:
+              metatask: qc_era5
+    task_era5_archive:
+      attrs:
+        cycledefs: default
+      command:
+        cyclestr:
+          attrs:
+            offset: "-01:00:00:00"
+          value: "&ENV_SETUP; gcp -cd -v ERA5_strd_@Y_padded.nc ERA5_ssrd_@Y_padded.nc ERA5_lp_@Y_padded.nc ERA5_sf_@Y_padded.nc ERA5_msl_@Y_padded.nc ERA5_t2m_@Y_padded.nc ERA5_sphum_@Y_padded.nc ERA5_u10_@Y_padded.nc ERA5_v10_@Y_padded.nc &ARCHIVE_INPUT;/@Y/@m/atmos/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 00:30:00
+      native: -D &ANALYSIS_INPUT;/atmos/ --output=&LOGS;/era5_archive_%j.out
+      dependency:
+        and:
+          taskdep_pad:
+            attrs:
+              task: pad_era5
+          taskdep_sphum:
+            attrs:
+              task: era5_sphum
+          taskdep_lp:
+            attrs:
+              task: era5_lp
+          metataskdep_qc:
+            attrs:
+              metatask: qc_era5
     # After analysis simulation has run:
     task_write_ics:
       attrs:
@@ -429,6 +525,20 @@ workflow:
       nodes: 1:ppn=1
       walltime: 03:00:00
       native: --output=&LOGS;/ics_gaea_%j.out
+      dependency:
+        taskdep:
+          attrs:
+            task: write_ics
+    task_ics_archive:
+      attrs:
+        cycledefs: default
+      command:
+        cyclestr:
+          value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &ARCHIVE_INPUT;/@Y/@m/initial/"
+      partition: batch
+      nodes: 1:ppn=1
+      walltime: 01:00:00
+      native: --output=&LOGS;/ics_archive_%j.out
       dependency:
         taskdep:
           attrs:
