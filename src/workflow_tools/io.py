@@ -1,17 +1,25 @@
 import errno
-import re
 from dataclasses import dataclass
 from functools import singledispatchmethod
 from getpass import getuser
 from os import environ
 from pathlib import Path
 from shutil import which
-from subprocess import DEVNULL, run
 from typing import Any
 
 import xarray
 from loguru import logger
 
+from .utils import run_cmd
+
+
+def _run_cmd_silently(cmd: str) -> None:
+    """
+    Runs a command, with the output of the job sent to
+    the logger instead of printed out.
+    """
+    res = run_cmd(cmd, text=True, capture_output=True)
+    logger.debug(res.stdout)
 
 @dataclass
 class HSMGet:
@@ -19,43 +27,39 @@ class HSMGet:
     ptmp: Path = Path('/ptmp') / getuser()
     tmp: Path = Path(environ.get('TMPDIR', ptmp))
 
-    def _run(self, cmd: str, stdout=DEVNULL, stderr=DEVNULL) -> None:
-        esc = re.sub(r'([\(\)])', r'\\\1', cmd)
-        run(esc, shell=True, check=True, stdout=stdout, stderr=stderr)
-
     @singledispatchmethod
-    def __call__(self, path_or_paths: Any, **kwargs: Any) -> Any:
+    def __call__(self, path_or_paths: Any) -> Any:
         raise TypeError(
             'Unsupported type for path to hsmget. Expected str, Path, or list[Path]'
         )
 
     @__call__.register
-    def _call_str(self, path: str, **kwargs: Any) -> Path:
+    def _call_str(self, path: str) -> Path:
         cast_path = Path(path)
-        return self.__call__(cast_path, **kwargs)
+        return self.__call__(cast_path)
 
     @__call__.register
-    def _call_path(self, path: Path, **kwargs: Any) -> Path:
+    def _call_path(self, path: Path) -> Path:
         if which('hsmget') is None:
             logger.info('Not using hsmget')
             return path
         relative = path.relative_to(self.archive)
         # hsmget will do the dmget first and this is fine since it's one file
         cmd = f'hsmget -q -a {self.archive} -w {self.tmp} -p {self.ptmp} {relative}'
-        self._run(cmd, **kwargs)
+        _run_cmd_silently(cmd)
         return self.tmp / relative
 
     @__call__.register
-    def _call_paths(self, paths: list, **kwargs: Any) -> list[Path]:
+    def _call_paths(self, paths: list) -> list[Path]:
         if which('hsmget') is None:
             logger.info('Not using hsmget')
             return paths
         p_str = ' '.join([p.as_posix() for p in paths])
-        self._run(f'dmget {p_str}')
+        _run_cmd_silently(f'dmget {p_str}')
         relative = [p.relative_to(self.archive) for p in paths]
         rel_str = ' '.join([r.as_posix() for r in relative])
         cmd = f'hsmget -q -a {self.archive} -w {self.tmp} -p {self.ptmp} {rel_str}'
-        self._run(cmd, **kwargs)
+        _run_cmd_silently(cmd)
         return [self.tmp / r for r in relative]
 
 
