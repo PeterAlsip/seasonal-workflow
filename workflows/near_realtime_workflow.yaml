@@ -275,12 +275,25 @@ workflow:
       walltime: 01:00:00
       native: -D /home/acr/git/seasonal-workflow/analysis_setup/rivers --output=&LOGS;/runoff_glofas_%j.out
       dependency:
-        datadep:
-          value:
-            cyclestr:
-              attrs:
-                offset: "-01:00:00:00"
-              value: /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@Y_v4.0.nc
+        and:
+          datadep:
+            value:
+              cyclestr:
+                attrs:
+                  offset: "-01:00:00:00"
+                value: /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@Y_v4.0.nc
+          sh_month:
+            command:
+              cyclestr:
+                value: "[ $(date -r /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@Y_v4.0.nc +%m ) -ge @m ]"
+            attrs:
+              shell: "/bin/bash"
+          sh_year:
+            command:
+              cyclestr:
+                value: "[ $(date -r /archive/uda/CEFI/GloFAS/GloFAS_river_discharge_@Y_v4.0.nc +%Y ) -ge @Y ]"
+            attrs:
+              shell: "/bin/bash"
     task_runoff_gaea:
       attrs:
         cycledefs: default
