@@ -8,18 +8,12 @@ variables:
     - name: rate_of_change_check
       args:
         threshold: 160
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   strd:
     - no_nans
     - name: range_check
       args:
         min_val: 342000
         max_val: 1800000
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   precip:
     - no_nans
     - name: range_check
@@ -41,18 +35,12 @@ variables:
     - name: rate_of_change_check
       args:
         threshold: .015
-    - name: repeated_float_check
-      args:
-        max_occurrences: 200500
   sphum:
     - no_nans
     - name: range_check
       args:
         min_val: 0.00001
         max_val: 0.03
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   slp:
     - no_nans
     - name: range_check
@@ -62,18 +50,12 @@ variables:
     - name: rate_of_change_check
       args:
         threshold: 7000
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   msl:
     - no_nans
     - name: range_check
       args:
         min_val: 92500
         max_val: 106000
-    - name: repeated_float_check
-      args:
-        max_occurrences: 10000
   swdn_sfc:
     - no_nans
     - name: range_check
@@ -83,9 +65,6 @@ variables:
     - name: rate_of_change_check
       args:
         threshold: 365
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   ssrd:
     - no_nans
     # Check qc_hourly for the range check
@@ -95,9 +74,6 @@ variables:
       args:
         min_val: 225
         max_val: 330
-    - name: repeated_float_check
-      args:
-        max_occurrences: 1000
   t_ref:
     - no_nans
     - name: range_check
@@ -107,9 +83,6 @@ variables:
     - name: rate_of_change_check
       args:
         threshold: 25
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   u_ref:
     - no_nans
     - name: range_check
@@ -118,9 +91,6 @@ variables:
         max_val: 50
     # rate of change could possibly be from positive bound to negative bound.
     # also complicated because of 4x daily frequency.
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   u10:
     - no_nans
     - name: range_check
@@ -129,24 +99,15 @@ variables:
         max_val: 50
     # rate of change could possibly be from positive bound to negative bound.
     # also complicated because of 4x daily frequency.
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   v_ref:
     - no_nans
     - name: range_check
       args:
         min_val: -50
         max_val: 50
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
   v10:
     - no_nans
     - name: range_check
       args:
         min_val: -50
         max_val: 50
-    - name: repeated_float_check
-      args:
-        max_occurrences: 500
