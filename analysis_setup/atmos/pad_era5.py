@@ -18,7 +18,6 @@ TMP = hsmget.tmp
 
 variables = {
     'mean_sea_level_pressure': 'msl',
-    'surface_pressure': 'sp',
     'total_precipitation': 'tp',
     'snowfall': 'sf',
     'surface_solar_radiation_downwards': 'ssrd',

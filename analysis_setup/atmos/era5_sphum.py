@@ -20,7 +20,7 @@ def main(d2m_file: Path, sp_file: Path, tmpdir: Path, outdir: Path | str | None 
             {tmpdir / d2m_file.name} {svp_file}'
     )
     run_cmd(
-        f'cdo -expr,"_mr=0.622*svp/(sp-svp);sphum=_mr/(1+_mr);" -merge \
+        f'cdo -expr,"_mr=0.622*svp/(msl-svp);sphum=_mr/(1+_mr);" -merge \
               {svp_file} {tmpdir / sp_file.name} {tmpdir / sphum_file}'
     )
     run_cmd(f'gcp {tmpdir / sphum_file} {outdir}')

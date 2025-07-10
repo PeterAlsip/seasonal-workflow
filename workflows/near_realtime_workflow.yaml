@@ -358,12 +358,6 @@ workflow:
                 attrs:
                   offset: "-01:00:00:00"
                 value: /archive/uda/CEFI/ERA5/snowfall/ERA5_snowfall_@m@Y.nc
-          datadep_sp:
-            value:
-              cyclestr:
-                attrs:
-                  offset: "-01:00:00:00"
-                value: /archive/uda/CEFI/ERA5/surface_pressure/ERA5_surface_pressure_@m@Y.nc
           datadep_ssrd:
             value:
               cyclestr:
@@ -423,7 +417,7 @@ workflow:
         cyclestr:
           attrs:
             offset: "-01:00:00:00"
-          value: "&ENV_SETUP; python era5_sphum.py -d &ANALYSIS_INPUT;/atmos/ERA5_d2m_@Y_padded.nc -p &ANALYSIS_INPUT;/atmos/ERA5_sp_@Y_padded.nc"
+          value: "&ENV_SETUP; python era5_sphum.py -d &ANALYSIS_INPUT;/atmos/ERA5_d2m_@Y_padded.nc -p &ANALYSIS_INPUT;/atmos/ERA5_msl_@Y_padded.nc"
       partition: batch
       nodes: 1:ppn=1
       walltime: 0:30:00
