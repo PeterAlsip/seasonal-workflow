@@ -71,6 +71,7 @@ variables:
     - po4os
     - sios
     - talkos
+    - dissicos
   ocean_cobalt_neus:
     - chlos
     - no3os
@@ -90,6 +91,11 @@ variables:
     - btm_co3_sol_arag
     - btm_co3_ion
     - btm_htotal
+  ocean_cobalt_sfc:
+    - pco2surf
+    - sfc_co3_ion
+    - sfc_co3_sol_arag
+
 
 filesystem:
   forecast_input_data: /work/acr/mom6/nwa12/forecast_input_data
@@ -116,5 +122,5 @@ filesystem:
   nowcast_history: /archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i{year}{month:02d}/gfdl.ncrc6-intel23-prod/history/
   forecast_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_cobalt_forecast_2024_09_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc6-intel23-prod/history/
 
-  combined_name: "{var}.nwa.full.ss_fcast.{freq}.raw.r20250410.enss.i{year}{month:02d}.nc"
+  combined_name: "{var}.nwa.full.ss_fcast.{freq}.raw.r20250710.enss.i{year}{month:02d}.nc"
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here
