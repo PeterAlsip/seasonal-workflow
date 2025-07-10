@@ -273,8 +273,8 @@ if __name__ == '__main__':
         args.threads,
         segments=segments,
         lon_lat_box=(dom.west_lon, dom.east_lon, dom.south_lat, dom.north_lat),
-        reanalysis_path=config.filesystem.interim_data.GLORYS_reanalysis, # TODO?
-        analysis_path=config.filesystem.interim_data.GLORYS_reanalysis,
+        reanalysis_path=config.filesystem.interim_data.GLORYS_reanalysis,
+        analysis_path=config.filesystem.interim_data.GLORYS_analysis,
         update=args.update,
         dry=args.dry,
     )
