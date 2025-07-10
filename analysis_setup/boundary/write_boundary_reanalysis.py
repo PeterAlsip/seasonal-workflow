@@ -110,12 +110,20 @@ def thread_worker(
 ) -> Path:
     out_file = out_dir / in_file.name
     lonmin, lonmax, latmin, latmax = lon_lat_box
-    run_cmd(
-        f'cdo setmisstonn -sellevidx,1/49 '
-        f'-sellonlatbox,{lonmin},{lonmax},{latmin},{latmax} '
-        f'{in_file.as_posix()} {out_file.as_posix()}',
-        escape=True
-    )
+    if '_2D_' in in_file.name:
+        run_cmd(
+            f'cdo setmisstonn '
+            f'-sellonlatbox,{lonmin},{lonmax},{latmin},{latmax} '
+            f'{in_file.as_posix()} {out_file.as_posix()}',
+            escape=True
+        )
+    else:
+        run_cmd(
+            f'cdo setmisstonn -sellevidx,1/49 '
+            f'-sellonlatbox,{lonmin},{lonmax},{latmin},{latmax} '
+            f'{in_file.as_posix()} {out_file.as_posix()}',
+            escape=True
+        )
     # out_file.with_suffix('.tmp').rename(out_file)
     return out_file
 
