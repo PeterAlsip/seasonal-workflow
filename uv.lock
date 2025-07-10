@@ -12,6 +12,31 @@ wheels = [
 ]
 
 [[package]]
+name = "bottleneck"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/80/82/dd20e69b97b9072ed2d26cc95c0a573461986bf62f7fde7ac59143490918/bottleneck-1.5.0.tar.gz", hash = "sha256:c860242cf20e69d5aab2ec3c5d6c8c2a15f19e4b25b28b8fca2c2a12cefae9d8", size = 104177, upload-time = "2025-05-13T21:11:21.158Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e9/8c/1e1fb2d30a906bc009f3fe070fa188a9593d73e5aa5e815e55edbb96eeec/bottleneck-1.5.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:97285cfedf3545d9a010b2db2123f9750bf920081e29364cc465052973bd0b5a", size = 99653, upload-time = "2025-05-13T21:10:52.655Z" },
+    { url = "https://files.pythonhosted.org/packages/56/8c/876c41988a9806020dc9b150f7ad5764a3d14857c11b637285eb7431c25f/bottleneck-1.5.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1043d95674566063f638582cc8700c24c4427f532f86b9e7cfc9f9ec84abc1ff", size = 357965, upload-time = "2025-05-13T21:10:53.582Z" },
+    { url = "https://files.pythonhosted.org/packages/07/ed/2d807648157a3e94405dc7759e434cbb10784003cd8fa34d992dee02e519/bottleneck-1.5.0-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:abc6a24a41f55765215005cec97dd69f41ac747ed0f4d446caa508531957eeda", size = 362845, upload-time = "2025-05-13T21:10:54.7Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/7a/ef9c3d9578c4a627d71d107f5e6f7074b98047536edd8adf0e17be5a0c5b/bottleneck-1.5.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:7967e0189defe9f49025bd6469ff0fe22af5463926af55c7ba1e4592051d8ef8", size = 361425, upload-time = "2025-05-13T21:10:56.931Z" },
+    { url = "https://files.pythonhosted.org/packages/88/e0/131f6a6adf8b2e2521e3880a29c5ec0e8ebf57b9e1f37fc2337df5c041b8/bottleneck-1.5.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:27e38e829497ca0a5eebdb79d3293aaa424f3c31c13806e5c607fd414536b7c3", size = 373411, upload-time = "2025-05-13T21:10:57.989Z" },
+    { url = "https://files.pythonhosted.org/packages/13/e4/4c24ec1347c4fa492f757b126be877201ae90bddbcdc9da17cce09de0d55/bottleneck-1.5.0-cp313-cp313-win32.whl", hash = "sha256:1214a2bf3b36c66e3898aab821ad8366a3062db6f83a8f083e2f799d202e86ea", size = 107925, upload-time = "2025-05-13T21:10:59.39Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/44/5e4a73bbe79e16ddbbbdfa1bc6af49b03cbb07aec5e323a14fa3acfc58bd/bottleneck-1.5.0-cp313-cp313-win_amd64.whl", hash = "sha256:436a402f0d60a9d6541d7adb0929501225a151ad03b96b756e0b607db6a106f1", size = 112158, upload-time = "2025-05-13T21:11:00.785Z" },
+    { url = "https://files.pythonhosted.org/packages/25/b2/f3ceb3c177dc9bddfb5e71e0e5949af13c5bfee283740ec81b429a4ce19a/bottleneck-1.5.0-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:fc0c0b661005b059fcb09988f8b5e2cd5e9c702e1bed24819ed38f85145140b5", size = 100852, upload-time = "2025-05-13T21:11:02.35Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/e7/4f5e212b482529847877558ae770be8eedd985b07d3eb0209dcbdd082595/bottleneck-1.5.0-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:48c2657102f3288e178cc341f000475a32f49a3cd8b7067e091d5446fa899383", size = 372068, upload-time = "2025-05-13T21:11:03.319Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/fa/7760ecdb2b37b7097e28a2028a1d5cad6ca0b7eae3806ed795c3a12fd87d/bottleneck-1.5.0-cp313-cp313t-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5c4c94cfcba46adfe71894c63c4b186c847965e73727dbaf5fd9ade41ef38e6e", size = 376524, upload-time = "2025-05-13T21:11:04.385Z" },
+    { url = "https://files.pythonhosted.org/packages/24/38/ee90a6e39ed04a8256ecd36baaf1abcea72787214e822675bfdd9b9e896e/bottleneck-1.5.0-cp313-cp313t-musllinux_1_2_aarch64.whl", hash = "sha256:3f3e308416886e29441a0b71bce8f3eb4c7a4943be541fd918244aaf25534d36", size = 375452, upload-time = "2025-05-13T21:11:05.918Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/96/82837f96be9abd2651565b9becc2f393eefe6d5a515606d662c6962df4b0/bottleneck-1.5.0-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:bda7c475d4a7e271dbd0b1d4bbce29065edc8891361857105b7212fe383c9a36", size = 386361, upload-time = "2025-05-13T21:11:07.191Z" },
+    { url = "https://files.pythonhosted.org/packages/73/40/ddf00a9b0065d037792d6d2095a4998f15787f2c60fbdcf638767a75c37f/bottleneck-1.5.0-cp313-cp313t-win32.whl", hash = "sha256:a107ed8b5f998918c24a1e476dbd2dfc3514ab0082df7132c460b01e6ffd8cf4", size = 109355, upload-time = "2025-05-13T21:11:08.253Z" },
+    { url = "https://files.pythonhosted.org/packages/33/56/c05fd1459f2b65941fcaf2697b81fe7d3428855c8e66ab1951eed04a13e2/bottleneck-1.5.0-cp313-cp313t-win_amd64.whl", hash = "sha256:816c910c5d1fb53adb32581c52a513b206f503ae253ace70cb32d1fe4e45af1d", size = 113739, upload-time = "2025-05-13T21:11:10.297Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.6.15"
 source = { registry = "https://pypi.org/simple" }
@@ -535,6 +560,7 @@ name = "workflow-tools"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "bottleneck" },
     { name = "dask" },
     { name = "esmpy" },
     { name = "loguru" },
@@ -556,6 +582,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "bottleneck", specifier = ">=1.5.0" },
     { name = "dask", specifier = ">=2025.5.1" },
     { name = "esmpy", git = "https://github.com/esmf-org/esmf?subdirectory=src%2Faddon%2Fesmpy&tag=v8.7.0" },
     { name = "loguru", specifier = ">=0.7.3" },
