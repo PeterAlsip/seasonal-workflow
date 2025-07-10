@@ -1,0 +1,147 @@
+# conda activate uwtools
+# uw rocoto realize --config-file retrospective_workflow.yaml --output-file retrospective_workflow.xml
+# /home/acr/git/rocoto/bin/rocotorun -d retrospective_workflow.db -w retrospective_workflow.xml
+# /home/acr/git/rocoto/bin/rocotostat -d retrospective_workflow.db -w retrospective_workflow.xml
+# or /home/acr/git/rocoto/bin/rocotoboot -d retrospective_workflow.db -w retrospective_workflow.xml -c all -t <TASK_TO_RUN>
+workflow:
+  attrs:
+    realtime: true
+    scheduler: slurm
+    cyclethrottle: 3
+  cycledef:
+    - attrs:
+        group: default
+      spec: "0 0 1 */3 2025 *"
+  log:
+    cyclestr:
+      value: /home/acr/git/seasonal-workflow/workflows/nrt_postprocess_@Y-@m.log
+  entities:
+    CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
+    ENV_SETUP: "source /home/acr/git/seasonal-workflow/workflows/env_setup.sh;"
+    QC_SETUP: "source /home/acr/git/ncqc/.venv/bin/activate;"
+    LOGS: /home/acr/git/seasonal-workflow/workflows/logs
+    FORECAST_OUTPUT: /work/acr/mom6/nwa12/forecast_output_data/individual
+    COLLAB: /collab1/data_untrusted/Andrew.C.Ross/to_cefi_data_portal
+    VARIABLES: >
+      tos
+      tob
+      sos
+      sob
+      MLD_003
+      btm_o2
+      btm_co3_sol_arag
+      btm_co3_ion
+      btm_htotal
+      no3os
+      phos
+      po4os
+      sios
+      talkos
+      dissicos
+      pco2surf
+      sfc_co3_ion
+      sfc_co3_sol_arag
+    DOMAINS: >
+      ocean_month
+      ocean_month
+      ocean_month
+      ocean_month
+      ocean_month
+      ocean_cobalt_btm
+      ocean_cobalt_btm
+      ocean_cobalt_btm
+      ocean_cobalt_btm
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_omip_sfc
+      ocean_cobalt_sfc
+      ocean_cobalt_sfc
+      ocean_cobalt_sfc
+  tasks:
+    metatask_postprocess_extract:
+      var:
+        domain: ocean_month ocean_cobalt_btm ocean_cobalt_omip_sfc ocean_cobalt_sfc
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_extract_#domain#:
+        attrs:
+          cycledefs: default
+          maxtries: 2 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&ENV_SETUP; python forecast_postprocess/postprocess_extract_fields.py -c config_nwa12_cobalt.yaml -d #domain# -y @Y -m @m --new"
+        partition: analysis
+        nodes: 1:ppn=1
+        walltime: 1:00:00
+        # This uses /vftmp/$USER as a cache so it should run on the same node every time
+        native: -D /home/acr/git/seasonal-workflow --nodelist=an211 --output=&LOGS;/pp_extract_%j.out
+    metatask_postprocess_combine:
+      var:
+        variable: "&VARIABLES;"
+        domain: "&DOMAINS;"
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_combine_#domain#_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 4 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&ENV_SETUP; python forecast_postprocess/postprocess_combine_new_forecasts.py -c config_nwa12_cobalt.yaml -d #domain# -v #variable# -y @Y -m @m"
+        partition: analysis
+        nodes: 1:ppn=1
+        walltime: 0:30:00
+        native: -D /home/acr/git/seasonal-workflow --exclude=an[001-002,007-012,014] --output=&LOGS;/pp_combine_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: pp_extract_#domain#
+    metatask_postprocess_qc:
+      var:
+        variable: "&VARIABLES;"
+        domain: "&DOMAINS;"
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_qc_#domain#_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 4 # Sometimes failure is just failure to load python
+        command:
+          cyclestr:
+            value: "&QC_SETUP; /nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py &FORECAST_OUTPUT;/#variable#.nwa.full.ss_fcast.monthly.raw.r20250710.enss.i@Y@m.nc -c workflows/qc_ocean.yaml workflows/qc_monthly.yaml --fail-on-error"
+        partition: batch
+        nodes: 1:ppn=1
+        walltime: 0:30:00
+        native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/pp_qc_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: pp_combine_#domain#_#variable#
+    metatask_postprocess_stage:
+      var:
+        variable: "&VARIABLES;"
+        domain: "&DOMAINS;"
+      attrs:
+        mode: parallel
+        throttle: 3
+      task_pp_stage_#domain#_#variable#:
+        attrs:
+          cycledefs: default
+          maxtries: 2
+        command:
+          cyclestr:
+            value: "&ENV_SETUP; gcp -cd -v &FORECAST_OUTPUT;/#variable#.nwa.full.ss_fcast.monthly.raw.r20250710.enss.i@Y@m.nc &COLLAB;/"
+        partition: analysis
+        nodes: 1:ppn=1
+        walltime: 0:05:00
+        native: -D /home/acr/git/seasonal-workflow --output=&LOGS;/pp_stage_%j.out
+        dependency:
+          taskdep:
+            attrs:
+              task: pp_qc_#domain#_#variable#

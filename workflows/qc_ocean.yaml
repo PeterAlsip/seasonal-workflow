@@ -1,0 +1,77 @@
+variables:
+  tos:
+    - name: range_check
+      args:
+        min_val: -2.1
+        max_val: 40
+  tos_anom:
+    - name: range_check
+      args:
+        min_val: -10
+        max_val: 10
+  tob:
+    - name: range_check
+      args:
+        min_val: -2.1
+        max_val: 40
+  tob_anom:
+    - name: range_check
+      args:
+        min_val: -15
+        max_val: 15
+  sos:
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 44 # model can evaporate a lot
+  sos_anom:
+    - name: range_check
+      args:
+        min_val: -15
+        max_val: 15
+  sob:
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 44
+  sob_anom:
+    - name: range_check
+      args:
+        min_val: -15
+        max_val: 15
+  MLD_003:
+    - name: range_check
+      args:
+        min_val: 0
+        max_val: 3000
+  MLD_003_anom:
+    - name: range_check
+      args:
+        min_val: -1100
+        max_val: 1100
+  btm_o2:
+    - ge_zero
+  btm_co3_sol_arag:
+    - ge_zero
+  btm_co3_ion:
+    - ge_zero
+  btm_htotal:
+    - ge_zero
+  no3os:
+    - ge_zero
+  phos:
+    - ge_zero
+  po4os:
+    - ge_zero
+  sios:
+    - ge_zero
+  talkos:
+    - ge_zero
+  dissicos:
+    - ge_zero
+  pco2surf:
+    - ge_zero
+  sfc_co3_ion:
+    - ge_zero
+  sfc_co3_sol_arag:
+    - ge_zero

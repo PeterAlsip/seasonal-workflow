@@ -1,0 +1,15 @@
+variables:
+  lead:
+    - name: length
+      args:
+        expected_length: 12
+  time:
+    - frequency_monthly
+    - name: length
+      args:
+        expected_length: 12
+  valid_time:
+    - frequency_monthly
+    - name: length
+      args:
+        expected_length: 12
