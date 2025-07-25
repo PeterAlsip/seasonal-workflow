@@ -187,7 +187,8 @@ def main(
                 # Make sure that data was found for every day of the month.
                 n_expected = monthrange(year, mon)[1]
                 if len(files) != n_expected:
-                    logger.warning(f'Number of files found ({len(files)}) is not the same as expected ({n_expected})')
+                    logger.warning(f'Number of files found ({len(files)}) is not '
+                                   'the same as expected ({n_expected})')
                 copied_files = hsmget(files)
 
                 with futures.ThreadPoolExecutor(max_workers=threads) as executor:
