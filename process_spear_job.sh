@@ -10,6 +10,10 @@
 # but running more than a few at a time seems to cause
 # failures during dmget.
 
+# Example usage:
+# sbatch process_spear_job.sh atmos monthly_mean t_ref 1 config_nwa12_cobalt.yaml
+# (Gets monthly mean near surface air temperature for ensemble #1 for location and times in config file)
+
 # Other users could change to own venv
 source /home/Andrew.C.Ross/git/seasonal-workflow/.venv/bin/activate.csh
 module load gcp
