@@ -8,14 +8,12 @@
 # Wrapper to run workflow to extract and combine SPEAR forecasts.
 # Should be sbatch-ed,
 # but running more than a few at a time seems to cause
-# failures during dmget. 
+# failures during dmget.
 
-# Newer prebuilt python envs
-# are missing dask and/or yaml
-module load miniforge
-conda activate /nbhome/acr/python/envs/medpy311_20250213
+# Other users could change to own venv
+source /home/Andrew.C.Ross/git/seasonal-workflow/.venv/bin/activate.csh
 module load gcp
-    
+
 set domain=$1
 set freq=$2
 set var=$3
