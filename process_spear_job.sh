@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/bash -e
 #SBATCH --ntasks=1
 #SBATCH --job-name=process_spear
 #SBATCH --time=2880
@@ -11,22 +11,23 @@
 # failures during dmget.
 
 # Example usage:
-# sbatch process_spear_job.sh atmos monthly_mean t_ref 1 config_nwa12_cobalt.yaml
+# sbatch process_spear_job.sh atmos monthly t_ref 1 config_nwa12_cobalt.yaml
 # (Gets monthly mean near surface air temperature for ensemble #1 for location and times in config file)
 
 # Other users could change to own venv
-source /home/Andrew.C.Ross/git/seasonal-workflow/.venv/bin/activate.csh
+source /home/Andrew.C.Ross/git/seasonal-workflow/.venv/bin/activate
 module load gcp
 
-set domain=$1
-set freq=$2
-set var=$3
-set ens=$4
-set config=$5
+domain=$1
+freq=$2
+var=$3
+ens=$4
+config=$5
 
-set files=`python spear_path.py -d $domain -f $freq -v $var -e $ens -c $config`
+files=`python src/workflow_tools/spear.py -d $domain -f $freq -v $var -e $ens -c $config`
 dmget $files
 gcp $files $TMPDIR/
-set processed=`python process_spear.py -r $TMPDIR -d $domain -f $freq -v $var -e $ens -c $config`
-gcp $processed /work/$USER/spear/forecast_output_data/
+processed=`python process_spear.py -r $TMPDIR -d $domain -f $freq -v $var -e $ens -c $config`
+# Note that where to put the output is not read from the config file here.
+gcp -cd $processed /work/$USER/spear/forecast_output_data/
 
