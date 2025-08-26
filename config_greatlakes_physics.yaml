@@ -11,17 +11,21 @@ forecasts:
     - 12
   ensemble_size: 10
 
-# Names of diagnostic files in nudged run output
-# to use to create forecast initial conditions
-# (_snap will be appended).
+# Name the snapshot files to look for in the history tar files.
+# These are monthly instantaneous data that will be used for initial conditions.
+# "_snap" is appended to these names, so the below says to look for files
+# named ocean_month_snap, ice_month_snap, and ocean_cobalt_tracers_snap.
 snapshots:
   - ocean_month
   - ice_month
-
+  
+# Use forecasts initialized between these dates (inclusive) to
+# calculate the lead-dependent climatologies.
 climatology:
   first_year: 1993
   last_year: 2019
 
+# Configure the model bounding box, grid files, and open boundaries
 domain:
   south_lat: 40
   north_lat: 50
@@ -30,9 +34,9 @@ domain:
 
 filesystem:
   # Where to put data that will be used to force the model:
-  model_input_data: /work/pja/mom6/forecast_input_data/spear_med
+  forecast_input_data: /work/pja/mom6/forecast_input_data/spear_med
   # Where to put results from the model simulations:
-  model_output_data: /work/pja/mom6/forecast_output_data
+  forecast_output_data: /work/pja/mom6/forecast_output_data
   # Where to put the model input on Gaea:
   gaea_input_data: /gpfs/f6/ira-cefi/scratch/Peter.Alsip/MOM_INPUT/lakes/forecast_input_data/spear_med
   # Path to existing daily river files (one file per year, padded):
