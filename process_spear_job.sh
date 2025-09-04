@@ -14,8 +14,16 @@
 # sbatch process_spear_job.sh atmos monthly t_ref 1 config_nwa12_cobalt.yaml
 # (Gets monthly mean near surface air temperature for ensemble #1 for location and times in config file)
 
+
+# Domain corresponds to one of the directories that the SPEAR post-processed data are in. Some of the possibilities are:
+#- atmos (monthly average atmosphere)
+#- atmos_daily (daily average atmosphere)
+#- atmos_4xdaily (6 hourly instantaneous atmosphere)
+#- ocean (monthly 2D ocean)
+#- ocean_z (monthly 3D ocean)
+
 # Other users could change to own venv
-source /home/Andrew.C.Ross/git/seasonal-workflow/.venv/bin/activate
+source /home/Peter.Alsip/git/seasonal-workflow/.venv/bin/activate
 module load gcp
 
 domain=$1
