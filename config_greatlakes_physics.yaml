@@ -78,12 +78,12 @@ variables:
   
 filesystem:
   # Where to put data that will be used to force the model:
-  forecast_input_data: /work/pja/mom6/forecast_input_data/spear_med
+  forecast_input_data: /work/pja/mom6/forecast_input_data
   nowcast_input_data: /work/pja/mom6/analysis_input_data
   # Where to put results from the model simulations:
   forecast_output_data: /work/pja/mom6/forecast_output_data
   # Where to put the model input on Gaea:
-  gaea_input_data: /gpfs/f6/ira-cefi/scratch/Peter.Alsip/MOM_INPUT/lakes/forecast_input_data/spear_med
+  gaea_input_data: /gpfs/f6/ira-cefi/scratch/Peter.Alsip/MOM_INPUT/lakes/forecast_input_data
   # Path to existing daily river files (one file per year, padded):
   yearly_river_files: None  #/work/acr/mom6/nwa12/analysis_input_data/rivers/glofasv4_runoff_{year}.nc
 
