@@ -108,7 +108,8 @@ filesystem:
   # Location of the nudged analysis history files:
   # analysis_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d/gfdl.ncrc6-intel23-prod/history/
   # NOTE: using re-run for newer bgc diags
-  analysis_history: None #/archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d_rerun/gfdl.ncrc6-intel23-prod/history/
+  # NOTE: write_ics_from_snapshot.py looks for files from here if now=F in that python script. So use this while testing great lakes retrospective forecasts - @PA 9/12/2025
+  analysis_history: /archive/Peter.Alsip/fre/cefi/er/2025_08/er_hindcast1941-2024/gfdl.ncrc6-intel23-prod/history/ #/archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d_rerun/gfdl.ncrc6-intel23-prod/history/
   
   # The NWA12 seasonal BGC analysis was run in multiple steps.
   # It should be safe to delete this for a continuous analysis.
@@ -117,7 +118,7 @@ filesystem:
   #  - /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_extension_2024_nudgets-90d/gfdl.ncrc6-intel23-prod/history/
   
 # The nowcast run is a nudged analysis run from the beginning of the current year to the initialization
-  # date of the real-time forecast.
+  # date of the real-time forecast. -- For now I'm using the long-term hindcast output while setting up and testing the workflow for retrospective forecasts
   nowcast_history: None # /archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i{year}{month:02d}/gfdl.ncrc6-intel23-prod/history/
   # Template for the name of the forecast tar files.
   # Note that year, month, and ensemble will be filled in by the python tools.
