@@ -536,7 +536,7 @@ SIS_OVERRIDE_EOF
   </experiment>
         
 <!-- Data files for forecasts with climatology boundary conditions-->
-<freInclude name="nwa12_data_clim">
+<freInclude name="erie_data_clim">
   <input>
     <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
       <!-- PA deleted tides and open boundary file paths, not relevant for GL. -->
@@ -756,875 +756,170 @@ SIS_OVERRIDE_EOF
   </dataFile>
 </freInclude>
 
-<!-- PA LEFT OFF HERE 9/11/2025 -->
-        
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e01" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e01" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e01']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e01" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e01']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e01_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e01_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e01_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e01_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e01_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e01_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e01_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e01_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e01_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e01_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e01_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e01_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e02" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e02" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e02']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e02" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e02']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e02_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e02_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e02_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e02_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e02_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e02_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e02_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e02_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e02_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e02_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e02_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e02_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e03" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e03" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e03']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e03" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e03']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e03_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e03_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e03_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e03_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e03_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e03_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e03_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e03_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e03_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e03_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e03_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e03_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e04" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e04" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e04']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e04" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e04']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e04_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e04_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e04_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e04_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e04_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e04_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e04_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e04_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e04_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e04_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e04_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e04_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e05" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e05" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e05']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e05" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e05']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e05_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e05_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e05_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e05_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e05_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e05_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e05_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e05_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e05_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e05_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e05_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e05_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e06" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e06" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e06']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e06" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e06']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e06_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e06_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e06_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e06_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e06_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e06_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e06_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e06_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e06_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e06_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e06_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e06_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e07" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e07" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e07']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e07" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e07']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e07_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e07_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e07_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e07_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e07_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e07_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e07_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e07_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e07_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e07_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e07_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e07_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e08" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e08" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e08']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e08" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e08']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e08_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e08_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e08_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e08_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e08_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e08_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e08_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e08_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e08_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e08_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e08_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e08_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e09" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e09" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e09']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e09" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e09']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e09_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e09_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e09_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e09_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e09_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e09_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e09_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e09_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e09_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e09_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e09_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e09_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e10" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e10" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e10']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e10" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e10']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e10_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e10_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e10_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e10_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e10_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e10_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e10_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e10_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e10_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e10_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e10_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e10_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e11" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e11" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e11']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e11" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e11']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e11_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e11_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e11_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e11_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e11_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e11_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e11_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e11_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e11_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e11_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e11_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e11_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e12" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e12" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e12']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e12" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e12']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e12_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e12_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e12_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e12_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e12_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e12_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e12_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e12_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e12_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e12_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e12_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e12_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e13" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e13" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e13']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e13" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e13']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e13_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e13_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e13_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e13_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e13_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e13_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e13_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e13_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e13_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e13_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e13_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e13_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e14" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e14" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e14']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e14" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e14']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e14_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e14_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e14_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e14_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e14_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e14_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e14_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e14_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e14_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e14_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e14_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e14_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
-
-<experiment name="NWA12_cobalt_forecast_2024_09_$(ystart)-$(mstart)-e15" inherit="NWA12_cobalt_forecast_2024_09">
+<experiment name="erie_forecast_2019_09_$(ystart)-$(mstart)-e15" inherit="erie_forecast_2019_09">
   <description>
     Forecast with climatology boundary conditions.
   </description>
   <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_clim']/input/node())"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='erie_data_clim']/input/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e15']/node())"/>
   </input>
 </experiment>
 
-<experiment name="NWA12_cobalt_forecast_2024_09_obcs_$(ystart)-$(mstart)-e15" inherit="NWA12_cobalt_forecast_2024_09">
-  <description>
-    Forecast with forecast boundary conditions.
-  </description>
-  <input>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='nwa12_data_obcs']/input/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='bgc_data']/node())"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" xpointer="xpointer(//freInclude[@name='atmos-e15']/node())"/>
-    <dataFile label="input" target="INPUT/thetao_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e15_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e15_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/thetao_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_thetao_i$(ystart)-$(mstart)-e15_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e15_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e15_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/so_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_so_i$(ystart)-$(mstart)-e15_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e15_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e15_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/ssh_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_ssh_i$(ystart)-$(mstart)-e15_003.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_1.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e15_001.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_2.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e15_002.nc</dataSource>
-    </dataFile>
-    <dataFile label="input" target="INPUT/uv_f_3.nc" chksum="" size="" timestamp="">
-      <dataSource site="ncrc">$(NWA12_USER)/forecast_input_data/boundary/$(ystart)-$(mstart)/forecast_v_i$(ystart)-$(mstart)-e15_003.nc</dataSource>
-    </dataFile>
-  </input>
-</experiment>
+
 </freInclude>
