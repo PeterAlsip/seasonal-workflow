@@ -108,9 +108,10 @@ filesystem:
   # Location of the nudged analysis history files:
   # analysis_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d/gfdl.ncrc6-intel23-prod/history/
   # NOTE: using re-run for newer bgc diags
-  # NOTE: write_ics_from_snapshot.py looks for files from here if now=F in that python script. So use this while testing great lakes retrospective forecasts - @PA 9/12/2025
-  analysis_history: /archive/Peter.Alsip/fre/cefi/er/2025_08/er_hindcast1941-2024/gfdl.ncrc6-intel23-prod/history/ #/archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d_rerun/gfdl.ncrc6-intel23-prod/history/
+  # NOTE: write_ics_from_snapshot.py looks for files from here if now=F in that python script. So point to the great lakes retrospective forecasts - @PA 11/14/2025
+    analysis_history: /archive/pja/fre/cefi/er/2025_11/er_retro_forecast_spinup-2019/gfdl.ncrc6-intel23-prod/history/
   
+
   # The NWA12 seasonal BGC analysis was run in multiple steps.
   # It should be safe to delete this for a continuous analysis.
 #analysis_extensions:
