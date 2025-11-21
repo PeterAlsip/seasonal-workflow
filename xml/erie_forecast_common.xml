@@ -33,7 +33,7 @@
    <property name="CHUNK_LENGTH_B" value="30yr"/> 
   
   <!-- Start year of post-processing (should likely be the same as the first year of the model) -->
-  <property name="PP_START_YEAR" value="2019"/>
+  <property name="PP_START_YEAR" value="2023"/>
   
   <!-- fre version to be used -->
   <property name="FRE_VERSION" value="bronx-23"/>
@@ -320,8 +320,8 @@ $name
 $baseDate
       </diagTable>
       <dataFile label="diagTable" target="INPUT/" chksum="" size="" timestamp="">
-	      <dataSource site="ncrc">/ncrc/home1/Peter.Alsip/git/regional-mom6-xml/diag_tables/diag_table_erie</dataSource> 
-        <dataSource site="gfdl">/home/Peter.Alsip/git/regional-mom6-xml/diag_tables/diag_table_erie</dataSource> 
+	      <dataSource site="ncrc">/ncrc/home1/Peter.Alsip/git/regional-mom6-xml/diag_tables/diag_table_erie_forecast</dataSource> 
+        <dataSource site="gfdl">/home/Peter.Alsip/git/regional-mom6-xml/diag_tables/diag_table_erie_forecast</dataSource> 
       </dataFile>
 		      <!-- <csh type='always'> --> <!-- @PA commented out 11/17 --> 
       <!-- Grid files-->
