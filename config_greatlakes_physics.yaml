@@ -4,15 +4,15 @@ retrospective_forecasts:
   first_year: 1991
   last_year: 2021
   months:
-    - 3
-    - 6
-    - 9
-    - 12
-  ensemble_size: 10
+    - 1
+    - 4
+    - 7
+    - 10
+  ensemble_size: 3 # changed to 3 for testing 
 
 # Configuration for the real time (new) forecasts.
 new_forecasts:
-  ensemble_size: 10
+  ensemble_size: 3 # changed to 3 for testing 
 
 
 # Name the snapshot files to look for in the history tar files.
@@ -109,7 +109,7 @@ filesystem:
   # analysis_history: /archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_COBALT_2024_09_nudgets-90d/gfdl.ncrc6-intel23-prod/history/
   # NOTE: using re-run for newer bgc diags
   # NOTE: write_ics_from_snapshot.py looks for files from here if now=F in that python script. So point to the great lakes retrospective forecasts - @PA 11/14/2025
-    analysis_history: /archive/pja/fre/cefi/er/2025_11/er_retro_forecast_spinup-2019/gfdl.ncrc6-intel23-prod/history/
+  analysis_history: /archive/pja/fre/cefi/er/2025_11/er_retro_forecast_spinup_2025_11_2022-01/gfdl.ncrc6-intel23-prod/history/
   
 
   # The NWA12 seasonal BGC analysis was run in multiple steps.
@@ -123,7 +123,7 @@ filesystem:
   nowcast_history: None # /archive/acr/fre/NWA/2024_09/NWA12_COBALT_2024_09_i{year}{month:02d}/gfdl.ncrc6-intel23-prod/history/
   # Template for the name of the forecast tar files.
   # Note that year, month, and ensemble will be filled in by the python tools.
-  forecast_history: None #/archive/Andrew.C.Ross/fre/NWA/2024_09/NWA12_cobalt_forecast_2024_09_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc6-intel23-prod/history/
+  forecast_history: /archive/Peter.Alsip/fre/cefi/er/2025_11/er_forecast_2025_11_{year}-{month:02d}-e{ensemble:02d}/gfdl.ncrc6-intel23-prod/history/
   # Name to give post-processed real-time forecast output data.
   combined_name: None #"{var}.nwa.full.ss_fcast.{freq}.raw.r20250710.enss.i{year}{month:02d}.nc"
   # TODO:need to have process_spear_job.sh read the path to place processed SPEAR data from here
