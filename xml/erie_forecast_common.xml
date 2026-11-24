@@ -16,7 +16,7 @@
 
   <!-- This will be included in the paths to the compiled model binary and /archive. Customize as desired.-->
   <!-- @PA convention I'm using: fre/cefi/[lake]/[YYYY_MM when exe was compiled]/ -->
-  <property name="FRE_STEM" value="fre/cefi/er/2025_11"/>
+  <property name="FRE_STEM" value="fre/cefi/GL/2026_09"/>
 
   <!-- These are the accounts that will be used on Gaea (NCRC) and PPAN (GFDL).
   ira-cefi, cefi, or gfdl_med are the two most likely options, but some users
@@ -33,7 +33,7 @@
    <property name="CHUNK_LENGTH_B" value="30yr"/> 
   
   <!-- Start year of post-processing (should likely be the same as the first year of the model) -->
-  <property name="PP_START_YEAR" value="2023"/>
+  <property name="PP_START_YEAR" value="1994"/>
   
   <!-- fre version to be used -->
   <property name="FRE_VERSION" value="bronx-23"/>
@@ -130,7 +130,7 @@
     </component>
   </experiment>
 
-  <experiment name="er_forecast_2025_11" inherit="FMS2_MOM6_SIS2_compile_symm">
+  <experiment name="er_forecast" inherit="FMS2_MOM6_SIS2_compile_symm">
     <description >
     </description>
     <input>
@@ -252,9 +252,9 @@
 "ATM" , "z_bot"         , ""            , ""                                               , "bilinear" , 10.0
 "ATM" , "gust"          , ""            , ""                                               , "bilinear" ,  1.0e-4
 "ATM", "o2_flux_pcair_atm",  ""         , ""                                               , "none",      0.214
-"ATM", "co2_flux_pcair_atm", "mole_fraction_of_carbon_dioxide_in_air", "INPUT/mole_fraction_of_co2_extended_ssp245.nc", "bilinear", 1.0e-06
-"ATM", "co2_bot",            "mole_fraction_of_carbon_dioxide_in_air", "INPUT/mole_fraction_of_co2_extended_ssp245.nc", "bilinear", 1.0e-06
-"ATM", "co2_dvmr_restore",   "mole_fraction_of_carbon_dioxide_in_air", "INPUT/mole_fraction_of_co2_extended_ssp245.nc", "bilinear", 1.0e-06
+#"ATM", "co2_flux_pcair_atm", "mole_fraction_of_carbon_dioxide_in_air", "INPUT/mole_fraction_of_co2_extended_ssp245.nc", "bilinear", 1.0e-06
+#"ATM", "co2_bot",            "mole_fraction_of_carbon_dioxide_in_air", "INPUT/mole_fraction_of_co2_extended_ssp245.nc", "bilinear", 1.0e-06
+#"ATM", "co2_dvmr_restore",   "mole_fraction_of_carbon_dioxide_in_air", "INPUT/mole_fraction_of_co2_extended_ssp245.nc", "bilinear", 1.0e-06
 #
 "ICE" , "lw_flux_dn"    , "lwdn_sfc"    , "INPUT/atmos_daily.$(atmos_start)-$(atmos_end).lwdn_sfc.nc"     , "bilinear" ,  1.0
 "ICE" , "sw_flux_vis_dir_dn", "swdn_sfc", "INPUT/atmos_daily.$(atmos_start)-$(atmos_end).swdn_sfc.nc"     , "bilinear" ,  0.285
@@ -400,8 +400,7 @@ cat > $work/INPUT/MOM_override << MOM_OVERRIDE_EOF
 #override REENTRANT_X = False
 #override NIGLOBAL = 430 
 #override NJGLOBAL = 180
-!#override LAYOUT = 48,32 !32,16
- 
+
 ! === module MOM_grid_init ===
 #override GRID_FILE = "hgrid_cart_er.nc"
 #override TOPO_FILE = 'depth_cart_er.nc'
@@ -409,20 +408,27 @@ cat > $work/INPUT/MOM_override << MOM_OVERRIDE_EOF
 #override MAXIMUM_DEPTH = 66.0
 
 ! === module MOM_coord_initialization ===
-! HYCOM1 configuration based on Baltic setup
-#override GINT = 0.003
 #override NK = 64
-#override COORD_CONFIG = "file"
-#override COORD_FILE = "erie_layer_coord_l64.nc"
-#override COORD_VAR = "Layer"
-#override REGRIDDING_COORDINATE_MODE = "HYCOM1"
+
+! HYCOM1 configuration based on Baltic setup
+!#override NK = 64
+!#override COORD_CONFIG = "file"
+!#override COORD_FILE = "erie_layer_coord_l64.nc"
+!#override COORD_VAR = "Layer"
+!#override REGRIDDING_COORDINATE_MODE = "HYCOM1"
+!#override REGRIDDING_COORDINATE_UNITS = "m"
+!#override ALE_COORDINATE_CONFIG = "HYBRID:erie_hycom_coordinate_l64.nc,rho2,dz"  
+
+! Z* configuration
+#override COORD_CONFIG = "ALE"
+#override REGRIDDING_COORDINATE_MODE = "Z*"
 #override REGRIDDING_COORDINATE_UNITS = "m"
-#override ALE_COORDINATE_CONFIG = "HYBRID:erie_hycom_coordinate_l64.nc,rho2,dz"  
+#override ALE_COORDINATE_CONFIG = "FILE:z_interface_er_l64.nc,interfaces=depth"
 
 ! === module MOM_diag_mediator ===
-!#override NUM_DIAG_COORDS = 1             !   ! entry in DIAG_COORDS must be provided.
-!#override DIAG_COORDS =  "sigma sigma SIGMA" ! MODULE_SUFFIX PARAMETER_SUFFIX COORDINATE_NAME
-!#override DIAG_COORD_DEF_sigma  = "FILE:interface_init_sigma_GLCFS.nc,interfaces=eta"
+#override NUM_DIAG_COORDS = 1             !   ! entry in DIAG_COORDS must be provided.
+#override DIAG_COORDS =  "z z ZSTAR" ! MODULE_SUFFIX PARAMETER_SUFFIX COORDINATE_NAME
+#override DIAG_COORD_DEF_z  = "FILE:z_interface_er_l64.nc,interfaces=depth"
 
 ! Debugging options
 !#override VERBOSITY = 9
@@ -501,8 +507,8 @@ SIS_OVERRIDE_EOF
         <production simTime="$(PROD_SIMTIME)" units="years">
             <segment simTime="12" units="months"/>
             <resources jobWallclock="4:00:00" segRuntime="4:00:00">
-              <ice                         layout = "72,24" io_layout = "1,1" mask_table="MOM_mask_table"/>
-              <ocn ranks="1728" threads="1" layout = "72,24" io_layout = "1,1" mask_table="MOM_mask_table"/>
+              <ice                         layout = "32,24" io_layout = "1,1" mask_table="MOM_mask_table"/>
+              <ocn ranks="768" threads="1" layout = "32,24" io_layout = "1,1" mask_table="MOM_mask_table"/>
             </resources>
         </production>
         <regression name="test">
@@ -551,6 +557,7 @@ SIS_OVERRIDE_EOF
     <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
         <dataSource site="ncrc">$(GL_WORLD)/single_lake/er/erie_hycom_coordinate_l64.nc</dataSource>
         <dataSource site="ncrc">$(GL_WORLD)/single_lake/er/erie_layer_coord_l64.nc</dataSource>
+        <dataSource site="ncrc">$(GL_WORLD)/single_lake/er/z_interface_er_l64.nc</dataSource>
     </dataFile>
     <!-- Ocean static file without mask holes -->
     <!-- Commented out by PA for GL
@@ -561,7 +568,6 @@ SIS_OVERRIDE_EOF
     <dataFile label="input" target="INPUT/" chksum="" size="" timestamp="">
       <dataSource site="ncrc">$(GL_WORLD)/all_lakes/SIS_input</dataSource>
       <dataSource site="gfdl">/archive/pja/MOM_INPUT/lakes/all_lakes/SIS_input</dataSource>
-      <!-- <dataSource site="gfdl">/home/Andrew.C.Ross/git/nwa-xml/NWA12/MOM_inputs/2023_04/SIS_input</dataSource> -->
     </dataFile>
   </input>
 </freInclude>
@@ -778,7 +784,7 @@ SIS_OVERRIDE_EOF
 </freInclude>
 
 <!-- @PA Include a run using only pp_ensemble mean derived forcing -->
- <experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-pp_ensemble" inherit="er_forecast_2025_11">
+ <experiment name="er_forecast_$(ystart)-$(mstart)-pp_ensemble" inherit="er_forecast">
    <description>
      Forecast with climatology boundary conditions.
    </description>
@@ -789,7 +795,7 @@ SIS_OVERRIDE_EOF
 </experiment>
 
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e01" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e01" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -799,7 +805,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e02" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e02" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -809,7 +815,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e03" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e03" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -819,7 +825,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e04" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e04" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -829,7 +835,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e05" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e05" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -839,7 +845,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e06" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e06" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -849,7 +855,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e07" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e07" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -859,7 +865,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e08" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e08" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -869,7 +875,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e09" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e09" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -879,7 +885,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e10" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e10" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -889,7 +895,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e11" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e11" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -899,7 +905,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e12" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e12" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -909,7 +915,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e13" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e13" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -919,7 +925,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e14" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e14" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>
@@ -929,7 +935,7 @@ SIS_OVERRIDE_EOF
   </input>
 </experiment>
 
-<experiment name="er_forecast_2025_11_$(ystart)-$(mstart)-e15" inherit="er_forecast_2025_11">
+<experiment name="er_forecast_$(ystart)-$(mstart)-e15" inherit="er_forecast">
   <description>
     Forecast with climatology boundary conditions.
   </description>

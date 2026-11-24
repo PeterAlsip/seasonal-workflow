@@ -188,7 +188,7 @@ def main(config: Config, year: int, month: int, now: bool):
         )
     else:
         history = config.filesystem.analysis_history
-    outdir = config.filesystem.forecast_input_data / 'initial'
+    outdir = config.filesystem.forecast_input_data / 'initial' / config.name 
     outdir.mkdir(exist_ok=True)
     tmp_files = [
         ics_from_snapshot(c, history, year, month)

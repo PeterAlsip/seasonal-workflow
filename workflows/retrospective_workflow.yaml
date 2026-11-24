@@ -11,29 +11,30 @@ workflow:
   cycledef:
     - attrs:
         group: default
-      spec: "0 0 1 8 1994 *"
+      spec: "0 0 1 */3 1994-1995 *"
   log:
     cyclestr:
-      value: /home/acr/git/seasonal-workflow/workflows/log_@Y-@m.log
+      value: /home/Peter.Alsip/git/seasonal-workflow/workflows/log_@Y-@m.log
   entities:
-    ANALYSIS_INPUT: /work/acr/mom6/nwa12/analysis_input_data
-    FORECAST_INPUT: /work/acr/mom6/nwa12/forecast_input_data
-    GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Andrew.C.Ross/northwest_atlantic/nwa12_input
-    CONFIG: /home/acr/git/seasonal-workflow/config_nwa12_cobalt.yaml
-    ENV_SETUP: "source /home/acr/git/seasonal-workflow/workflows/env_setup.sh;"
-    QC_SETUP: "source /home/acr/git/ncqc/.venv/bin/activate;"
-    LOGS: /home/acr/git/seasonal-workflow/workflows/logs
+    ANALYSIS_INPUT: /work/pja/mom6/analysis_input_data
+    FORECAST_INPUT: /work/pja/mom6/forecast_input_data
+    GAEA_INPUT: gaea:/gpfs/f6/ira-cefi/scratch/Peter.Alsip/MOM_INPUT/lakes
+    CONFIG: /home/Peter.Alsip/git/seasonal-workflow/config_greatlakes_physics.yaml
+    LAKE: er # Make sure this matches what is in config_greatlakes_physics.yaml- PA 11/23/2026
+    ENV_SETUP: "source /home/Peter.Alsip/git/seasonal-workflow/workflows/env_setup.sh;"
+    QC_SETUP: "source /home/pja/git/ncqc/.venv/bin/activate;" 
+    LOGS: /home/Peter.Alsip/git/seasonal-workflow/workflows/logs
   tasks:
     task_write_spear_atmos:
       attrs:
         cycledefs: default
       command:
         cyclestr:
-          value: "&ENV_SETUP; python write_spear_atmos.py -c &CONFIG; -y @Y -m @m"
+          value: "&ENV_SETUP; python write_spear_atmos-greatlakes.py -c &CONFIG; -y @Y -m @m"
       partition: batch
       nodes: 1:ppn=1
       walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow/forecast_setup/ --output=&LOGS;/spear_atmos_%j.out
+      native: -D /home/Peter.Alsip/git/seasonal-workflow/forecast_setup/ --output=&LOGS;/spear_atmos_%j.out
     metatask_qc_spear_atmos_daily:
       var:
         variable: lwdn_sfc precip q_ref slp swdn_sfc t_ref
@@ -46,12 +47,12 @@ workflow:
           maxtries: 2 # Sometimes failure is just failure to load python
         command:
           cyclestr:
-            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c workflows/qc_atmos.yaml workflows/qc_daily.yaml --fail-on-error || exit 255' _"
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/home/Peter.Alsip/git/seasonal-workflow/.venv/bin/uv run /home/Peter.Alsip/git/ncqc/ncqc.py  \"$1\" -c workflows/qc_atmos.yaml workflows/qc_daily.yaml --fail-on-error || exit 255' _"
             # This will wrongly succeed if find doesn't return any files.
         partition: batch
         nodes: 1:ppn=1
         walltime: 0:05:00
-        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
+        native: -D /home/Peter.Alsip/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
         dependency:
           taskdep:
             attrs:
@@ -68,11 +69,11 @@ workflow:
           maxtries: 1
         command:
           cyclestr:
-            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/nbhome/acr/local/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c workflows/qc_atmos.yaml --fail-on-error || exit 255' _"
+            value: "&QC_SETUP; find &FORECAST_INPUT;/atmos/@Y-@m-e??/ -name \"*#variable#*\" -type f -print0 | xargs -0 -n 1 sh -c '/home/Peter.Alsip/git/seasonal-workflow/.venv/bin/uv run /home/acr/git/ncqc/ncqc.py  \"$1\" -c workflows/qc_atmos.yaml --fail-on-error || exit 255' _"
         partition: batch
         nodes: 1:ppn=1
         walltime: 0:05:00
-        native: -D /home/acr/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
+        native: -D /home/Peter.Alsip/git/seasonal-workflow  --output=&LOGS;/spear_qc_%j.out
         dependency:
           taskdep:
             attrs:
@@ -105,13 +106,13 @@ workflow:
       partition: analysis
       nodes: 1:ppn=1
       walltime: 02:00:00
-      native: -D /home/acr/git/seasonal-workflow/forecast_setup --output=&LOGS;/ics_%j.out
+      native: -D /home/Peter.Alsip/git/seasonal-workflow/forecast_setup --output=&LOGS;/ics_%j.out
     task_ics_gaea:
       attrs:
         cycledefs: default
       command:
         cyclestr:
-          value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/"
+          value: "&ENV_SETUP; gcp -cd -v &FORECAST_INPUT;/initial/&LAKE;/forecast_ics_@Y-@m.tar &GAEA_INPUT;/forecast_input_data/initial/&LAKE;"
       partition: batch
       nodes: 1:ppn=1
       walltime: 03:00:00

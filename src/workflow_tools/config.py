@@ -82,10 +82,22 @@ class Config(StrictModel):
     filesystem: Filesystem
     model_config = ConfigDict(extra='forbid')
 
+
 def load_config(config_path: str | Path) -> Config:
     """Load and parse the YAML configuration file."""
     with open(config_path) as f:
         data = safe_load(f)
+    ##############################
+    ### MODIFICATION FOR GL: Abstraction of history paths based on what domain is being run (as defined in config's "name" attribute)
+    # Resolve placeholders before Pydantic validates the model - PA 11/24/2026
+    # {name} is the lake domain you specify int he config_greatlakes_physics.yaml
+    if isinstance(data, dict) and isinstance(data.get("filesystem"), dict):
+        exp_name = data["name"]
+        for key, value in data["filesystem"].items():
+            if isinstance(value, str):
+                data["filesystem"][key] = value.replace("{name}", exp_name)
+    ##############################
+
     return Config.model_validate(data)
 
 if __name__ == '__main__':
